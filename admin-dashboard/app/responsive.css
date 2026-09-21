@@ -1,0 +1,155 @@
+/* Reflow rules follow the routed shell and theme styles. */
+.page,
+.panel,
+.table,
+.metric,
+.columns > *,
+.verify > *,
+.form-grid > *,
+.page-identity,
+.global-search,
+.auth-card label {
+  min-width: 0;
+}
+.page,
+.auth-card {
+  overflow-wrap: anywhere;
+}
+.table {
+  max-width: 100%;
+}
+input:not([type='checkbox']),
+textarea,
+select {
+  min-width: 0;
+  max-width: 100%;
+}
+.head,
+.pills,
+.pagination,
+.pagination > div,
+.community-live-toolbar {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.auth-page:has(> .auth-card:only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.auth-card {
+  margin-block: 32px 90px;
+}
+.admin-sidebar .nav-group a {
+  min-height: 44px;
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+  }
+  .page {
+    padding: 24px 20px 90px;
+  }
+  .small,
+  .plans {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .admin-sidebar {
+    height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+  .admin-sidebar .sidebar-scroll nav {
+    display: block;
+    overflow-x: hidden;
+  }
+  .admin-sidebar .nav-group a span {
+    display: block;
+  }
+  .admin-sidebar .nav-group a i {
+    flex-shrink: 0;
+  }
+  .admin-sidebar .sidebar-footer .account {
+    display: flex;
+  }
+  .admin-sidebar .sidebar-footer .secure {
+    display: block;
+  }
+  .topbar {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+  .page-identity h1 {
+    overflow-wrap: anywhere;
+  }
+  .global-search .search-results {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 50dvh;
+    overflow-y: auto;
+  }
+  .head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .head .primary {
+    align-self: flex-start;
+  }
+  .pills {
+    gap: 8px;
+  }
+  .pills button {
+    min-height: 44px;
+  }
+  .route-search-field > div {
+    flex-wrap: wrap;
+  }
+  .route-search-field input {
+    flex-basis: 180px;
+  }
+  .pagination > div {
+    flex-wrap: wrap;
+  }
+  .quick,
+  .small,
+  .plans,
+  .checks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .confirm-modal footer {
+    flex-wrap: wrap;
+  }
+  .confirm-modal footer button {
+    flex: 1 1 120px;
+  }
+  .auth-page {
+    min-height: 100dvh;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .auth-card {
+    width: min(450px, calc(100% - 32px));
+    padding: 24px 20px;
+    margin: 24px auto 90px;
+  }
+  .auth-card h2 {
+    font-size: 28px;
+  }
+  input:not([type='checkbox']),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  .theme-controls {
+    bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+  }
+  .theme-controls button {
+    min-height: 40px;
+    font-size: 12px;
+  }
+  .toast {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    overflow-wrap: anywhere;
+  }
+}

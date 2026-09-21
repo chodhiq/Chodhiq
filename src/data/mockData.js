@@ -1,0 +1,220 @@
+import { serviceCategories } from './serviceTaxonomy.js';
+
+export const categories = serviceCategories;
+
+// Real businesses sourced from Google Places (name, address, phone, rating, review count are real).
+// Photos are placeholders — Places didn't return any for these listings.
+// Languages spoken / years experience / pricing are left blank — Google doesn't expose these;
+// a real provider onboarding flow would collect them directly from the business.
+export const providers = [
+  {
+    id: '1',
+    name: 'Paniz Bastani Interiors',
+    category: 'Interior Design',
+    baseCity: 'Birmingham',
+    serviceAreas: ['Birmingham'],
+    languages: [],
+    yearsExperience: null,
+    priceRange: null,
+    rating: 5.0,
+    reviewCount: 15,
+    isVerified: true,
+    phone: '+44 7595 247150',
+    whatsapp: '+44 7595 247150',
+    address: 'Unit 10, 112-116 Park Hill Rd, Harborne, Birmingham B17 9HD',
+    googleMapsUrl: 'https://www.google.com/maps/place/?q=place_id:ChIJZeJB4C69cEgRzswba7qhmiU',
+    reviewHighlight:
+      'Clients say she brings big design visions to life and consistently exceeds expectations on renovation projects.',
+    image: 'https://picsum.photos/seed/paniz-interiors-cover/400/300',
+    portfolio: [
+      'https://picsum.photos/seed/paniz-interiors-1/300/300',
+      'https://picsum.photos/seed/paniz-interiors-2/300/300',
+      'https://picsum.photos/seed/paniz-interiors-3/300/300',
+    ],
+    featuredService: null,
+  },
+  {
+    id: '2',
+    name: 'M A Autos',
+    category: 'Mechanic',
+    baseCity: 'Bradford',
+    serviceAreas: ['Bradford'],
+    languages: [],
+    yearsExperience: null,
+    priceRange: null,
+    rating: 4.4,
+    reviewCount: 61,
+    isVerified: true,
+    phone: '+44 7908 569953',
+    whatsapp: '+44 7908 569953',
+    address: 'Havelock St, Bradford BD7 4EX',
+    googleMapsUrl: 'https://www.google.com/maps/place/?q=place_id:ChIJ44UiSOjme0gRY_61kvWtbyo',
+    reviewHighlight:
+      'Regulars praise Hasan for honest pricing and diagnosing issues quickly without unnecessary upselling.',
+    image: 'https://picsum.photos/seed/ma-autos-cover/400/300',
+    portfolio: [
+      'https://picsum.photos/seed/ma-autos-1/300/300',
+      'https://picsum.photos/seed/ma-autos-2/300/300',
+    ],
+    featuredService: null,
+  },
+  {
+    id: '3',
+    name: 'Milan Catering',
+    category: 'Catering',
+    baseCity: 'Leicester',
+    serviceAreas: ['Leicester'],
+    languages: [],
+    yearsExperience: null,
+    priceRange: null,
+    rating: 4.9,
+    reviewCount: 132,
+    isVerified: true,
+    phone: '+44 116 276 4455',
+    whatsapp: '+44 116 276 4455',
+    address: '68 Gough Rd, Leicester LE5 4AN',
+    googleMapsUrl: 'https://www.google.com/maps/place/?q=place_id:ChIJGfXbn2Zhd0gR48DAH7vqrKM',
+    reviewHighlight:
+      'Couples repeatedly mention how the team listened closely to their flavour preferences and delivered on every promise.',
+    image: 'https://picsum.photos/seed/milan-catering-cover/400/300',
+    portfolio: [
+      'https://picsum.photos/seed/milan-catering-1/300/300',
+      'https://picsum.photos/seed/milan-catering-2/300/300',
+      'https://picsum.photos/seed/milan-catering-3/300/300',
+    ],
+    featuredService: null,
+  },
+  {
+    id: '4',
+    name: 'Henna Artist London — Sweta Vajir',
+    category: 'Bridal & Beauty',
+    baseCity: 'Harrow',
+    serviceAreas: ['Harrow', 'London'],
+    languages: [],
+    yearsExperience: null,
+    priceRange: null,
+    rating: 5.0,
+    reviewCount: 124,
+    isVerified: true,
+    phone: '+44 7718 818893',
+    whatsapp: '+44 7718 818893',
+    address: '435 Kenton Rd, Harrow HA3 0XY',
+    googleMapsUrl: 'https://www.google.com/maps/place/?q=place_id:ChIJFVdzTSETdkgR606r0JozGQw',
+    reviewHighlight:
+      'Brides consistently describe the bridal mehndi stain as beautifully deep and long-lasting, with intricate custom designs.',
+    image: 'https://picsum.photos/seed/sweta-henna-cover/400/300',
+    portfolio: [
+      'https://picsum.photos/seed/sweta-henna-1/300/300',
+      'https://picsum.photos/seed/sweta-henna-2/300/300',
+    ],
+    featuredService: null,
+  },
+  {
+    id: '5',
+    name: 'Stitched by Farida',
+    category: 'Tailoring',
+    baseCity: 'Bradford',
+    serviceAreas: ['Bradford', 'Birmingham'],
+    languages: [],
+    yearsExperience: null,
+    priceRange: null,
+    rating: 4.9,
+    reviewCount: 59,
+    isVerified: true,
+    phone: '+44 7500 947877',
+    whatsapp: '+44 7500 947877',
+    address: '2 Musgrave Mount, Bradford BD2 3LA',
+    googleMapsUrl: 'https://www.google.com/maps/place/?q=place_id:ChIJYx6CU6Hhe0gR4YrEE-q1-HI',
+    reviewHighlight:
+      'Known for rescuing ill-fitting bridal outfits on tight deadlines, with clients travelling from other cities for consultations.',
+    image: 'https://picsum.photos/seed/farida-tailoring-cover/400/300',
+    portfolio: [
+      'https://picsum.photos/seed/farida-tailoring-1/300/300',
+      'https://picsum.photos/seed/farida-tailoring-2/300/300',
+    ],
+    featuredService: null,
+  },
+  {
+    id: '6',
+    name: "Sami's Studio",
+    category: 'Photography',
+    baseCity: 'London',
+    serviceAreas: ['London', 'Essex'],
+    languages: [],
+    yearsExperience: null,
+    priceRange: null,
+    rating: 4.8,
+    reviewCount: 609,
+    isVerified: true,
+    phone: '+44 20 3590 0210',
+    whatsapp: '+44 20 3590 0210',
+    address: '167 Green St, London E7 8JE',
+    googleMapsUrl: 'https://www.google.com/maps/place/?q=place_id:ChIJc42yTrqn2EcRq55Q0JYIhUw',
+    reviewHighlight:
+      'Repeat wedding clients highlight the organised, seamless coverage and how at ease the team makes the couple feel.',
+    image: 'https://picsum.photos/seed/samis-studio-cover/400/300',
+    portfolio: [
+      'https://picsum.photos/seed/samis-studio-1/300/300',
+      'https://picsum.photos/seed/samis-studio-2/300/300',
+      'https://picsum.photos/seed/samis-studio-3/300/300',
+    ],
+    featuredService: null,
+  },
+  {
+    id: '7',
+    name: 'SA Electrical & Plumbing Contractors',
+    category: 'Electrician',
+    baseCity: 'London',
+    serviceAreas: ['London'],
+    languages: [],
+    yearsExperience: null,
+    priceRange: null,
+    rating: 4.9,
+    reviewCount: 110,
+    isVerified: true,
+    phone: '+44 7796 893239',
+    whatsapp: '+44 7796 893239',
+    address: '11 Cheltenham Rd, London E10 6EU',
+    googleMapsUrl: 'https://www.google.com/maps/place/?q=place_id:ChIJtxRNMFIddkgRbOdPxDkrF3U',
+    reviewHighlight:
+      'Customers note punctual, clearly explained work covering both electrical and plumbing jobs, with fair pricing throughout.',
+    image: 'https://picsum.photos/seed/sa-electrical-cover/400/300',
+    portfolio: [
+      'https://picsum.photos/seed/sa-electrical-1/300/300',
+      'https://picsum.photos/seed/sa-electrical-2/300/300',
+    ],
+    featuredService: null,
+  },
+];
+
+export const featuredProviders = providers.slice(0, 4).map((p) => ({
+  id: p.id,
+  name: p.name,
+  tag: 'Top Rated',
+  image: p.image,
+}));
+
+export const recentSearches = [
+  'Interior Designer Birmingham',
+  'Mechanic Bradford',
+  'Wedding Caterer Leicester',
+];
+
+export const searchSuggestions = [
+  { label: 'Interior Designers', icon: 'sofa' },
+  { label: 'Mechanics Near Me', icon: 'wrench' },
+  { label: 'Wedding Caterers', icon: 'utensils' },
+  { label: 'Bridal Henna Artists', icon: 'sparkles' },
+  { label: 'Electricians', icon: 'zap' },
+  { label: 'Photographers', icon: 'camera' },
+];
+
+export const ukCities = [
+  'London',
+  'Birmingham',
+  'Bradford',
+  'Leicester',
+  'Manchester',
+  'Leeds',
+  'Glasgow',
+];

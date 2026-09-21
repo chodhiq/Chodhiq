@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "checkJs": true,
+    "noEmit": true
+  },
+  "include": [
+    "src/data/accountMappers.js",
+    "src/data/bookingMapper.js",
+    "src/data/categoryMatching.js",
+    "src/lib/validation.js"
+  ],
+  "exclude": ["node_modules", "dist", "dist-verify"]
+}

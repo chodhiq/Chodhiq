@@ -1,0 +1,11 @@
+.header-actions{position:relative}
+.icon-button b{position:absolute;right:-5px;top:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:99px;background:#bd5e54;color:#fff;display:grid;place-items:center;font-size:9px}
+.notification-panel{position:absolute;right:0;top:48px;width:min(390px,calc(100vw - 30px));max-height:480px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 48px #17261f2b;z-index:30;padding:8px}
+.notification-panel>header{display:flex;justify-content:space-between;padding:10px 11px;border-bottom:1px solid var(--line)}
+.notification-panel>header span{color:var(--muted);font-size:10px}
+.notification-panel>button{width:100%;border:0;border-bottom:1px solid var(--line);background:#fff;text-align:left;padding:12px;border-radius:8px;cursor:pointer}
+.notification-panel>button.unread{background:var(--pale)}
+.notification-panel button b,.notification-panel button span,.notification-panel button time{display:block}
+.notification-panel button b{font-size:12px}.notification-panel button span{font-size:11px;line-height:1.45;color:var(--muted);margin-top:4px}.notification-panel button time{font-size:9px;color:var(--muted);margin-top:7px}
+.notification-panel>p{padding:18px;text-align:center;color:var(--muted);font-size:11px}
+@media(max-width:700px){.header-actions{display:flex}.header-actions .live-pill,.header-actions .view-button{display:none}.notification-panel{position:fixed;top:66px;right:12px}}

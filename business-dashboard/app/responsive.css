@@ -1,0 +1,218 @@
+/* Loaded after theme and feature styles so desktop refinements cannot undo reflow. */
+.app-shell {
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+.sidebar {
+  overflow-y: auto;
+}
+.sidebar > * {
+  flex-shrink: 0;
+}
+.page,
+.panel,
+.stat,
+.form-grid > *,
+.reference-grid > *,
+.lead-layout > *,
+.lead-person > div,
+.workspace > header > div {
+  min-width: 0;
+}
+.page,
+.auth-card {
+  overflow-wrap: anywhere;
+}
+input:not([type='checkbox']),
+textarea,
+select {
+  min-width: 0;
+  max-width: 100%;
+}
+.section-title,
+.reference-welcome,
+.lead-actions,
+.add-service {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.auth-page:has(> .auth-card:only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 701px) and (max-width: 1000px) {
+  .app-shell {
+    grid-template-columns: 190px minmax(0, 1fr);
+  }
+  .sidebar {
+    width: 190px;
+    padding: 20px 10px;
+  }
+  .brand div {
+    font-size: 12px;
+  }
+  .sidebar nav button,
+  .sidebar nav button:not(.active) {
+    font-size: 12px;
+    justify-content: flex-start;
+    padding: 12px 8px;
+  }
+  .page {
+    padding: 24px 20px 90px;
+  }
+  .workspace > header {
+    padding: 0 20px;
+  }
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .reference-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 700px) {
+  .app-shell {
+    display: block;
+  }
+  .sidebar {
+    inset: auto 0 0;
+    width: 100%;
+    height: auto;
+    padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+    overflow: visible;
+    border-top: 1px solid var(--line);
+  }
+  .sidebar nav {
+    min-width: 0;
+    gap: 4px;
+  }
+  .sidebar nav button,
+  .sidebar nav button:nth-child(n + 6) {
+    min-height: 58px;
+    flex-basis: 88px;
+    padding: 7px 5px;
+    font-size: 12px !important;
+    line-height: 1.25;
+    white-space: normal;
+  }
+  .sidebar nav button span {
+    font-size: 20px;
+  }
+  .workspace {
+    padding-bottom: calc(82px + env(safe-area-inset-bottom));
+  }
+  .workspace > header {
+    height: auto;
+    min-height: 72px;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+  .workspace > header h1 {
+    font-size: 20px;
+  }
+  .header-actions {
+    flex-shrink: 0;
+  }
+  .header-actions .icon-button {
+    display: block;
+    width: 44px;
+    height: 44px;
+  }
+  .page {
+    padding: 22px 16px 90px;
+  }
+  .panel {
+    padding: 16px;
+  }
+  .reference-welcome {
+    align-items: flex-start;
+  }
+  .reference-welcome .primary {
+    white-space: normal;
+  }
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .reference-grid,
+  .dashboard-grid,
+  .lower-grid,
+  .lead-layout,
+  .form-grid,
+  .plans {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .add-service > input {
+    flex: 1 1 160px;
+  }
+  .lead-actions > button {
+    flex: 1 1 120px;
+  }
+  .hours-list > div {
+    grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .hours-list > div > b {
+    grid-column: 1 / 3;
+  }
+  .hours-list > div > .switch {
+    grid-column: 3;
+    justify-self: end;
+  }
+  .hours-list > div > span,
+  .hours-list > div input:last-of-type {
+    display: block;
+  }
+  .hours-list input[type='time'] {
+    width: 100%;
+    min-height: 44px;
+  }
+  .hours-list > div > em {
+    grid-column: 1 / -1;
+  }
+  .auth-page {
+    min-height: 100dvh;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .auth-brand {
+    padding: 32px 24px;
+  }
+  .auth-brand h1 {
+    font-size: clamp(28px, 8vw, 40px);
+  }
+  .auth-card {
+    width: min(440px, calc(100% - 32px));
+    padding: 24px 20px;
+    margin: 24px auto 90px;
+  }
+  .onboarding-tabs {
+    flex-wrap: wrap;
+  }
+  input:not([type='checkbox']),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  .theme-controls {
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    right: 10px;
+  }
+  body:has(.auth-page) .theme-controls {
+    bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  .theme-controls button {
+    min-height: 36px;
+    font-size: 12px;
+  }
+  .toast {
+    left: 12px;
+    right: 12px;
+    bottom: calc(142px + env(safe-area-inset-bottom));
+    overflow-wrap: anywhere;
+  }
+}
+@media (max-width: 360px) {
+  .stat-grid,
+  .photo-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

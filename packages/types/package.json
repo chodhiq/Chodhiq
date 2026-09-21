@@ -1,0 +1,9 @@
+{
+  "name": "@chodhiq/types",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./domain": "./domain.d.ts",
+    "./database": "./database.generated.d.ts"
+  }
+}

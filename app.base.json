@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "ChodhiQ",
+    "slug": "chodhiq",
+    "scheme": "chodhiq",
+    "version": "1.0.0",
+    "icon": "./assets/chodhiq-app-icon-v2.png",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/chodhiq-official-logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1026"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.chodhiq.app",
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.chodhiq.app",
+      "versionCode": 9,
+      "blockedPermissions": ["android.permission.RECORD_AUDIO"],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/chodhiq-adaptive-foreground.png",
+        "backgroundColor": "#0B1026"
+      }
+    },
+    "web": {
+      "favicon": "./assets/chodhiq-app-icon-v2.png"
+    },
+    "androidNavigationBar": {
+      "backgroundColor": "#0B1026",
+      "barStyle": "light-content"
+    },
+    "plugins": [
+      "expo-web-browser",
+      "expo-notifications",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ChodhiQ uses your location to find businesses near you."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ChodhiQ needs access to your photos to set a profile picture."
+        }
+      ],
+      "expo-sqlite"
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+.onboarding-card{width:min(620px,92%)}
+.onboarding-tabs{display:flex;gap:8px;margin:20px 0}
+.onboarding-tabs button{flex:1}
+.onboarding-card>input{width:100%;height:48px;border:1px solid var(--line);border-radius:12px;padding:0 14px}
+.claim-results{display:grid;gap:8px;max-height:330px;overflow:auto;margin:14px 0}
+.claim-results>button{display:grid;grid-template-columns:1fr auto;text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;cursor:pointer}
+.claim-results b,.claim-results span{display:block}
+.claim-results span{font-size:11px;color:var(--muted);margin-top:4px}
+.claim-results em{grid-column:2;grid-row:1/3;align-self:center;color:var(--primary);font-style:normal;font-weight:800}
+.verification-upload{display:grid;gap:10px;margin-top:16px}
+.verification-upload select,.verification-upload input{height:44px;border:1px solid var(--line);border-radius:10px;padding:0 11px}
+.verification-files{display:grid;gap:7px;margin-top:12px}
+.verification-files div{display:flex;justify-content:space-between;padding:9px 11px;background:var(--cream);border-radius:9px;font-size:11px}

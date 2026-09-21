@@ -1,0 +1,44 @@
+name: Quality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm test
+      - run: npx expo export --platform web --output-dir dist-ci
+      - run: npm audit --omit=dev --audit-level=high
+      - name: Verify provider dashboard
+        working-directory: business-dashboard
+        run: |
+          npm ci
+          npm run verify
+          npm audit --omit=dev --audit-level=high
+      - name: Verify administration dashboard and Edge Functions
+        working-directory: admin-dashboard
+        run: |
+          npm ci
+          npm run verify
+          npm audit --omit=dev --audit-level=high
+      - name: Verify coming-soon site
+        working-directory: coming-soon
+        run: |
+          npm ci
+          npm run verify
+          npm audit --omit=dev --audit-level=high
+      - name: Reject untracked deployment and unsafe database regressions
+        run: |
+          test -f supabase/functions/deliver-provider-leads/index.ts
+          test -f supabase/functions/ingest-mvp-event/index.ts
+          grep -q "record_user_moderation_change" supabase/migrations/20260901130000_security_remediation.sql
+          grep -q "drop policy.*Clients record MVP events" supabase/migrations/20260901130000_security_remediation.sql

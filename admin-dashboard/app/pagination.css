@@ -1,0 +1,5 @@
+.pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 11px 4px;color:var(--m);font-size:9px}
+.pagination>div{display:flex;align-items:center;gap:9px}
+.pagination button{border:1px solid var(--l);background:white;color:var(--i);border-radius:8px;padding:7px 10px;font-size:8px;font-weight:700;cursor:pointer}
+.pagination button:disabled{opacity:.4;cursor:not-allowed}
+.pagination b{font-size:8px;color:var(--m)}

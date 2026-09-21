@@ -1,0 +1,11 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "incremental": false,
+    "skipLibCheck": true
+  },
+  "include": ["App.js", "src/**/*.js", "packages/**/*.js", "packages/**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "dist-verify", "assets", "supabase", "tests"]
+}

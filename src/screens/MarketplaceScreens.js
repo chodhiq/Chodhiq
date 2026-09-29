@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import AppTextInput from '../components/AppTextInput';
+import { Alert, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+
+import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Icons from 'lucide-react-native';
 import ScreenHeader from '../components/ScreenHeader';
@@ -18,6 +13,7 @@ import { supabase } from '../lib/supabase';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { openSubscriptionCheckout } from '../data/subscriptionRepository';
 import { features } from '../config/features';
+import { cleanText } from '../lib/validation';
 
 const iconMap = {
   sofa: 'Sofa',
@@ -213,19 +209,39 @@ export function SubscriptionPlansScreen({ navigation }) {
 }
 
 export function CreatePostScreen({ navigation }) {
-  const { session, providers } = useAppState();
+  const { session, providers, access } = useAppState();
   const { palette } = useChodhiQTheme();
   const [type, setType] = useState('promotion'),
     [title, setTitle] = useState(''),
     [body, setBody] = useState(''),
     [providerId, setProviderId] = useState(null),
     [busy, setBusy] = useState(false);
+  const ownedIds = new Set(access.ownedProviders.map((provider) => String(provider.id)));
+  const ownedProviders = providers.filter((provider) => ownedIds.has(String(provider.id)));
+  const postTypes = [
+    { value: 'promotion', label: 'Offer', hint: 'Special deals and discounts', Icon: Icons.Tag },
+    { value: 'discussion', label: 'Update', hint: 'News and announcements', Icon: Icons.Megaphone },
+    {
+      value: 'experience',
+      label: 'Event',
+      hint: 'Upcoming events and activities',
+      Icon: Icons.CalendarDays,
+    },
+  ];
   const publish = async () => {
     if (!session) return navigation.navigate('Welcome');
-    if (!title.trim() || !body.trim())
-      return Alert.alert('Complete your post', 'Add a title and description.');
+    if (!providerId || !ownedIds.has(String(providerId)))
+      return Alert.alert('Choose your business', 'Select a business profile that you own.');
+    let safeTitle;
+    let safeBody;
+    try {
+      safeTitle = cleanText(title, { field: 'Title', min: 3, max: 120 });
+      safeBody = cleanText(body, { field: 'Description', min: 5, max: 2000, multiline: true });
+    } catch (error) {
+      return Alert.alert('Check your post', error.message);
+    }
     setBusy(true);
-    const text = `${title.trim()}\n\n${body.trim()}`,
+    const text = `${safeTitle}\n\n${safeBody}`,
       payload = {
         author_id: session.user.id,
         provider_id: providerId,
@@ -260,52 +276,69 @@ export function CreatePostScreen({ navigation }) {
   };
   return (
     <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]}>
-      <ScreenHeader navigation={navigation} title="Create post" />
+      <ScreenHeader
+        navigation={navigation}
+        title="Create post"
+        subtitle="Share offers, updates or events with your customers."
+      />
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={[styles.label, { color: palette.text2 }]}>Post type</Text>
-        <View style={[styles.segment, { backgroundColor: palette.surface }]}>
-          {[
-            ['promotion', 'Offer'],
-            ['discussion', 'Update'],
-            ['experience', 'Event'],
-          ].map(([value, label]) => (
+        <View style={styles.sectionHeading}>
+          <Text style={[styles.sectionTitle, { color: palette.text }]}>Post type</Text>
+          <Text style={[styles.sectionHint, { color: palette.text2 }]}>
+            Choose the type of post you want to create.
+          </Text>
+        </View>
+        <View style={styles.postTypeRow}>
+          {postTypes.map(({ value, label, hint, Icon }) => (
             <TouchableOpacity
               key={value}
               style={[
-                styles.segmentButton,
-                { borderColor: palette.border },
+                styles.postTypeCard,
+                { backgroundColor: palette.surface, borderColor: palette.border },
                 type === value && {
-                  backgroundColor: palette.primary,
+                  backgroundColor: palette.primarySoft,
                   borderColor: palette.primary,
                 },
               ]}
               onPress={() => setType(value)}
             >
-              <Text
-                style={[
-                  styles.segmentText,
-                  { color: palette.text2 },
-                  type === value && styles.segmentTextActive,
-                ]}
-              >
-                {label}
-              </Text>
+              <View style={[styles.postTypeIcon, { backgroundColor: palette.surfaceAlt }]}>
+                <Icon size={19} color={type === value ? palette.primary : palette.text2} />
+              </View>
+              <View style={styles.postTypeCopy}>
+                <Text style={[styles.postTypeLabel, { color: palette.text }]}>{label}</Text>
+                <Text numberOfLines={2} style={[styles.postTypeHint, { color: palette.text2 }]}>
+                  {hint}
+                </Text>
+              </View>
+              {type === value ? (
+                <View style={[styles.selectedMark, { backgroundColor: palette.primary }]}>
+                  <Icons.Check size={13} color="#FFFFFF" />
+                </View>
+              ) : null}
             </TouchableOpacity>
           ))}
         </View>
-        <Text style={[styles.label, { color: palette.text2 }]}>Title</Text>
-        <TextInput
+        <View style={styles.fieldHeading}>
+          <Text style={[styles.sectionTitle, { color: palette.text }]}>Title</Text>
+          <Text style={[styles.counter, { color: palette.muted }]}>{title.length}/120</Text>
+        </View>
+        <AppTextInput
           style={[
             styles.input,
             { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text },
           ]}
           value={title}
           onChangeText={setTitle}
+          maxLength={120}
           placeholder="Weekend special offer"
           placeholderTextColor={palette.muted}
         />
-        <Text style={[styles.label, { color: palette.text2 }]}>Description</Text>
-        <TextInput
+        <View style={styles.fieldHeading}>
+          <Text style={[styles.sectionTitle, { color: palette.text }]}>Description</Text>
+          <Text style={[styles.counter, { color: palette.muted }]}>{body.length}/2000</Text>
+        </View>
+        <AppTextInput
           multiline
           style={[
             styles.input,
@@ -314,56 +347,115 @@ export function CreatePostScreen({ navigation }) {
           ]}
           value={body}
           onChangeText={setBody}
+          maxLength={2000}
           placeholder="Share the details, dates and how to claim it."
           placeholderTextColor={palette.muted}
         />
-        <Text style={[styles.label, { color: palette.text2 }]}>Business profile</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {providers.slice(0, 12).map((p) => (
-            <TouchableOpacity
-              key={p.id}
-              style={[
-                styles.providerChip,
-                { backgroundColor: palette.primarySoft },
-                providerId === p.id && { backgroundColor: palette.primary },
-              ]}
-              onPress={() => setProviderId(p.id)}
-            >
-              <Text
-                style={[
-                  styles.providerText,
-                  { color: palette.primary },
-                  providerId === p.id && { color: palette.background },
-                ]}
-                numberOfLines={1}
-              >
-                {p.name}
+        {ownedProviders.length ? (
+          <View>
+            <Text style={[styles.sectionTitle, { color: palette.text, marginBottom: 10 }]}>
+              Business profile
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {ownedProviders.map((p) => (
+                <TouchableOpacity
+                  key={p.id}
+                  style={[
+                    styles.providerChip,
+                    { backgroundColor: palette.primarySoft },
+                    providerId === p.id && { backgroundColor: palette.primary },
+                  ]}
+                  onPress={() => setProviderId(p.id)}
+                >
+                  <Text
+                    style={[
+                      styles.providerText,
+                      { color: palette.primary },
+                      providerId === p.id && { color: palette.background },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {p.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        ) : (
+          <View style={[styles.businessPrompt, { backgroundColor: palette.primarySoft }]}>
+            <View style={[styles.businessPromptIcon, { backgroundColor: palette.surface }]}>
+              <Icons.Store size={24} color={palette.primary} />
+            </View>
+            <View style={styles.businessPromptCopy}>
+              <Text style={[styles.businessPromptTitle, { color: palette.text }]}>
+                Business profile
               </Text>
+              <Text style={[styles.sectionHint, { color: palette.text2 }]}>
+                Claim or register a business before publishing provider content.
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ClaimListing')}
+              style={[styles.profileLink, { backgroundColor: palette.surface }]}
+            >
+              <Text style={{ color: palette.primary, fontWeight: '800', fontSize: 12 }}>
+                Go to profile
+              </Text>
+              <Icons.ChevronRight size={16} color={palette.primary} />
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          </View>
+        )}
+        <View style={styles.uploadHeading}>
+          <View style={styles.fieldHeading}>
+            <Text style={[styles.sectionTitle, { color: palette.text }]}>Poster images</Text>
+            <Text style={[styles.counter, { color: palette.muted }]}>0/5</Text>
+          </View>
+          <Text style={[styles.sectionHint, { color: palette.text2 }]}>
+            Add eye-catching images to your post.
+          </Text>
+        </View>
         <View
           style={[
             styles.uploadMock,
-            { backgroundColor: palette.primarySoft, borderColor: palette.primary },
+            { backgroundColor: palette.surface, borderColor: palette.primary },
           ]}
         >
-          <Icons.ImagePlus size={25} color={palette.primary} />
-          <View>
-            <Text style={[styles.uploadTitle, { color: palette.text }]}>Poster images</Text>
-            <Text style={[styles.uploadNote, { color: palette.text2 }]}>
-              Images are managed through the Business Dashboard
+          <View style={[styles.uploadIcon, { backgroundColor: palette.primarySoft }]}>
+            <Icons.ImagePlus size={27} color={palette.primary} />
+          </View>
+          <Text style={[styles.uploadTitle, { color: palette.text }]}>Add poster images</Text>
+          <Text style={[styles.uploadNote, { color: palette.text2 }]}>
+            Images are managed through the Business Dashboard
+          </Text>
+        </View>
+        <View style={styles.imageActions}>
+          <View
+            style={[
+              styles.imageAction,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
+          >
+            <Icons.Image size={19} color={palette.primary} />
+            <Text style={[styles.imageActionText, { color: palette.text }]}>
+              Choose from gallery
             </Text>
+          </View>
+          <View
+            style={[
+              styles.imageAction,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
+          >
+            <Icons.Camera size={19} color={palette.primary} />
+            <Text style={[styles.imageActionText, { color: palette.text }]}>Take photo</Text>
           </View>
         </View>
         <TouchableOpacity
           disabled={busy}
-          style={[styles.publish, { backgroundColor: palette.primary }]}
+          style={[styles.publish, styles.publishLarge, { backgroundColor: palette.primary }]}
           onPress={publish}
         >
-          <Text style={[styles.chooseText, { color: palette.background }]}>
-            {busy ? 'Publishing…' : 'Publish post'}
-          </Text>
+          <Text style={styles.publishText}>{busy ? 'Publishing…' : 'Publish post'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -378,7 +470,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     padding: spacing.lg,
     paddingBottom: 80,
-    gap: spacing.md,
+    gap: 16,
   },
   categoryGrid: {
     padding: spacing.lg,
@@ -427,6 +519,67 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
+  sectionHeading: { gap: 4 },
+  sectionTitle: { fontSize: 15, fontWeight: '800' },
+  sectionHint: { fontSize: 12, lineHeight: 18 },
+  fieldHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  counter: { fontSize: 11 },
+  postTypeRow: { flexDirection: 'row', gap: 8 },
+  postTypeCard: {
+    flex: 1,
+    minHeight: 105,
+    position: 'relative',
+    borderWidth: 1,
+    borderRadius: 15,
+    padding: 10,
+    justifyContent: 'center',
+    gap: 8,
+  },
+  postTypeIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  postTypeCopy: { gap: 3 },
+  postTypeLabel: { fontSize: 12, fontWeight: '800' },
+  postTypeHint: { fontSize: 9, lineHeight: 13 },
+  selectedMark: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 19,
+    height: 19,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  businessPrompt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 16,
+    padding: 12,
+  },
+  businessPromptIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  businessPromptCopy: { flex: 1, gap: 4 },
+  businessPromptTitle: { fontSize: 13, fontWeight: '800' },
+  profileLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+  },
+  uploadHeading: { gap: 4 },
   segment: { flexDirection: 'row', backgroundColor: '#fff' },
   segmentButton: {
     flex: 1,
@@ -457,23 +610,46 @@ const styles = StyleSheet.create({
   },
   providerChipActive: { backgroundColor: colors.primary },
   providerText: { color: colors.primary, fontSize: 11 },
+  empty: { fontSize: 12, lineHeight: 18 },
   uploadMock: {
-    flexDirection: 'row',
-    gap: 12,
+    minHeight: 145,
+    gap: 7,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: colors.primary,
     borderRadius: radius.md,
-    padding: 18,
-    backgroundColor: colors.primaryLight,
+    padding: 16,
   },
-  uploadTitle: { fontWeight: '800', color: colors.textPrimary },
-  uploadNote: { fontSize: 11, color: colors.textMuted, marginTop: 3 },
+  uploadIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  uploadTitle: { fontWeight: '800', fontSize: 13 },
+  uploadNote: { fontSize: 11, marginTop: 1, textAlign: 'center' },
+  imageActions: { flexDirection: 'row', gap: 10 },
+  imageAction: {
+    minHeight: 50,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 8,
+  },
+  imageActionText: { fontSize: 10, fontWeight: '700' },
   publish: {
     backgroundColor: colors.primary,
     padding: 15,
     borderRadius: radius.md,
     alignItems: 'center',
   },
+  publishLarge: { minHeight: 56, borderRadius: 17, justifyContent: 'center' },
+  publishText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
 });

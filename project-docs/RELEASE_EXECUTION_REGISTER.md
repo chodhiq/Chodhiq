@@ -1,6 +1,10 @@
 # ChodhiQ release execution register
 
-Updated: 2026-08-30
+Updated: 2026-09-22
+
+## Current verification target
+
+Live verification now uses ChodhiQ Production (`gfjhvsajwjrrlylgrkhf`) and the deployed ChodhiQ Workers. The staging rows below record earlier work and are not the active run target. Use `npm run launch:config` to check local project alignment, each product's verification command for code, and read-only live checks before account-owner sign-in tests. Do not run the older staging mutation or cleanup harnesses against Production. See `DASHBOARD_HOSTING.md` and `PROVIDER_EMAIL_CONFIRMATION_2026-09-22.md` for current configuration and confirmation-link evidence.
 
 Automated local verification passed for all three products on 2026-08-29: 59 tests, three production builds/exports, lint, formatting, TypeScript, accessibility and security invariants. This does not replace staging or physical-device evidence.
 

@@ -1,0 +1,231 @@
+﻿raw_id,pdf_name,pdf_postcode,checked_on,fsa_extract_date,assessment,fsa_id,fsa_name,fsa_postcode,fsa_address,fsa_url
+1,La Maison Cafe,LE13TE,2026-09-24,2026-09-16,possible_match_review,1366743,La Maison,LE13TE,"Ground Floor, Parvette House, Abbey Street, Leicester",https://ratings.food.gov.uk/business/1366743
+2,La Forêt Café,LE16RH,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,1231067,La Foret Cafe,LE16RN,"11 King Street, Leicester",https://ratings.food.gov.uk/business/1231067
+3,Lunch Box,LE15FT,2026-09-24,2026-09-16,no_clear_match,,,,,
+4,Bitsy's Emporium of Awesome,LE35DL,2026-09-24,2026-09-16,name_and_postcode_match,1275427,Bitsy's Emporium Of Awesome,LE35DL,"4 North Mills, Frog Island, Leicester",https://ratings.food.gov.uk/business/1275427
+5,Bread & Honey Coffee House,LE16RN,2026-09-24,2026-09-16,no_clear_match,,,,,
+6,PUBLIC,LE16RN,2026-09-24,2026-09-16,name_and_postcode_match,1873891,Public,LE16RN,"41 King Street, Leicester",https://ratings.food.gov.uk/business/1873891
+7,Chloe Gourmet,LE15GW,2026-09-24,2026-09-16,name_and_postcode_match,1217084,Chloe Gourmet,LE15GW,"10 - 12 Cank Street, Leicester",https://ratings.food.gov.uk/business/1217084
+8,James' Bistro,LE14SX,2026-09-24,2026-09-16,possible_match_review,194686,James Cafe Bistro,LE14SX,"5 East Bond Street, Leicester",https://ratings.food.gov.uk/business/194686
+9,Casablanca Café,LE50QG,2026-09-24,2026-09-16,possible_match_review,1536809,Casablanca,LE50QG,"186 Uppingham Road, Leicester",https://ratings.food.gov.uk/business/1536809
+10,Bryter Moon Deli,LE15FA,2026-09-24,2026-09-16,possible_match_review,692579,Bryter Moon,LE15FA,"1 - 2 Silver Arcade, Leicester",https://ratings.food.gov.uk/business/692579
+11,Bru Coffee and More,LE11DE,2026-09-24,2026-09-16,no_clear_match,,,,,
+12,Brown's Cafe Bistro,LE22DA,2026-09-24,2026-09-16,possible_match_review,1231052,Brown's Cafe And Bistro,LE22DA,"12 Allandale Road, Leicester",https://ratings.food.gov.uk/business/1231052
+13,KAI,LE15DF,2026-09-24,2026-09-16,no_clear_match,,,,,
+14,Halcyon Kitchen,LE21TT,2026-09-24,2026-09-16,name_and_postcode_match,982648,Halcyon Kitchen,LE21TT,"95 Queens Road, Leicester",https://ratings.food.gov.uk/business/982648
+15,Hallaci Cafe,LE13AN,2026-09-24,2026-09-16,name_and_postcode_match,1198937,Hallaci Cafe,LE13AN,"79 Church Gate, Leicester",https://ratings.food.gov.uk/business/1198937
+16,Roma,LE11JA,2026-09-24,2026-09-16,no_clear_match,,,,,
+17,Grays Coffee Shop & Kitchen,LE11RE,2026-09-24,2026-09-16,name_and_postcode_match,656243,Grays Coffee Shop & Kitchen,LE11RE,"Leicester Creative Business Depot, 31 Rutland Street, Leicester",https://ratings.food.gov.uk/business/656243
+18,B-B'S Cafe,LE45AS,2026-09-24,2026-09-16,name_and_postcode_match,1764666,B B's Cafe,LE45AS,"28 Belgrave Road, Leicester",https://ratings.food.gov.uk/business/1764666
+19,Merchant of Venice,LE16FE,2026-09-24,2026-09-16,name_and_postcode_match,1693207,Merchant Of Venice,LE16FE,"173 - 175 Granby Street, Leicester",https://ratings.food.gov.uk/business/1693207
+20,Chocoberry,LE21EB,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,1629582,Chocoberry,LE46RG,"176 Gipsy Lane, Leicester",https://ratings.food.gov.uk/business/1629582
+21,Tea Time Leicester Limited,LE11DL,2026-09-24,2026-09-16,no_clear_match,,,,,
+22,FTSH Leicester Ltd,LE54LE,2026-09-24,2026-09-16,no_clear_match,,,,,
+23,Santhi Leicester Ltd,LE11DL,2026-09-24,2026-09-16,no_clear_match,,,,,
+24,Down To Earth Cafe Ltd,LE11SB,2026-09-24,2026-09-16,no_clear_match,,,,,
+25,B-B's Cafe Ltd,LE45AS,2026-09-24,2026-09-16,possible_match_review,1764666,B B's Cafe,LE45AS,"28 Belgrave Road, Leicester",https://ratings.food.gov.uk/business/1764666
+26,Maka Cafe Ltd,LE13LE,2026-09-24,2026-09-16,possible_match_review,1752816,Maka Cafe,LE13LE,"Unit 4 Ground Floor, 4 Britannia Street, Leicester",https://ratings.food.gov.uk/business/1752816
+27,Arsad Cafe Ltd,LE13HS,2026-09-24,2026-09-16,no_clear_match,,,,,
+28,Desi Street Food Ltd,LE15BN,2026-09-24,2026-09-16,possible_match_review,1920117,Desi Street Food,LE15BN,"22-24 Horsefair Street, Leicester",https://ratings.food.gov.uk/business/1920117
+29,Kilminjaro Cafe and Restaurant Ltd,LE13LE,2026-09-24,2026-09-16,no_clear_match,,,,,
+30,Success Cafe Ltd,LE16TF,2026-09-24,2026-09-16,no_clear_match,,,,,
+31,Varanasi Boutique Restaurant,LE14JB,2026-09-24,2026-09-16,possible_match_review,1698748,Varanasi Restaurant,LE14JB,"89 - 91 High Street, Leicester",https://ratings.food.gov.uk/business/1698748
+32,Lala's Restaurant,LE11JA,2026-09-24,2026-09-16,name_and_postcode_match,1889781,Lala?s Restaurant,LE11JA,"17 Halford Street, Leicester",https://ratings.food.gov.uk/business/1889781
+33,Wild Tango,LE16RJ,2026-09-24,2026-09-16,name_and_postcode_match,1645361,Wild Tango,LE16RJ,"14 King Street, Leicester",https://ratings.food.gov.uk/business/1645361
+34,Leicester Coffee House Company,LE11DL,2026-09-24,2026-09-16,possible_match_review,1089608,Leicester Coffee House,LE11DL,"110 Granby Street, Leicester",https://ratings.food.gov.uk/business/1089608
+35,Kings Coffee House,LE16XE,2026-09-24,2026-09-16,name_and_postcode_match,1130305,Kings Coffee House,LE16XE,"Holy Trinity Church, Upper King Street, Leicester",https://ratings.food.gov.uk/business/1130305
+36,The Tiny Bakery,LE23AE,2026-09-24,2026-09-16,name_and_postcode_match,643136,The Tiny Bakery,LE23AE,"98 Clarendon Park Road, Leicester",https://ratings.food.gov.uk/business/643136
+37,Pastry & Bake,LE55EE,2026-09-24,2026-09-16,no_clear_match,,,,,
+38,Cakes & Bakes Leicester,LE21HN,2026-09-24,2026-09-16,no_clear_match,,,,,
+39,L’AMORE DESSERT LOUNGE,LE21QJ,2026-09-24,2026-09-16,name_and_postcode_match,1935361,L'amore Dessert Lounge,LE21QJ,"145 Evington Road, Leicester",https://ratings.food.gov.uk/business/1935361
+40,Bryter Moon Deli,LE15FA,2026-09-24,2026-09-16,possible_match_review,692579,Bryter Moon,LE15FA,"1 - 2 Silver Arcade, Leicester",https://ratings.food.gov.uk/business/692579
+41,Traditional Leicester,LE30TH,2026-09-24,2026-09-16,no_clear_match,,,,,
+42,The Cake Shop Leicester,LE20GE,2026-09-24,2026-09-16,no_clear_match,,,,,
+43,Rafiq Catering,LE55DS,2026-09-24,2026-09-16,name_and_postcode_match,923153,Rafiq Catering,LE55DS,"77 Dorothy Road, Leicester",https://ratings.food.gov.uk/business/923153
+44,Catering Service SR,LE21AB,2026-09-24,2026-09-16,possible_match_review,1716800,Catering Service SR Ltd,LE21AB,"Unit 2, 23 - 25 Highfield Street, Leicester",https://ratings.food.gov.uk/business/1716800
+45,Fade Barber,LE53DF,2026-09-24,2026-09-16,not_applicable,,,,,
+46,City Barbers,LE11RB,2026-09-24,2026-09-16,not_applicable,,,,,
+47,HairNova Leicester,LE15ET,2026-09-24,2026-09-16,not_applicable,,,,,
+48,Kreate Hair Design,LE16SL,2026-09-24,2026-09-16,not_applicable,,,,,
+49,Nipa's Hair and Beauty Leicester,LE13YH,2026-09-24,2026-09-16,not_applicable,,,,,
+50,The Beauty Refinery,LE20PF,2026-09-24,2026-09-16,not_applicable,,,,,
+51,Chloe's Nails Leicester,LE16DP,2026-09-24,2026-09-16,not_applicable,,,,,
+52,Natalie Nail And Spa,LE15YN,2026-09-24,2026-09-16,not_applicable,,,,,
+53,Skin City,LE14SX,2026-09-24,2026-09-16,not_applicable,,,,,
+54,Wilton Street Garage,LE13NP,2026-09-24,2026-09-16,not_applicable,,,,,
+55,T T Autos Leicester Ltd,LE20HA,2026-09-24,2026-09-16,not_applicable,,,,,
+56,Royal Icon Tyres,LE50HJ,2026-09-24,2026-09-16,not_applicable,,,,,
+57,Express Car Wash,LE47DA,2026-09-24,2026-09-16,not_applicable,,,,,
+58,Big Car World - St. Margaret's,LE40BT,2026-09-24,2026-09-16,not_applicable,,,,,
+59,Sandicliffe Used Cars Leicester,LE26BW,2026-09-24,2026-09-16,not_applicable,,,,,
+60,AMD Bikes,LE53RF,2026-09-24,2026-09-16,not_applicable,,,,,
+61,Julies Cycles,LE23AG,2026-09-24,2026-09-16,not_applicable,,,,,
+62,The Warehouse Gym,LE50HJ,2026-09-24,2026-09-16,not_applicable,,,,,
+63,The Gym Group Leicester Highcross,LE14AP,2026-09-24,2026-09-16,not_applicable,,,,,
+64,The Dental Wellness Centre,LE27LN,2026-09-24,2026-09-16,not_applicable,,,,,
+65,Winchester Avenue Dental Surgery,LE31AU,2026-09-24,2026-09-16,not_applicable,,,,,
+66,Saffron Eyecare,LE26UG,2026-09-24,2026-09-16,not_applicable,,,,,
+67,Omcare Late Night Pharmacy,LE45AU,2026-09-24,2026-09-16,not_applicable,,,,,
+68,Phonebazzar Leicester,LE13FG,2026-09-24,2026-09-16,not_applicable,,,,,
+69,UK TELECOM,LE15FA,2026-09-24,2026-09-16,not_applicable,,,,,
+70,ELECTRONX HUB,LE15AD,2026-09-24,2026-09-16,not_applicable,,,,,
+71,THE PC EXPERT LEICESTER,LE23AJ,2026-09-24,2026-09-16,not_applicable,,,,,
+72,Flowerworks,LE15DR,2026-09-24,2026-09-16,not_applicable,,,,,
+73,Flower Company Head Office,LE27SN,2026-09-24,2026-09-16,not_applicable,,,,,
+74,Ram Jewellers,LE45AT,2026-09-24,2026-09-16,not_applicable,,,,,
+75,Local Leicester Furniture,LE40AA,2026-09-24,2026-09-16,not_applicable,,,,,
+76,Very Bazaar Leicester,LE15EU,2026-09-24,2026-09-16,not_applicable,,,,,
+77,Spiritcrystals,LE14AN,2026-09-24,2026-09-16,not_applicable,,,,,
+78,Shuperb,LE50BT,2026-09-24,2026-09-16,not_applicable,,,,,
+79,USA 4 Books,LE53EF,2026-09-24,2026-09-16,not_applicable,,,,,
+80,Pets at Home Leicester,LE11SG,2026-09-24,2026-09-16,not_applicable,,,,,
+81,Printing Passport Photo Shop,LE13YH,2026-09-24,2026-09-16,not_applicable,,,,,
+82,ZigZag Photography Leicester,LE23AB,2026-09-24,2026-09-16,not_applicable,,,,,
+83,Driving Instructor Leicester,LE12DG,2026-09-24,2026-09-16,not_applicable,,,,,
+84,Leicester Plumbers,LE29JE,2026-09-24,2026-09-16,not_applicable,,,,,
+85,786 ELECTRICALS LIMITED,LE17GD,2026-09-24,2026-09-16,not_applicable,,,,,
+86,313 Laundrette,LE46JT,2026-09-24,2026-09-16,not_applicable,,,,,
+87,Smartfield Accountants,LE20PF,2026-09-24,2026-09-16,not_applicable,,,,,
+88,Bloom Accountants Leicester,LE16XF,2026-09-24,2026-09-16,not_applicable,,,,,
+89,Sahota & Sahota Solicitors,LE16TE,2026-09-24,2026-09-16,not_applicable,,,,,
+90,SP Solicitors,LE16AS,2026-09-24,2026-09-16,not_applicable,,,,,
+91,haart Estate and Lettings Agents Leicester,LE11DE,2026-09-24,2026-09-16,not_applicable,,,,,
+92,EweMove Leicester,,2026-09-24,2026-09-16,not_applicable,,,,,
+93,Capital Cleaning Company,LE25BF,2026-09-24,2026-09-16,not_applicable,,,,,
+94,BrightClean,,2026-09-24,2026-09-16,not_applicable,,,,,
+95,Specsavers Leicester,LE13GP,2026-09-24,2026-09-16,not_applicable,,,,,
+96,OFFICE Leicester Highcross,LE14FT,2026-09-24,2026-09-16,not_applicable,,,,,
+97,Waterstones,LE14AJ,2026-09-24,2026-09-16,not_applicable,,,,,
+98,Urban Outfitters,LE14JB,2026-09-24,2026-09-16,not_applicable,,,,,
+99,Rebecca Massage And Spa,LE21WL,2026-09-24,2026-09-16,not_applicable,,,,,
+100,Scoops Gelato,LE15AW,2026-09-24,2026-09-16,no_clear_match,,,,,
+101,Madras Flavours,LE14PF,2026-09-24,2026-09-16,name_and_postcode_match,1948181,Madras Flavours,LE14PF,"Basement Restaurant, 25-27 Highcross Street, Leicester",https://ratings.food.gov.uk/business/1948181
+102,Unico Italian Restaurant,LE11WB,2026-09-24,2026-09-16,possible_match_review,1629564,Unico Bar Restaurant,LE11WB,"97 Humberstone Gate, Leicester",https://ratings.food.gov.uk/business/1629564
+103,Jollof Republic,LE30RA,2026-09-24,2026-09-16,no_clear_match,,,,,
+104,The Good Earth,LE11JX,2026-09-24,2026-09-16,name_and_postcode_match,50190,The Good Earth,LE11JX,"19 Free Lane, Leicester",https://ratings.food.gov.uk/business/50190
+105,Gelato Village - St. Martins,LE15DE,2026-09-24,2026-09-16,no_clear_match,,,,,
+106,Crafty / St Martin's Coffee Shop,LE15DG,2026-09-24,2026-09-16,no_clear_match,,,,,
+107,Saints of Mokha,,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,1410967,Saints Of Mokha,LE16SL,"51 - 53 Belvoir Street, Leicester",https://ratings.food.gov.uk/business/1410967
+108,Koben,,2026-09-24,2026-09-16,no_clear_match,,,,,
+109,Almeida Coffee & Juice Bar,,2026-09-24,2026-09-16,no_clear_match,,,,,
+110,Northern Cobbler,,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,742094,Northern Cobbler,LE23FL,"104 Queens Road, Leicester",https://ratings.food.gov.uk/business/742094
+111,TCC Coffee Roasters,,2026-09-24,2026-09-16,no_clear_match,,,,,
+112,World Peace Café,,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,48075,World Peace Cafe,LE15FQ,"17 Guildhall Lane, Leicester",https://ratings.food.gov.uk/business/48075
+113,Cocoa Amore,,2026-09-24,2026-09-16,no_clear_match,,,,,
+114,Mrs Bridges Tea Rooms,,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,77844,Mrs Bridges Tea Rooms,LE15DR,"17 Loseby Lane, Leicester",https://ratings.food.gov.uk/business/77844
+115,Currant Affairs / Dash Vegan,,2026-09-24,2026-09-16,no_clear_match,,,,,
+116,Christopher James Deli,,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,1719014,Christopher James Deli,LE21TU,"60B Queens Road, Leicester",https://ratings.food.gov.uk/business/1719014
+117,Deli Flavour,,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,26999,Deli Flavour,LE22DA,"2 Allandale Road, Leicester",https://ratings.food.gov.uk/business/26999
+118,W.Archer & Son,LE21TT,2026-09-24,2026-09-16,possible_match_review,480962,W Archer And Son,LE21TT,"99 Queens Road, Leicester",https://ratings.food.gov.uk/business/480962
+119,Global Food Village,LE13YH,2026-09-24,2026-09-16,name_and_postcode_match,1920112,Global Food Village,LE13YH,"1 Kildare Walk, Leicester",https://ratings.food.gov.uk/business/1920112
+120,Soria Convenience Store Ltd,LE11PA,2026-09-24,2026-09-16,possible_match_review,1596881,Soria Convenience Store,LE11PA,"1 Northampton Street, Leicester",https://ratings.food.gov.uk/business/1596881
+121,G K Supermarket,LE54QB,2026-09-24,2026-09-16,no_clear_match,,,,,
+122,Highfields,LE20DS,2026-09-24,2026-09-16,no_clear_match,,,,,
+123,Humberstone Supermarket,LE51AE,2026-09-24,2026-09-16,no_clear_match,,,,,
+124,Mudhurs Kooners Superstore,LE54HG,2026-09-24,2026-09-16,no_clear_match,,,,,
+125,P B Supermarket,LE54HF,2026-09-24,2026-09-16,no_clear_match,,,,,
+126,Patsons Supermarket,LE50FE,2026-09-24,2026-09-16,no_clear_match,,,,,
+127,Shiva Shakti Foods,LE45HD,2026-09-24,2026-09-16,name_and_postcode_match,211017,Shiva Shakti Foods,LE45HD,"4 - 6 Macdonald Road, Leicester",https://ratings.food.gov.uk/business/211017
+128,3KS Supermarket,LE50HL,2026-09-24,2026-09-16,no_clear_match,,,,,
+129,Abdul's Bazaar,LE53EE,2026-09-24,2026-09-16,no_clear_match,,,,,
+130,Apna Supermarket,LE20GT,2026-09-24,2026-09-16,name_and_postcode_match,776458,Apna Supermarket,LE20GT,"Ground Floor Shop, 31 Melbourne Road, Leicester",https://ratings.food.gov.uk/business/776458
+131,Nest,LE22BE,2026-09-24,2026-09-16,not_applicable,,,,,
+132,The Aura Edit Boutique,LE35AG,2026-09-24,2026-09-16,not_applicable,,,,,
+133,The Pot Pourri Shop,,2026-09-24,2026-09-16,not_applicable,,,,,
+134,Just Fair Trade,,2026-09-24,2026-09-16,not_applicable,,,,,
+135,Super Game Shack,LE15FA,2026-09-24,2026-09-16,not_applicable,,,,,
+136,ReRoll,,2026-09-24,2026-09-16,no_clear_match,,,,,
+137,Out Of Joint Records,LE15FA,2026-09-24,2026-09-16,not_applicable,,,,,
+138,Beat Route,,2026-09-24,2026-09-16,not_applicable,,,,,
+139,Rockaboom,,2026-09-24,2026-09-16,not_applicable,,,,,
+140,The Source,,2026-09-24,2026-09-16,not_applicable,,,,,
+141,Lumbers,,2026-09-24,2026-09-16,not_applicable,,,,,
+142,Pragnell,,2026-09-24,2026-09-16,not_applicable,,,,,
+143,Lanes Fine Jewellery,,2026-09-24,2026-09-16,not_applicable,,,,,
+144,Churchgate Jewellers,,2026-09-24,2026-09-16,not_applicable,,,,,
+145,Bipin Jewellers,,2026-09-24,2026-09-16,not_applicable,,,,,
+146,D M Soni Jewellers,,2026-09-24,2026-09-16,not_applicable,,,,,
+147,Raj Jewellers,,2026-09-24,2026-09-16,not_applicable,,,,,
+148,Krishna Jewellers,,2026-09-24,2026-09-16,not_applicable,,,,,
+149,Kalyan Jewellers,LE45AU,2026-09-24,2026-09-16,not_applicable,,,,,
+150,Harriman & Co,,2026-09-24,2026-09-16,not_applicable,,,,,
+151,Burnmoor Street Store,,2026-09-24,2026-09-16,not_applicable,,,,,
+152,Button Boutique,,2026-09-24,2026-09-16,not_applicable,,,,,
+153,Gadsby's,,2026-09-24,2026-09-16,not_applicable,,,,,
+154,Patina,,2026-09-24,2026-09-16,not_applicable,,,,,
+155,Arciide,,2026-09-24,2026-09-16,not_applicable,,,,,
+156,Cover Story,,2026-09-24,2026-09-16,not_applicable,,,,,
+157,The Wardrobe,,2026-09-24,2026-09-16,not_applicable,,,,,
+158,Blue Tit Thrift,,2026-09-24,2026-09-16,not_applicable,,,,,
+159,Withers Sports,,2026-09-24,2026-09-16,not_applicable,,,,,
+160,Divine Boutique,,2026-09-24,2026-09-16,not_applicable,,,,,
+161,Brides of Bond Street,,2026-09-24,2026-09-16,not_applicable,,,,,
+162,Suit Yourself,,2026-09-24,2026-09-16,not_applicable,,,,,
+163,Gali Las Bridal,LE22BE,2026-09-24,2026-09-16,not_applicable,,,,,
+164,The Flower Corner,,2026-09-24,2026-09-16,not_applicable,,,,,
+165,The Bloom Project,,2026-09-24,2026-09-16,not_applicable,,,,,
+166,Harem's Barbers Leicester,LE31BH,2026-09-24,2026-09-16,not_applicable,,,,,
+167,Barrie Stephen,LE16RJ,2026-09-24,2026-09-16,not_applicable,,,,,
+168,City Centre MOTs,LE13DL,2026-09-24,2026-09-16,not_applicable,,,,,
+169,The Detailer Leicester,LE52AE,2026-09-24,2026-09-16,not_applicable,,,,,
+170,LockSafe Security Services,LE26AN,2026-09-24,2026-09-16,not_applicable,,,,,
+171,Commercial Cleaners Only,LE54LE,2026-09-24,2026-09-16,not_applicable,,,,,
+172,Physiotherapy Leicester,LE26LR,2026-09-24,2026-09-16,not_applicable,,,,,
+173,London Road Chiropractic Clinic,LE21NE,2026-09-24,2026-09-16,not_applicable,,,,,
+174,D.R. Laundrette,LE21DF,2026-09-24,2026-09-16,not_applicable,,,,,
+175,L A Spa N Groom,LE52EJ,2026-09-24,2026-09-16,not_applicable,,,,,
+176,Atlas Travels,LE21HL,2026-09-24,2026-09-16,not_applicable,,,,,
+177,Forever Party,LE12LB,2026-09-24,2026-09-16,no_clear_match,,,,,
+178,Cask23,LE11DH,2026-09-24,2026-09-16,not_applicable,,,,,
+179,33 Cank Street,LE15GX,2026-09-24,2026-09-16,name_and_postcode_match,703452,33 Cank Street,LE15GX,Leicester,https://ratings.food.gov.uk/business/703452
+180,5 Coats,LE14FP,2026-09-24,2026-09-16,not_applicable,,,,,
+181,Art's Greek Cuisine,LE16DN,2026-09-24,2026-09-16,name_and_postcode_match,1649128,Art's Greek Cuisine,LE16DN,"11 Market Street, Leicester",https://ratings.food.gov.uk/business/1649128
+182,Audrey,LE14LD,2026-09-24,2026-09-16,name_and_postcode_match,1531491,Audrey,LE14LD,"21 St Nicholas Place, Leicester",https://ratings.food.gov.uk/business/1531491
+183,Auricle,LE15EW,2026-09-24,2026-09-16,not_applicable,,,,,
+184,Bar Tropicia,LE15DG,2026-09-24,2026-09-16,possible_match_review,1561263,Bar Tropicana,LE15DG,"5 St Martins Walk, Leicester",https://ratings.food.gov.uk/business/1561263
+185,Way Coffee,,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,1647452,Way Coffee,LE35AG,"One Centre, 10 Frog Island, Leicester",https://ratings.food.gov.uk/business/1647452
+186,96 Degrees,,2026-09-24,2026-09-16,no_clear_match,,,,,
+187,BICA LISBOA,,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,1700819,Bica Lisboa,LE21TT,"93 Queens Road, Leicester",https://ratings.food.gov.uk/business/1700819
+188,Joe & Co,,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,1886462,Joe & Co.,LE21TU,"70 Queens Road, Leicester",https://ratings.food.gov.uk/business/1886462
+189,Green & Pleasant Wholefoods,,2026-09-24,2026-09-16,no_clear_match,,,,,
+190,The Offie,,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,839898,The Offie,LE23AE,"Former, 142 Clarendon Park Road, Leicester",https://ratings.food.gov.uk/business/839898
+191,Leicester Running Shop,LE23AE,2026-09-24,2026-09-16,not_applicable,,,,,
+192,Tin Fish,,2026-09-24,2026-09-16,not_applicable,,,,,
+193,Maynard & Bradley,,2026-09-24,2026-09-16,not_applicable,,,,,
+194,The Globe,,2026-09-24,2026-09-16,name_match_postcode_conflict_or_missing,446068,The Globe,LE15EU,"43 Silver Street, Leicester",https://ratings.food.gov.uk/business/446068
+195,Wygston's House,,2026-09-24,2026-09-16,no_clear_match,,,,,
+196,&KITH,LE11DE,2026-09-24,2026-09-16,no_clear_match,,,,,
+197,PUBLIC & Plants,LE16RN,2026-09-24,2026-09-16,no_clear_match,,,,,
+198,33CankStreet,LE15GX,2026-09-24,2026-09-16,no_clear_match,,,,,
+199,The Very Bazaar,LE15EU,2026-09-24,2026-09-16,not_applicable,,,,,
+200,Flower Works,LE15DR,2026-09-24,2026-09-16,not_applicable,,,,,
+201,Kayal Restaurant Leicester,LE16FE,2026-09-24,2026-09-16,no_clear_match,,,,,
+202,Kerala Express,LE30RA,2026-09-24,2026-09-16,no_clear_match,,,,,
+203,Madras Flavours - Indian Pure Vegetarian Restaurant Leicester,LE14PF,2026-09-24,2026-09-16,no_clear_match,,,,,
+204,Ustad Hotel,LE21AB,2026-09-24,2026-09-16,no_clear_match,,,,,
+205,Dakshin,LE45AT,2026-09-24,2026-09-16,name_and_postcode_match,668703,Dakshin,LE45AT,"150 Belgrave Road, Leicester",https://ratings.food.gov.uk/business/668703
+206,Amaravathi,LE45LD,2026-09-24,2026-09-16,no_clear_match,,,,,
+207,Chennai Dosa Leicester,LE46PN,2026-09-24,2026-09-16,no_clear_match,,,,,
+208,Chennai Bites,LE45AT,2026-09-24,2026-09-16,name_and_postcode_match,1892896,Chennai Bites,LE45AT,"84 Belgrave Road, Leicester",https://ratings.food.gov.uk/business/1892896
+209,Chettinad Restaurant,LE21ED,2026-09-24,2026-09-16,no_clear_match,,,,,
+210,Crispy Dosa Leicester,LE15AD,2026-09-24,2026-09-16,no_clear_match,,,,,
+211,Cherians Food Court,LE30LE,2026-09-24,2026-09-16,no_clear_match,,,,,
+212,Kerala Arabic House,LE54HJ,2026-09-24,2026-09-16,name_and_postcode_match,1931210,Kerala Arabic House,LE54HJ,"360 St Saviours Road, Leicester",https://ratings.food.gov.uk/business/1931210
+213,Southern Spices,LE15TE,2026-09-24,2026-09-16,name_and_postcode_match,1876357,Southern Spices,LE15TE,"Restaurant, 9 Upper Brown Street, Leicester",https://ratings.food.gov.uk/business/1876357
+214,Curry Up Fast Food,LE21WE,2026-09-24,2026-09-16,no_clear_match,,,,,
+215,MO's Wembley,LE13XL,2026-09-24,2026-09-16,name_and_postcode_match,1735054,Mo's Wembley,LE13XL,"144 Belgrave Gate, Leicester",https://ratings.food.gov.uk/business/1735054
+216,Sanjay Foods,LE45HD,2026-09-24,2026-09-16,name_and_postcode_match,597392,Sanjay Foods,LE45HD,"Unit E, Belgrave Industrial Centre, Macdonald Road, Leicester",https://ratings.food.gov.uk/business/597392
+217,Milan / Milan Catering / Milan Mithaiwala / Milan Events,LE54AN,2026-09-24,2026-09-16,no_clear_match,,,,,
+218,Rana's Culinary,LE13GR,2026-09-24,2026-09-16,no_clear_match,,,,,
+219,Chilli Guys,LE53EB,2026-09-24,2026-09-16,name_and_postcode_match,356927,Chilli Guys,LE53EB,"Unit Q, Vulcan Business Centre, Vulcan Road, Leicester",https://ratings.food.gov.uk/business/356927
+220,Shivam Events,LE49LG,2026-09-24,2026-09-16,possible_match_review,1714345,Shivam Events Ltd,LE49LG,"123A Barkby Road, Leicester",https://ratings.food.gov.uk/business/1714345
+221," entity [""turn0business16"",""Air Yatra Travel",LE46LA,2026-09-24,2026-09-16,not_applicable,,,,,
+222,Alankar Travels Ltd,LE45EA,2026-09-24,2026-09-16,not_applicable,,,,,
+223,Bhaarat Travel,LE45HD,2026-09-24,2026-09-16,not_applicable,,,,,
+224,Layka Travel World Limited,LE53GG,2026-09-24,2026-09-16,not_applicable,,,,,
+225,Travel Services,LE54QB,2026-09-24,2026-09-16,not_applicable,,,,,
+226,IVFS-india visa,LE47AN,2026-09-24,2026-09-16,not_applicable,,,,,
+227,Dulhan Beauty Salon Leicester,LE45GA,2026-09-24,2026-09-16,not_applicable,,,,,
+228,Nipa's Hair and Beauty Leicester,LE13YH,2026-09-24,2026-09-16,not_applicable,,,,,
+229,Kanch’s Beauty Salon,LE20HF,2026-09-24,2026-09-16,not_applicable,,,,,
+230,Shaan Beauty Salon,LE30FX,2026-09-24,2026-09-16,not_applicable,,,,,

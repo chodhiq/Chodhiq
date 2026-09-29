@@ -29,3 +29,32 @@ export async function createReview(userId, input) {
   if (error) throw error;
   return mapReview(data);
 }
+
+export async function updateReview(userId, reviewId, input) {
+  if (!supabase) throw new Error('Reviews require an internet connection.');
+  const comment = String(input.comment || '').trim();
+  const rating = Number(input.rating);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5)
+    throw new Error('Choose a rating from 1 to 5 stars.');
+  if (!comment) throw new Error('Add a short review before saving.');
+  if (comment.length > 500) throw new Error('Keep your review to 500 characters or fewer.');
+  const { data, error } = await supabase
+    .from('reviews')
+    .update({ rating, comment })
+    .eq('id', reviewId)
+    .eq('user_id', userId)
+    .select('id,provider_id,user_id,rating,comment,created_at,review_replies(body)')
+    .single();
+  if (error) throw error;
+  return mapReview(data);
+}
+
+export async function deleteReview(userId, reviewId) {
+  if (!supabase) throw new Error('Reviews require an internet connection.');
+  const { error } = await supabase
+    .from('reviews')
+    .delete()
+    .eq('id', reviewId)
+    .eq('user_id', userId);
+  if (error) throw error;
+}

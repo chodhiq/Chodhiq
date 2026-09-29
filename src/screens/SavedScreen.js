@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HeartOff } from 'lucide-react-native';
 import { colors, radius, shadows, spacing, typography } from '../theme/theme';

@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import AppTextInput from '../components/AppTextInput';
 import {
   Alert,
   Linking,
   Modal,
   ScrollView,
-  Share,
   StyleSheet,
-  Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import Text from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { validateHttpsUrl } from '../lib/validation';
 import {
@@ -310,7 +310,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
           </TouchableOpacity>
         ))}
       </View>
-      <TextInput
+      <AppTextInput
         maxLength={500}
         multiline
         value={reviewComment}
@@ -510,8 +510,17 @@ export default function ProviderDetailScreen({ route, navigation }) {
         animationType="slide"
         onRequestClose={() => setReportOpen(false)}
       >
-        <View style={styles.overlay}>
-          <View style={[styles.report, { backgroundColor: palette.surface }]}>
+        <View style={[styles.overlay, { paddingBottom: insets.bottom }]}>
+          <ScrollView
+            style={styles.bookingSheetScroll}
+            contentContainerStyle={[
+              styles.report,
+              styles.bookingSheet,
+              { backgroundColor: palette.surface },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.reportHead}>
               <Text style={[styles.sheetTitle, { color: palette.text }]}>
                 Report incorrect information
@@ -524,7 +533,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
                 <X size={22} color={palette.text2} />
               </TouchableOpacity>
             </View>
-            <TextInput
+            <AppTextInput
               style={[styles.input, { borderColor: palette.border, color: palette.text }]}
               multiline
               value={reportDetails}
@@ -540,7 +549,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
                 Submit report
               </Text>
             </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
       <Modal
@@ -639,7 +648,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
               ))}
             </View>
             <View style={styles.dateRow}>
-              <TextInput
+              <AppTextInput
                 accessibilityLabel="Booking date in year month day format"
                 value={bookingDate}
                 onChangeText={setBookingDate}
@@ -647,7 +656,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
                 placeholderTextColor={palette.muted}
                 style={[styles.dateInput, { color: palette.text, borderColor: palette.border }]}
               />
-              <TextInput
+              <AppTextInput
                 accessibilityLabel="Booking time in 24 hour format"
                 value={bookingTime}
                 onChangeText={setBookingTime}
@@ -656,7 +665,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
                 style={[styles.dateInput, { color: palette.text, borderColor: palette.border }]}
               />
             </View>
-            <TextInput
+            <AppTextInput
               accessibilityLabel="Booking notes"
               maxLength={1000}
               style={[styles.input, { borderColor: palette.border, color: palette.text }]}
@@ -728,6 +737,8 @@ const styles = StyleSheet.create({
   },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,.5)', justifyContent: 'flex-end' },
   report: { borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20 },
+  bookingSheetScroll: { flexGrow: 0, maxHeight: '92%' },
+  bookingSheet: { paddingBottom: 24 },
   reportHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   quickLabel: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', marginTop: 12 },
   quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 7 },

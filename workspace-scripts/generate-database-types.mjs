@@ -5,12 +5,19 @@ import { resolve } from 'node:path';
 const projectId = process.env.SUPABASE_PROJECT_ID?.trim();
 const args = ['supabase', 'gen', 'types', 'typescript'];
 if (projectId) args.push('--project-id', projectId);
-else args.push('--local');
+else args.push('--linked');
 
-const command = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-const result = spawnSync(command, args, { encoding: 'utf8', shell: false });
+const command = process.execPath;
+const cliPath = resolve('node_modules/supabase/dist/supabase.js');
+const result = spawnSync(command, [cliPath, ...args.slice(1)], {
+  encoding: 'utf8',
+  shell: false,
+  maxBuffer: 16 * 1024 * 1024,
+});
 if (result.status !== 0) {
-  process.stderr.write(result.stderr || result.stdout || 'Supabase type generation failed.\n');
+  process.stderr.write(
+    result.stderr || result.stdout || result.error?.message || 'Supabase type generation failed.\n',
+  );
   process.exit(result.status || 1);
 }
 if (!/export type Database/.test(result.stdout)) {

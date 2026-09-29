@@ -28,6 +28,13 @@ test('server-renders the ChodhiQ business shell', async () => {
   assert.match(html, /Securing your workspace/);
 });
 
+test('business sign-in shares the dashboard tablet and mobile breakpoints', async () => {
+  const responsive = await readFile(new URL('../app/responsive.css', import.meta.url), 'utf8');
+  assert.match(responsive, /min-width:\s*821px[\s\S]*max-width:\s*1100px/);
+  assert.match(responsive, /max-width:\s*820px/);
+  assert.match(responsive, /max-width:\s*520px/);
+});
+
 test('paused launch hides subscription checkout surfaces', async () => {
   const source = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
   assert.match(source, /NEXT_PUBLIC_ENABLE_PAYMENTS/);
@@ -65,12 +72,16 @@ test('ships the shared light and dark dashboard themes', async () => {
 });
 
 test('uses PostgreSQL weekday numbering and avoids placeholder auth calls', async () => {
-  const page = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
-  assert.match(page, /label:\s*['"]Monday['"],\s*dayOfWeek:\s*1/);
-  assert.match(page, /label:\s*['"]Sunday['"],\s*dayOfWeek:\s*0/);
-  assert.match(page, /useState\(isSupabaseConfigured\)/);
-  assert.match(page, /if\s*\(!isSupabaseConfigured\)\s*return/);
-  assert.doesNotMatch(page, /from\(['"]providers['"]\)\s*\.select\(['"]\*['"]\)/);
+  const [page, dashboard, domain] = await Promise.all([
+    readFile(new URL('../app/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/use-business-dashboard.ts', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/business-dashboard-domain.ts', import.meta.url), 'utf8'),
+  ]);
+  assert.match(domain, /label:\s*['"]Monday['"],\s*dayOfWeek:\s*1/);
+  assert.match(domain, /label:\s*['"]Sunday['"],\s*dayOfWeek:\s*0/);
+  assert.match(dashboard, /useState\(isSupabaseConfigured\)/);
+  assert.match(dashboard, /if\s*\(!isSupabaseConfigured\)\s*return/);
+  assert.doesNotMatch(page + dashboard, /from\(['"]providers['"]\)\s*\.select\(['"]\*['"]\)/);
 });
 
 test('business signup routes through application review before provider access', async () => {
@@ -85,7 +96,10 @@ test('business signup routes through application review before provider access',
     ),
   ]);
   assert.match(page, /BusinessApplication session=/);
-  const application = await readFile(new URL("../app/business-application.tsx", import.meta.url), "utf8");
+  const application = await readFile(
+    new URL('../app/business-application.tsx', import.meta.url),
+    'utf8',
+  );
   assert.match(application, /auth\.signUp/);
   assert.match(application, /submit_business_application/);
   assert.match(application, /review_due_at/);
@@ -97,11 +111,20 @@ test('business signup routes through application review before provider access',
 });
 
 test('password recovery survives auth event timing', async () => {
-  const page = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
-  assert.match(page, /window\.location\.hash\.includes\('type=recovery'\)/);
-  assert.match(page, /event === 'PASSWORD_RECOVERY'/);
+  const [page, dashboard] = await Promise.all([
+    readFile(new URL('../app/page.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../lib/use-business-dashboard.ts', import.meta.url), 'utf8'),
+  ]);
+  const authSource = page + dashboard;
+  const client = await readFile(new URL('../lib/supabase.ts', import.meta.url), 'utf8');
+  assert.match(authSource, /window\.location\.hash\.includes\('type=recovery'\)/);
+  assert.match(authSource, /event === 'PASSWORD_RECOVERY'/);
   assert.match(page, /resetPasswordForEmail/);
   assert.match(page, /updateUser\(\{ password \}\)/);
+  assert.match(authSource, /supabase\.auth\.setSession/);
+  assert.match(authSource, /access_token/);
+  assert.match(authSource, /refresh_token/);
+  assert.match(client, /detectSessionInUrl:\s*false/);
 });
 
 test('loads and marks owner notifications', async () => {

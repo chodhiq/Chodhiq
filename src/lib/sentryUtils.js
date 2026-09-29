@@ -2,6 +2,8 @@ import * as Sentry from '@sentry/react-native';
 
 const redact = (value) =>
   String(value ?? '')
+    .replace(/(https?:\/\/[^\s?#]+)\?[^\s#]*/gi, '$1?[redacted]')
+    .replace(/([?&][^=&#\s]+)=([^&#\s]*)/g, '$1=[redacted]')
     .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]')
     .replace(/(?:\+?\d[\d\s().-]{7,}\d)/g, '[phone]')
     .replace(
@@ -9,6 +11,45 @@ const redact = (value) =>
       '[id]',
     )
     .slice(0, 1000);
+
+const redactValue = (value) => {
+  if (typeof value === 'string') return redact(value);
+  if (Array.isArray(value)) return value.map(redactValue);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, child]) => [redact(key), redactValue(child)]),
+    );
+  }
+  return value;
+};
+
+const sensitiveField =
+  /^(?:email|user_?email|phone|mobile|name|full_?name|display_?name|message|notes|details|body|address|authorization|access_?token|refresh_?token|token)$/i;
+const redactFields = (value) => {
+  if (Array.isArray(value)) return value.map(redactFields);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, child]) => [
+        redact(key),
+        sensitiveField.test(key) ? '[redacted]' : redactFields(child),
+      ]),
+    );
+  }
+  return redactValue(value);
+};
+
+export const redactSentryEvent = (event) => {
+  if (!event || typeof event !== 'object') return event;
+  const safeEvent = redactFields(event);
+  if (safeEvent.message) safeEvent.message = redact(safeEvent.message);
+  for (const exception of safeEvent.exception?.values || []) {
+    if (exception.value) exception.value = redact(exception.value);
+  }
+  if (safeEvent.logentry?.message) safeEvent.logentry.message = redact(safeEvent.logentry.message);
+  return safeEvent;
+};
+
+export const redactSentryText = redact;
 
 const sanitizeContext = (context) =>
   Object.fromEntries(

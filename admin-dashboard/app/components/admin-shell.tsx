@@ -1,9 +1,9 @@
-"use client";
+'use client';
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import Link from "./admin-link";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
+import Link from './admin-link';
+import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import {
   useEffect,
   useRef,
@@ -11,72 +11,37 @@ import {
   type FormEvent,
   type KeyboardEvent,
   type ReactNode,
-} from "react";
-import { isSupabaseConfigured, supabase } from "../../lib/supabase";
-import { useAdmin } from "../../lib/admin";
-import { signInErrorMessage, withAuthTimeout } from "../../lib/auth-operations";
-import { brand } from "../../lib/brand";
+} from 'react';
+import { isSupabaseConfigured, supabase } from '../../lib/supabase';
+import { useAdmin, useAdminActions, useAdminAuth } from '../../lib/admin';
+import { signInErrorMessage, withAuthTimeout } from '../../lib/auth-operations';
+import { brand } from '../../lib/brand';
 
 const monetisationEnabled =
-  process.env.NEXT_PUBLIC_ENABLE_MONETISATION?.trim().toLowerCase() === "true";
+  process.env.NEXT_PUBLIC_ENABLE_MONETISATION?.trim().toLowerCase() === 'true';
 
 const navGroups = [
   {
-    label: "Workspace",
+    label: 'Operations',
     items: [
-      ["/", "Overview"],
-      ["/activity", "Activity"],
-      ["/analytics", "Analytics"],
-    ],
-  },
-  {
-    label: "Marketplace",
-    items: [
-      ["/providers", "Providers"],
-      ["/verification", "Verification"],
-      ["/applications", "Business applications"],
-      ["/categories", "Categories"],
-      ["/demand", "Demand"],
-    ],
-  },
-  { label: "Advertising", items: [["/campaigns", "Campaigns"]] },
-  {
-    label: "Trust & safety",
-    items: [
-      ["/reports/providers", "Provider reports"],
-      ["/reports/community", "Post reports"],
-      ["/community", "Community"],
-      ["/reviews", "Reviews"],
-    ],
-  },
-  ...(monetisationEnabled
-    ? [
-        {
-          label: "Commercial",
-          items: [
-            ["/subscriptions", "Subscriptions"],
-            ["/payments", "Payments"],
-          ],
-        },
-      ]
-    : []),
-  {
-    label: "Administration",
-    items: [
-      ["/users", "Users"],
-      ["/admins", "Admin roles"],
-      ["/notifications", "Notifications"],
-      ["/audit", "Audit log"],
+      ['/', 'Dashboard'],
+      ['/providers', 'Providers'],
+      ['/demand', 'Bookings'],
+      ['/users', 'Customers'],
+      [monetisationEnabled ? '/payments' : '/analytics', 'Payouts'],
+      ['/categories', 'Services'],
+      ['/analytics', 'Reports'],
+      ['/admins', 'Settings'],
     ],
   },
 ] as const;
 
 function NavIcon({ index }: { index: number }) {
   const paths = [
-    "M4 11l8-7 8 7v9h-5v-6H9v6H4z",
-    "M4 5h16v14H4z M8 9h8 M8 13h5",
-    "M4 12h16 M12 4v16",
-    "M5 4h14v16H5z M8 8h8 M8 12h8 M8 16h5",
+    'M4 11l8-7 8 7v9h-5v-6H9v6H4z',
+    'M4 5h16v14H4z M8 9h8 M8 13h5',
+    'M4 12h16 M12 4v16',
+    'M5 4h14v16H5z M8 8h8 M8 12h8 M8 16h5',
   ];
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -86,12 +51,12 @@ function NavIcon({ index }: { index: number }) {
 }
 
 function GlobalSearch() {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState<
     Array<{ id: string; label: string; detail: string; href: string }>
   >([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [active, setActive] = useState(-1);
   const requestId = useRef(0);
   const root = useRef<HTMLDivElement>(null);
@@ -99,35 +64,35 @@ function GlobalSearch() {
     if (query.trim().length < 2) {
       setResults([]);
       setLoading(false);
-      setError("");
+      setError('');
       return;
     }
     const activeRequest = ++requestId.current;
     const timer = setTimeout(async () => {
       setLoading(true);
-      setError("");
-      const value = query.trim().replace(/[,%_()]/g, " ");
+      setError('');
+      const value = query.trim().replace(/[,%_()]/g, ' ');
       const [providers, users, posts] = await Promise.all([
         supabase
-          .from("providers")
-          .select("id,business_name,base_city")
-          .ilike("business_name", `%${value}%`)
+          .from('providers')
+          .select('id,business_name,base_city')
+          .ilike('business_name', `%${value}%`)
           .range(0, 4),
         supabase
-          .from("profiles")
-          .select("id,full_name,city")
-          .ilike("full_name", `%${value}%`)
+          .from('profiles')
+          .select('id,full_name,city')
+          .ilike('full_name', `%${value}%`)
           .range(0, 4),
         supabase
-          .from("community_posts")
-          .select("id,body,status")
-          .ilike("body", `%${value}%`)
+          .from('community_posts')
+          .select('id,body,status')
+          .ilike('body', `%${value}%`)
           .range(0, 4),
       ]);
       if (activeRequest !== requestId.current) return;
       const error = providers.error || users.error || posts.error;
       if (error) {
-        setError("Search is temporarily unavailable.");
+        setError('Search is temporarily unavailable.');
         setResults([]);
         setLoading(false);
         return;
@@ -136,13 +101,13 @@ function GlobalSearch() {
         ...(providers.data || []).map((row) => ({
           id: `p-${row.id}`,
           label: row.business_name,
-          detail: `Provider · ${row.base_city || "No city"}`,
+          detail: `Provider · ${row.base_city || 'No city'}`,
           href: `/providers/${row.id}`,
         })),
         ...(users.data || []).map((row) => ({
           id: `u-${row.id}`,
           label: row.full_name || row.id,
-          detail: `User · ${row.city || "No city"}`,
+          detail: `User · ${row.city || 'No city'}`,
           href: `/users?user=${row.id}`,
         })),
         ...(posts.data || []).map((row) => ({
@@ -167,29 +132,29 @@ function GlobalSearch() {
         setActive(-1);
       }
     };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
+    document.addEventListener('pointerdown', close);
+    return () => document.removeEventListener('pointerdown', close);
   }, []);
   function close() {
-    setQuery("");
+    setQuery('');
     setResults([]);
     setActive(-1);
-    setError("");
+    setError('');
   }
   function keys(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Escape") {
+    if (event.key === 'Escape') {
       event.preventDefault();
       close();
     }
-    if (event.key === "ArrowDown" && results.length) {
+    if (event.key === 'ArrowDown' && results.length) {
       event.preventDefault();
       setActive((value) => (value + 1) % results.length);
     }
-    if (event.key === "ArrowUp" && results.length) {
+    if (event.key === 'ArrowUp' && results.length) {
       event.preventDefault();
       setActive((value) => (value <= 0 ? results.length - 1 : value - 1));
     }
-    if (event.key === "Enter" && active >= 0) {
+    if (event.key === 'Enter' && active >= 0) {
       event.preventDefault();
       document.getElementById(`global-result-${active}`)?.click();
     }
@@ -234,7 +199,7 @@ function GlobalSearch() {
                 id={`global-result-${index}`}
                 role="option"
                 aria-selected={active === index}
-                className={active === index ? "active" : ""}
+                className={active === index ? 'active' : ''}
                 key={result.id}
                 href={result.href}
                 onClick={close}
@@ -253,27 +218,27 @@ function GlobalSearch() {
 }
 
 function ConfirmationModal() {
-  const admin = useAdmin();
-  const [text, setText] = useState("");
+  const admin = useAdminActions();
+  const [text, setText] = useState('');
   const dialog = useRef<HTMLElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (!admin.confirmation) return;
     previousFocus.current = document.activeElement as HTMLElement | null;
     const timer = window.setTimeout(
-      () => dialog.current?.querySelector<HTMLElement>("button, input")?.focus(),
+      () => dialog.current?.querySelector<HTMLElement>('button, input')?.focus(),
       0,
     );
     const keydown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         event.preventDefault();
         admin.settleConfirmation(false);
         return;
       }
-      if (event.key !== "Tab" || !dialog.current) return;
+      if (event.key !== 'Tab' || !dialog.current) return;
       const focusable = [
         ...dialog.current.querySelectorAll<HTMLElement>(
-          "button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [href]",
+          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [href]',
         ),
       ];
       if (!focusable.length) return;
@@ -287,12 +252,12 @@ function ConfirmationModal() {
         first.focus();
       }
     };
-    document.addEventListener("keydown", keydown);
+    document.addEventListener('keydown', keydown);
     return () => {
       clearTimeout(timer);
-      document.removeEventListener("keydown", keydown);
+      document.removeEventListener('keydown', keydown);
       previousFocus.current?.focus();
-      setText("");
+      setText('');
     };
   }, [admin, admin.confirmation, admin.settleConfirmation]);
   const request = admin.confirmation;
@@ -328,7 +293,7 @@ function ConfirmationModal() {
             disabled={!enabled}
             onClick={() => admin.settleConfirmation(true)}
           >
-            {request.confirmLabel || "Confirm"}
+            {request.confirmLabel || 'Confirm'}
           </button>
         </footer>
       </section>
@@ -337,13 +302,13 @@ function ConfirmationModal() {
 }
 
 export function AdminGate({ children }: { children: ReactNode }) {
-  const admin = useAdmin();
+  const admin = useAdminAuth();
   const [recovering, setRecovering] = useState(
-    () => typeof window !== "undefined" && window.location.hash.includes("type=recovery"),
+    () => typeof window !== 'undefined' && window.location.hash.includes('type=recovery'),
   );
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setRecovering(true);
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true);
     });
     return () => data.subscription.unsubscribe();
   }, []);
@@ -367,7 +332,18 @@ export function AdminGate({ children }: { children: ReactNode }) {
         <p>Validating secure session…</p>
       </main>
     );
-  if (admin.sessionError) return <main className="auth-page"><section className="auth-card"><h2>Session validation failed</h2><p role="alert">{admin.sessionError}</p><button className="primary" onClick={() => window.location.reload()}>Retry session validation</button></section></main>;
+  if (admin.sessionError)
+    return (
+      <main className="auth-page">
+        <section className="auth-card">
+          <h2>Session validation failed</h2>
+          <p role="alert">{admin.sessionError}</p>
+          <button className="primary" onClick={() => window.location.reload()}>
+            Retry session validation
+          </button>
+        </section>
+      </main>
+    );
   if (recovering) return <ResetPassword onComplete={() => setRecovering(false)} />;
   if (!admin.session) return <Login />;
   if (!admin.isAdmin)
@@ -390,18 +366,18 @@ export function AdminShell({ title, children }: { title: string; children: React
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [today] = useState(() =>
-    new Intl.DateTimeFormat("en-GB", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      timeZone: "Europe/London",
+    new Intl.DateTimeFormat('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'Europe/London',
     }).format(new Date()),
   );
   if (!admin.session) return null;
   let iconIndex = 0;
   return (
-    <main className={`shell ${mobileOpen ? "nav-open" : ""}`}>
+    <main className={`shell ${mobileOpen ? 'nav-open' : ''}`}>
       <aside className="admin-sidebar">
         <div className="sidebar-brand">
           <span>
@@ -409,7 +385,7 @@ export function AdminShell({ title, children }: { title: string; children: React
           </span>
           <div>
             <strong>{brand.name}</strong>
-            <small>ADMIN OPERATIONS</small>
+            <small>ADMIN</small>
           </div>
           <button
             className="sidebar-close"
@@ -432,9 +408,9 @@ export function AdminShell({ title, children }: { title: string; children: React
                       aria-label={label}
                       key={href}
                       href={href}
-                      aria-current={path === href ? "page" : undefined}
+                      aria-current={path === href ? 'page' : undefined}
                       className={
-                        path === href || (href !== "/" && path.startsWith(href)) ? "active" : ""
+                        path === href || (href !== '/' && path.startsWith(href)) ? 'active' : ''
                       }
                     >
                       <i>
@@ -454,7 +430,7 @@ export function AdminShell({ title, children }: { title: string; children: React
             <p>Every privileged action is recorded.</p>
           </div>
           <button className="account" onClick={() => supabase.auth.signOut()}>
-            <span>{(admin.session.user.email || "AD").slice(0, 2).toUpperCase()}</span>
+            <span>{(admin.session.user.email || 'AD').slice(0, 2).toUpperCase()}</span>
             <div>
               <b>{admin.session.user.email}</b>
               <small>Sign out securely</small>
@@ -499,9 +475,9 @@ export function AdminShell({ title, children }: { title: string; children: React
       {admin.toast && (
         <div
           className={`toast ${admin.toast.type}`}
-          role={admin.toast.type === "error" ? "alert" : "status"}
+          role={admin.toast.type === 'error' ? 'alert' : 'status'}
         >
-          <b>{admin.toast.type === "error" ? "!" : "✓"}</b>
+          <b>{admin.toast.type === 'error' ? '!' : '✓'}</b>
           {admin.toast.message}
         </div>
       )}
@@ -512,31 +488,40 @@ export function AdminShell({ title, children }: { title: string; children: React
 
 function Login() {
   const emailInput = useRef<HTMLInputElement>(null);
-  const [emailError, setEmailError] = useState("");
+  const [emailError, setEmailError] = useState('');
   function checkEmail() {
     const input = emailInput.current;
     if (!input) return false;
     const valid = input.validity.valid;
-    setEmailError(valid ? "" : input.validity.valueMissing ? "Enter your email address." : "Enter a valid email address, such as name@example.com.");
+    setEmailError(
+      valid
+        ? ''
+        : input.validity.valueMissing
+          ? 'Enter your email address.'
+          : 'Enter a valid email address, such as name@example.com.',
+    );
     return valid;
   }
   const environment = process.env.NEXT_PUBLIC_ENVIRONMENT_LABEL?.trim();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [submitting, setSubmitting] = useState(false);
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (submitting || !checkEmail()) return;
     setSubmitting(true);
-    setError("");
-    setNotice("");
+    setError('');
+    setNotice('');
     try {
-      const result = await withAuthTimeout(supabase.auth.signInWithPassword({ email: email.trim(), password }));
+      const result = await withAuthTimeout(
+        supabase.auth.signInWithPassword({ email: email.trim(), password }),
+      );
       if (result.error) setError(signInErrorMessage(result.error));
-      else if (!result.data.session) setError("Sign-in did not create a session. Please try again.");
+      else if (!result.data.session)
+        setError('Sign-in did not create a session. Please try again.');
     } catch (error) {
       setError(signInErrorMessage(error));
     } finally {
@@ -545,28 +530,39 @@ function Login() {
   }
   async function forgotPassword() {
     if (submitting || !checkEmail()) return;
-    setError("");
-    setNotice("");
+    setError('');
+    setNotice('');
     if (!email.trim()) {
-      setError("Enter your email address first.");
+      setError('Enter your email address first.');
       return;
     }
     setSubmitting(true);
     const result = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: window.location.origin,
     });
-    if (result.error) setError("Password reset is temporarily unavailable. Please try again.");
-    else setNotice("If an account exists for that email, a password reset link has been sent.");
+    if (result.error) setError('Password reset is temporarily unavailable. Please try again.');
+    else setNotice('If an account exists for that email, a password reset link has been sent.');
     setSubmitting(false);
   }
   return (
-    <main className="auth-page">
-      <section className="auth-card">
-        <small>ADMIN ACCESS{environment ? ` · ${environment}` : ""}</small>
-        <h2>Sign in securely</h2>
+    <main className="auth-page admin-login-page">
+      <section className="admin-login-brand" aria-label="ChodhiQ administration">
+        <Image
+          className="admin-login-art"
+          src="/admin-login-side.png"
+          alt="ChodhiQ administration: control the platform and protect the community"
+          fill
+          priority
+          sizes="(max-width: 820px) 100vw, 52vw"
+        />
+      </section>
+      <section className="auth-card admin-login-card">
+        <small>ADMIN DASHBOARD{environment ? ` · ${environment}` : ''}</small>
+        <h2>Authorized access</h2>
+        <p>Sign in with your {brand.name} administrator account.</p>
         <form onSubmit={submit}>
           <label htmlFor="admin-email">
-            Email
+            Admin email
             <input
               id="admin-email"
               ref={emailInput}
@@ -579,30 +575,39 @@ function Login() {
               type="email"
               required
               autoComplete="username"
+              placeholder="admin@chodhiq.com"
               value={email}
-              onChange={(event) => { setEmail(event.target.value); setError(""); setNotice(""); checkEmail(); }}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setError('');
+                setNotice('');
+                checkEmail();
+              }}
             />
           </label>
-          <p id="login-email-error" className="form-error" aria-live="polite">{emailError}</p>
+          <p id="login-email-error" className="form-error" aria-live="polite">
+            {emailError}
+          </p>
           <label htmlFor="admin-password">
             Password
             <span className="password-field">
               <input
                 id="admin-password"
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 required
                 autoComplete="current-password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
               />
               <button
                 type="button"
                 className="password-toggle"
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 aria-pressed={showPassword}
                 onClick={() => setShowPassword((value) => !value)}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? 'Hide' : 'Show'}
               </button>
             </span>
           </label>
@@ -617,7 +622,7 @@ function Login() {
             </p>
           )}
           <button className="primary" disabled={submitting}>
-            {submitting ? "Signing in…" : "Sign in"}
+            {submitting ? 'Signing in…' : 'Sign in securely →'}
           </button>
           <button
             type="button"
@@ -628,28 +633,86 @@ function Login() {
             Forgot password?
           </button>
         </form>
+        <p className="admin-login-trust">◆ Protected administrative session</p>
+        <p className="admin-login-restriction">
+          Access is restricted to authorized {brand.name} personnel.
+        </p>
+        <p className="admin-login-support">
+          Need assistance? <a href={`mailto:${brand.supportEmail}`}>Contact technical support</a>
+        </p>
       </section>
     </main>
   );
 }
 
 function ResetPassword({ onComplete }: { onComplete: () => void }) {
-  const [password, setPassword] = useState("");
-  const [confirmation, setConfirmation] = useState("");
+  const [password, setPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
+  const [ready, setReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  useEffect(() => {
+    let active = true;
+    async function prepareRecoverySession() {
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      if (accessToken && refreshToken) {
+        const established = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (!active) return;
+        if (established.error || !established.data.session) {
+          setError('This reset link is invalid or has expired. Request a new reset link.');
+          return;
+        }
+        window.history.replaceState({}, '', window.location.pathname);
+        setReady(true);
+        return;
+      }
+
+      const current = await supabase.auth.getSession();
+      if (!active) return;
+      if (current.error || !current.data.session) {
+        setError('This reset link is invalid or has expired. Request a new reset link.');
+        return;
+      }
+      setReady(true);
+    }
+    void prepareRecoverySession().catch(() => {
+      if (active) setError('The recovery session could not be verified. Request a new reset link.');
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
   async function submit(event: FormEvent) {
     event.preventDefault();
-    setError("");
-    if (password.length < 10) return setError("Use at least 10 characters.");
-    if (password !== confirmation) return setError("The passwords do not match.");
+    setError('');
+    if (!ready) return setError('Wait while the secure recovery session is verified.');
+    if (password.length < 10) return setError('Use at least 10 characters.');
+    if (password !== confirmation) return setError('The passwords do not match.');
     setSubmitting(true);
-    const result = await supabase.auth.updateUser({ password });
+    const session = await supabase.auth.getSession();
+    if (session.error || !session.data.session) {
+      setSubmitting(false);
+      return setError('This reset link is invalid or has expired. Request a new reset link.');
+    }
+    const result = await withAuthTimeout(supabase.auth.updateUser({ password }));
     setSubmitting(false);
-    if (result.error)
-      return setError("The password could not be updated. Request a new reset link.");
-    window.history.replaceState({}, "", window.location.pathname);
+    if (result.error) {
+      const code = String(result.error.code || '');
+      if (code.includes('same_password'))
+        return setError('Choose a password you have not used before.');
+      if (code.includes('weak_password'))
+        return setError('Choose a stronger password with at least 10 characters.');
+      if (code.includes('session') || code.includes('token'))
+        return setError('This reset link is invalid or has expired. Request a new reset link.');
+      return setError('The password could not be updated. Please try again.');
+    }
+    window.history.replaceState({}, '', window.location.pathname);
     onComplete();
   }
   return (
@@ -664,7 +727,7 @@ function ResetPassword({ onComplete }: { onComplete: () => void }) {
             <span className="password-field">
               <input
                 id="admin-new-password"
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 required
                 minLength={10}
                 autoComplete="new-password"
@@ -674,11 +737,11 @@ function ResetPassword({ onComplete }: { onComplete: () => void }) {
               <button
                 type="button"
                 className="password-toggle"
-                aria-label={showPassword ? "Hide passwords" : "Show passwords"}
+                aria-label={showPassword ? 'Hide passwords' : 'Show passwords'}
                 aria-pressed={showPassword}
                 onClick={() => setShowPassword((value) => !value)}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? 'Hide' : 'Show'}
               </button>
             </span>
           </label>
@@ -686,7 +749,7 @@ function ResetPassword({ onComplete }: { onComplete: () => void }) {
             Confirm new password
             <input
               id="admin-confirm-password"
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               required
               minLength={10}
               autoComplete="new-password"
@@ -699,8 +762,8 @@ function ResetPassword({ onComplete }: { onComplete: () => void }) {
               {error}
             </p>
           )}
-          <button className="primary" disabled={submitting}>
-            {submitting ? "Updating…" : "Update password"}
+          <button className="primary" disabled={submitting || !ready}>
+            {submitting ? 'Updating…' : 'Update password'}
           </button>
         </form>
       </section>

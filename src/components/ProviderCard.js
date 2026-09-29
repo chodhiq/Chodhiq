@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import Text from './AppText';
 import { Heart, Star, MapPin, BadgeCheck, Crown } from 'lucide-react-native';
 import { colors, radius, shadows, spacing, typography } from '../theme/theme';
 import { PressableScale } from './Motion';
@@ -22,7 +23,10 @@ const deriveStatus = (provider) => {
 export function ProviderCardCompact({ provider, onPress, onSave, saved }) {
   const { palette } = useChodhiQTheme();
   return (
-    <PressableScale style={styles.compactCard} onPress={onPress}>
+    <PressableScale
+      style={[styles.compactCard, provider.isDataVerified && styles.dataVerifiedGlow]}
+      onPress={onPress}
+    >
       <View
         style={[
           styles.compactInner,
@@ -42,6 +46,12 @@ export function ProviderCardCompact({ provider, onPress, onSave, saved }) {
             <View style={styles.verifiedBadge}>
               <BadgeCheck size={12} color={colors.primary} />
               <Text style={styles.verifiedText}>Verified</Text>
+            </View>
+          )}
+          {!provider.isVerified && provider.isDataVerified && (
+            <View style={styles.dataCheckedBadge}>
+              <BadgeCheck size={12} color="#08724F" />
+              <Text style={styles.dataCheckedText}>Data checked</Text>
             </View>
           )}
           {features.customAds && !!provider.sponsoredRank && (
@@ -105,7 +115,10 @@ export function ProviderCardCompact({ provider, onPress, onSave, saved }) {
 export function ProviderCardRow({ provider, onPress, onSave, saved }) {
   const { palette } = useChodhiQTheme();
   return (
-    <PressableScale style={styles.rowCard} onPress={onPress}>
+    <PressableScale
+      style={[styles.rowCard, provider.isDataVerified && styles.dataVerifiedGlow]}
+      onPress={onPress}
+    >
       <View
         style={[styles.rowInner, { backgroundColor: palette.surface, borderColor: palette.border }]}
       >
@@ -123,6 +136,12 @@ export function ProviderCardRow({ provider, onPress, onSave, saved }) {
               {provider.name}
             </Text>
             {provider.isVerified && <BadgeCheck size={15} color={colors.primary} />}
+            {!provider.isVerified && provider.isDataVerified && (
+              <View style={styles.rowDataCheckedBadge}>
+                <BadgeCheck size={12} color="#08724F" />
+                <Text style={styles.dataCheckedText}>Data checked</Text>
+              </View>
+            )}
           </View>
           <Text style={[typography.caption, { color: palette.text2 }]}>{provider.category}</Text>
           <View style={styles.addressRow}>
@@ -208,6 +227,38 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   verifiedText: { fontSize: 10, fontWeight: '600', color: colors.primary },
+  dataCheckedBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#E6FFF4',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: '#5EE0AD',
+  },
+  rowDataCheckedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#E6FFF4',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+  },
+  dataCheckedText: { fontSize: 9, fontWeight: '800', color: '#08724F' },
+  dataVerifiedGlow: {
+    borderColor: '#5EE0AD',
+    shadowColor: '#16A36A',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.32,
+    shadowRadius: 12,
+    elevation: 7,
+  },
   promotedBadge: {
     position: 'absolute',
     left: 8,

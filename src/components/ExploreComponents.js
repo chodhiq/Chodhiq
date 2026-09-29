@@ -1,5 +1,8 @@
 import React from 'react';
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import AppTextInput from './AppTextInput';
+import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+
+import Text from './AppText';
 import {
   ArrowLeft,
   BadgeCheck,
@@ -45,7 +48,7 @@ export function ExploreSearch({ palette, value, onChange, onFilters }) {
   return (
     <View style={[s.search, { backgroundColor: palette.elevated, borderColor: palette.border }]}>
       <Search size={19} color={palette.text2} />
-      <TextInput
+      <AppTextInput
         accessibilityLabel="Search businesses, services and creators"
         value={value}
         onChangeText={onChange}
@@ -101,7 +104,11 @@ export function ExploreBusinessCard({ palette, provider, saved, onSave, onPress 
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[s.card, { backgroundColor: palette.surface, borderColor: palette.border }]}
+      style={[
+        s.card,
+        { backgroundColor: palette.surface, borderColor: palette.border },
+        provider.isDataVerified && s.dataVerifiedGlow,
+      ]}
     >
       <View style={s.imageWrap}>
         <Image
@@ -118,6 +125,12 @@ export function ExploreBusinessCard({ palette, provider, saved, onSave, onPress 
             {provider.name}
           </Text>
           {provider.isVerified && <BadgeCheck size={15} color="#4C8DFF" />}
+          {!provider.isVerified && provider.isDataVerified && (
+            <View style={s.dataCheckedBadge}>
+              <BadgeCheck size={12} color="#08724F" />
+              <Text style={s.dataCheckedText}>Data checked</Text>
+            </View>
+          )}
         </View>
         <Text numberOfLines={1} style={[s.category, { color: palette.text2 }]}>
           {provider.category}
@@ -317,6 +330,14 @@ const s = StyleSheet.create({
     marginBottom: 12,
     ...shadows.soft,
   },
+  dataVerifiedGlow: {
+    borderColor: '#5EE0AD',
+    shadowColor: '#16A36A',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.32,
+    shadowRadius: 12,
+    elevation: 7,
+  },
   imageWrap: { width: 72, height: 72, borderRadius: 12, overflow: 'hidden' },
   image: { width: '100%', height: '100%', borderRadius: 12 },
   open: {
@@ -330,6 +351,16 @@ const s = StyleSheet.create({
   openText: { fontSize: 9, fontWeight: '800', color: '#FFFFFF' },
   cardCopy: { flex: 1, paddingLeft: 12, paddingRight: 30, minWidth: 0 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  dataCheckedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#E6FFF4',
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  dataCheckedText: { color: '#08724F', fontSize: 9, fontWeight: '800' },
   name: { fontSize: 15, fontWeight: '800', flexShrink: 1 },
   category: { fontSize: 12, marginTop: 3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 5 },

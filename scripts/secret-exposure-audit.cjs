@@ -13,6 +13,7 @@ const ignoredDirectories = new Set([
   'build',
   'coverage',
   'node_modules',
+  'output',
   'outputs',
   'work',
 ]);

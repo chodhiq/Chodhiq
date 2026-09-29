@@ -15,8 +15,8 @@ function mapCategory(row) {
 function mapProvider(row) {
   const fallback = bundledByName.get(row.business_name) || {};
   return {
-    ...fallback,
     id: row.id,
+    publishedAt: row.created_at || null,
     name: row.business_name,
     category: row.categories?.name || 'Service provider',
     categoryId: row.categories?.slug,
@@ -28,13 +28,16 @@ function mapProvider(row) {
     subcategory: null,
     description: row.description,
     baseCity: row.base_city,
+    basePostcode: row.base_postcode || null,
     serviceAreas: row.service_areas || [],
     languages: row.languages_spoken || [],
     yearsExperience: row.years_experience,
     priceRange: row.price_range,
-    rating: Number(row.avg_rating || 0),
-    reviewCount: row.review_count || 0,
+    rating: row.avg_rating == null ? null : Number(row.avg_rating),
+    reviewCount: row.review_count == null ? 0 : Number(row.review_count),
     isVerified: row.is_verified,
+    isDataVerified: row.data_verification_status === 'source_checked',
+    dataVerifiedAt: row.data_verified_at,
     phone: row.phone,
     whatsapp: row.whatsapp,
     website: row.website,
@@ -44,8 +47,10 @@ function mapProvider(row) {
       : row.base_city
         ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${row.business_name} ${row.base_city} ${row.base_postcode || ''}`)}`
         : null,
-    image: row.cover_image_url || fallback.image,
-    portfolio: row.portfolio_urls?.length ? row.portfolio_urls : fallback.portfolio || [],
+    image: row.cover_image_url || null,
+    baseLatitude: row.latitude == null ? null : Number(row.latitude),
+    baseLongitude: row.longitude == null ? null : Number(row.longitude),
+    portfolio: row.portfolio_urls || [],
   };
 }
 
@@ -62,12 +67,18 @@ export async function loadMarketplace() {
         supabase
           .from('providers')
           .select(
-            'id,business_name,description,base_city,base_postcode,service_areas,languages_spoken,years_experience,price_range,phone,whatsapp,website,google_place_id,cover_image_url,portfolio_urls,is_verified,avg_rating,review_count,created_at,categories(name,slug)',
+            [
+              'id,business_name,description,base_city,base_postcode,service_areas',
+              'languages_spoken,years_experience,price_range,phone,whatsapp,website',
+              'google_place_id,cover_image_url,portfolio_urls,is_verified',
+              'data_verification_status,data_verified_at,avg_rating,review_count,created_at',
+              'categories(name,slug)',
+            ].join(','),
           )
           .order('created_at', { ascending: false }),
         supabase
           .from('reviews')
-          .select('id,provider_id,rating,comment,created_at')
+          .select('id,provider_id,user_id,rating,comment,created_at')
           .order('created_at', { ascending: false }),
         supabase.from('review_replies').select('review_id,body'),
         supabase
@@ -99,9 +110,12 @@ export async function loadMarketplace() {
         ...(hoursByProvider.get(hours.provider_id) || []),
         hours,
       ]);
+    const coordinateResult = await supabase.rpc('public_provider_coordinates');
+    const coordinateRows = coordinateResult.error ? [] : coordinateResult.data || [];
+    const coordinates = new Map(coordinateRows.map((row) => [row.id, row]));
     const providers = providerResult.data
       .map((row) => ({
-        ...mapProvider(row),
+        ...mapProvider({ ...row, ...(coordinates.get(row.id) || {}) }),
         services: servicesByProvider.get(row.id) || [],
         featuredService:
           (servicesByProvider.get(row.id) || []).find((service) => service.is_featured) ||
@@ -112,7 +126,7 @@ export async function loadMarketplace() {
       .sort((a, b) => {
         const rankA = a.sponsoredRank === 5 ? 2 : a.sponsoredRank === 10 ? 1 : 0;
         const rankB = b.sponsoredRank === 5 ? 2 : b.sponsoredRank === 10 ? 1 : 0;
-        return rankB - rankA || b.rating - a.rating || b.reviewCount - a.reviewCount;
+        return rankB - rankA || (b.rating || 0) - (a.rating || 0) || b.reviewCount - a.reviewCount;
       });
     await cacheMarketplace(categories, providers);
     return {

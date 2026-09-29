@@ -31,7 +31,18 @@ Deno.serve(async (request) => {
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!url || !anonKey || !serviceKey) return json({ error: 'Server configuration missing' }, 500);
-  const body = await request.json().catch(() => ({}));
+  const rawBody = await request.text();
+  if (new TextEncoder().encode(rawBody).byteLength > 4096)
+    return json({ error: 'Payload too large' }, 413);
+  let body: Record<string, unknown>;
+  try {
+    const parsed: unknown = JSON.parse(rawBody);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+      return json({ error: 'Invalid analytics event' }, 400);
+    body = parsed as Record<string, unknown>;
+  } catch {
+    return json({ error: 'Invalid analytics event' }, 400);
+  }
   const eventType = typeof body.eventType === 'string' ? body.eventType : '';
   const installationId = typeof body.installationId === 'string' ? body.installationId.trim() : '';
   const entityId =
@@ -67,14 +78,12 @@ Deno.serve(async (request) => {
     const { data } = await caller.auth.getUser();
     userId = data.user?.id ?? null;
   }
-  const { error } = await admin
-    .from('mvp_events')
-    .insert({
-      event_type: eventType,
-      installation_id: installationId,
-      user_id: userId,
-      entity_id: entityId,
-    });
+  const { error } = await admin.from('mvp_events').insert({
+    event_type: eventType,
+    installation_id: installationId,
+    user_id: userId,
+    entity_id: entityId,
+  });
   if (error?.code === '23505' && eventType === 'install')
     return json({ accepted: true, duplicate: true }, 202);
   if (error) return json({ error: 'Event could not be recorded' }, 500);

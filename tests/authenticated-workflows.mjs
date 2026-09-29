@@ -15,6 +15,13 @@ const required = [
   'E2E_PROVIDER_ID',
 ];
 const missing = required.filter((key) => !process.env[key]);
+if (process.env.EXPO_PUBLIC_SUPABASE_URL) {
+  assert.equal(
+    new URL(process.env.EXPO_PUBLIC_SUPABASE_URL).hostname,
+    'ljhncdzhzoatonhhofbv.supabase.co',
+    'This mutation test is restricted to ChodhiQ Staging',
+  );
+}
 const options = { auth: { persistSession: false, autoRefreshToken: false } };
 const client = () =>
   createClient(

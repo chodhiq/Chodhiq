@@ -13,16 +13,35 @@
       "channel": "preview",
       "env": {
         "EXPO_PUBLIC_DEMO_MODE": "false",
+        "EXPO_PUBLIC_ENABLE_GOOGLE_MAPS": "false",
         "EXPO_PUBLIC_ENABLE_PAYMENTS": "false",
         "EXPO_PUBLIC_ENABLE_GOOGLE_ADS": "false"
       }
     },
     "production": {
       "channel": "production",
+      "environment": "production",
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_DEMO_MODE": "false",
-        "EXPO_PUBLIC_ENABLE_PAYMENTS": "false"
+        "EXPO_PUBLIC_ENABLE_GOOGLE_MAPS": "false",
+        "EXPO_PUBLIC_ENABLE_PAYMENTS": "false",
+        "EXPO_PUBLIC_ENABLE_GOOGLE_ADS": "false"
+      }
+    },
+    "production-apk": {
+      "channel": "production",
+      "environment": "production",
+      "distribution": "internal",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_DEMO_MODE": "false",
+        "EXPO_PUBLIC_ENABLE_GOOGLE_MAPS": "false",
+        "EXPO_PUBLIC_ENABLE_PAYMENTS": "false",
+        "EXPO_PUBLIC_ENABLE_GOOGLE_ADS": "false"
       }
     }
   },

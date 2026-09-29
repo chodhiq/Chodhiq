@@ -16,5 +16,5 @@ function validPublicKey(value: string) {
 }
 export const isSupabaseConfigured = validSupabaseUrl(url) && validPublicKey(key);
 export const supabase = createClient(url || "https://placeholder.supabase.co", key || "placeholder", {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
 });

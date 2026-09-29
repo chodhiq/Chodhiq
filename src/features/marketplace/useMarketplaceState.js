@@ -13,12 +13,13 @@ export function useMarketplaceState(retryPendingOperations) {
   const refreshMarketplace = useCallback(async () => {
     setMarketplaceLoading(true);
     try {
-      await retryPendingOperations().catch(() => {});
       const marketplace = await loadMarketplace();
       setCategories(marketplace.categories);
       setProviders(marketplace.providers);
       if (marketplace.reviews) setReviews(marketplace.reviews);
       setOffline(marketplace.offline);
+      // Keep discovery responsive while any queued writes retry in the background.
+      retryPendingOperations().catch(() => {});
       return marketplace;
     } finally {
       setMarketplaceLoading(false);

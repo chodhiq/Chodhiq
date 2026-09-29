@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
@@ -190,7 +191,7 @@ export default function ProfileScreen({ navigation }) {
             <View
               style={[
                 styles.providerCard,
-                { backgroundColor: palette.primarySoft, borderColor: palette.primary },
+                { backgroundColor: palette.primaryTint, borderColor: palette.primary },
               ]}
             >
               <View style={styles.providerTop}>
@@ -224,13 +225,15 @@ export default function ProfileScreen({ navigation }) {
                 />
               </View>
               <PressableScale
-                style={[styles.providerButton, { backgroundColor: palette.primary }]}
+                style={styles.providerButton}
                 onPress={() => navigation.navigate('ClaimListing')}
               >
-                <Text style={{ color: palette.background, fontWeight: '900' }}>
-                  Join as a provider
-                </Text>
-                <ChevronRight size={18} color={palette.background} />
+                <View style={[styles.providerButtonContent, { backgroundColor: palette.primary }]}>
+                  <Text style={{ color: palette.onPrimary, fontWeight: '900' }}>
+                    Join as a provider
+                  </Text>
+                  <ChevronRight size={18} color={palette.onPrimary} />
+                </View>
               </PressableScale>
               <Text style={[styles.providerNote, { color: palette.text2 }]}>
                 You’ll need basic business details and proof of ownership for verification.
@@ -456,22 +459,22 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     borderWidth: 1,
     borderRadius: radius.xl,
-    padding: 20,
+    padding: spacing.md,
     ...shadows.soft,
   },
   providerTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   providerIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   providerHeading: { flex: 1 },
   providerKicker: { fontSize: 9, fontWeight: '900', letterSpacing: 1 },
-  providerTitle: { fontSize: 20, lineHeight: 25, fontWeight: '900', marginTop: 3 },
-  providerBody: { fontSize: 13, lineHeight: 20, marginTop: 14 },
-  providerBenefits: { gap: 10, marginVertical: 16 },
+  providerTitle: { fontSize: 18, lineHeight: 22, fontWeight: '900', marginTop: 2 },
+  providerBody: { fontSize: 12, lineHeight: 18, marginTop: 12 },
+  providerBenefits: { gap: 8, marginVertical: 12 },
   benefit: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   benefitIcon: {
     width: 28,
@@ -482,8 +485,11 @@ const styles = StyleSheet.create({
   },
   benefitText: { flex: 1, fontSize: 12, fontWeight: '700' },
   providerButton: {
-    minHeight: 50,
     borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  providerButtonContent: {
+    minHeight: 46,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

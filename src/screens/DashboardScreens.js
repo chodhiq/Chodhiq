@@ -1,14 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   BadgeCheck,
   BarChart3,
   Bell,
   BriefcaseBusiness,
-  Check,
   ChevronRight,
-  Clock3,
   FileCheck2,
   ImagePlus,
   MessageCircle,
@@ -16,48 +15,12 @@ import {
   Star,
   Store,
   Users,
-  X,
 } from 'lucide-react-native';
 import ScreenHeader from '../components/ScreenHeader';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { radius, shadows, spacing } from '../theme/theme';
 
-const demoApplications = [
-  {
-    id: 'app-1',
-    name: 'Malabar Home Foods',
-    category: 'Catering',
-    city: 'Birmingham',
-    status: 'Pending',
-  },
-  {
-    id: 'app-2',
-    name: 'Nila Beauty Studio',
-    category: 'Beauty',
-    city: 'Coventry',
-    status: 'Pending',
-  },
-  { id: 'app-3', name: 'South Coast Events', category: 'Events', city: 'London', status: 'Review' },
-];
-const demoReports = [
-  {
-    id: 'report-1',
-    title: 'Listing details need review',
-    meta: 'Provider information · 2 hours ago',
-  },
-  { id: 'report-2', title: 'Community post reported', meta: 'Content moderation · Yesterday' },
-];
-
-function DemoBadge({ palette }) {
-  return (
-    <View style={[s.demo, { backgroundColor: palette.lavenderSoft, borderColor: palette.indigo }]}>
-      <Text style={{ color: palette.indigo, fontSize: 9, fontWeight: '900', letterSpacing: 0.8 }}>
-        DEMO DATA
-      </Text>
-    </View>
-  );
-}
 function Section({ palette, title, action, onAction, children }) {
   return (
     <View style={{ marginTop: 24 }}>
@@ -108,26 +71,9 @@ export function BusinessDashboardScreen({ navigation }) {
   const ownedId = access.ownedProviders[0]?.id;
   const business = providers.find((item) => item.id === ownedId);
   const [leadStates, setLeadStates] = useState({});
-  const leads = quoteRequests.length
-    ? quoteRequests
-    : [
-        {
-          id: 'demo-lead-1',
-          providerName: business?.name || 'Your business',
-          message: 'I would like a quote for a family event next month.',
-          createdAt: 'Today',
-          status: 'New',
-        },
-        {
-          id: 'demo-lead-2',
-          providerName: business?.name || 'Your business',
-          message: 'Are you available this weekend?',
-          createdAt: 'Yesterday',
-          status: 'Contacted',
-        },
-      ];
+  const leads = quoteRequests;
   const completeness = useMemo(() => {
-    if (!business) return 35;
+    if (!business) return 0;
     const fields = [
       business.name,
       business.description,
@@ -158,13 +104,16 @@ export function BusinessDashboardScreen({ navigation }) {
         <View style={[s.hero, { backgroundColor: palette.hero, borderColor: palette.border }]}>
           <View style={{ flex: 1 }}>
             <View style={s.heroTop}>
-              <DemoBadge palette={palette} />
-              <View style={[s.status, { backgroundColor: palette.goldSoft }]}>
-                <BadgeCheck size={13} color={palette.saffron} />
-                <Text style={{ color: palette.saffron, fontSize: 10, fontWeight: '800' }}>
-                  {business?.isVerified ? 'Verified' : 'Demo profile'}
-                </Text>
-              </View>
+              {business?.isVerified ? (
+                <View style={[s.status, { backgroundColor: palette.goldSoft }]}>
+                  <BadgeCheck size={13} color={palette.saffron} />
+                  <Text style={{ color: palette.saffron, fontSize: 10, fontWeight: '800' }}>
+                    Verified
+                  </Text>
+                </View>
+              ) : (
+                <View />
+              )}
             </View>
             <Text style={s.heroEyebrow}>BUSINESS OVERVIEW</Text>
             <Text style={s.heroTitle}>{business?.name || 'Your ChodhiQ Business'}</Text>
@@ -193,9 +142,9 @@ export function BusinessDashboardScreen({ navigation }) {
           <Metric
             palette={palette}
             Icon={BarChart3}
-            value="1.2k"
+            value="—"
             label="Profile views"
-            note="Demo · 30 days"
+            note="Analytics unavailable"
             tone={palette.blue || palette.indigo}
           />
         </View>
@@ -248,45 +197,56 @@ export function BusinessDashboardScreen({ navigation }) {
           action="View all"
           onAction={() => navigation.navigate('QuoteRequests')}
         >
-          {leads.slice(0, 4).map((lead) => {
-            const state = leadStates[lead.id] || lead.status || 'New';
-            return (
-              <View
-                key={lead.id}
-                style={[s.lead, { backgroundColor: palette.surface, borderColor: palette.border }]}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.cardTitle, { color: palette.text }]}>
-                    {lead.providerName || 'Customer enquiry'}
-                  </Text>
-                  <Text numberOfLines={2} style={[s.body, { color: palette.text2 }]}>
-                    {lead.message}
-                  </Text>
-                  <Text style={[s.meta, { color: palette.muted }]}>{lead.createdAt}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => setLead(lead.id, state === 'Contacted' ? 'New' : 'Contacted')}
+          {leads.length ? (
+            leads.slice(0, 4).map((lead) => {
+              const state = leadStates[lead.id] || lead.status || 'New';
+              return (
+                <View
+                  key={lead.id}
                   style={[
-                    s.leadState,
-                    {
-                      backgroundColor:
-                        state === 'Contacted' ? palette.lavenderSoft : palette.goldSoft,
-                    },
+                    s.lead,
+                    { backgroundColor: palette.surface, borderColor: palette.border },
                   ]}
                 >
-                  <Text
-                    style={{
-                      color: state === 'Contacted' ? palette.indigo : palette.saffron,
-                      fontSize: 9,
-                      fontWeight: '900',
-                    }}
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.cardTitle, { color: palette.text }]}>
+                      {lead.providerName || 'Customer enquiry'}
+                    </Text>
+                    <Text numberOfLines={2} style={[s.body, { color: palette.text2 }]}>
+                      {lead.message}
+                    </Text>
+                    <Text style={[s.meta, { color: palette.muted }]}>{lead.createdAt}</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setLead(lead.id, state === 'Contacted' ? 'New' : 'Contacted')}
+                    style={[
+                      s.leadState,
+                      {
+                        backgroundColor:
+                          state === 'Contacted' ? palette.lavenderSoft : palette.goldSoft,
+                      },
+                    ]}
                   >
-                    {state}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            );
-          })}
+                    <Text
+                      style={{
+                        color: state === 'Contacted' ? palette.indigo : palette.saffron,
+                        fontSize: 9,
+                        fontWeight: '900',
+                      }}
+                    >
+                      {state}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })
+          ) : (
+            <View
+              style={[s.card, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            >
+              <Text style={[s.body, { color: palette.text2 }]}>No customer enquiries yet.</Text>
+            </View>
+          )}
         </Section>
         <Section palette={palette} title="Media">
           <TouchableOpacity
@@ -316,14 +276,6 @@ export function BusinessDashboardScreen({ navigation }) {
 export function AdminDashboardScreen({ navigation }) {
   const { palette } = useChodhiQTheme();
   const { providers, notifications, session, access } = useAppState();
-  const [applications, setApplications] = useState(demoApplications);
-  const decide = (id, status) =>
-    setApplications((current) =>
-      current.map((item) => (item.id === id ? { ...item, status } : item)),
-    );
-  const pending = applications.filter(
-    (item) => item.status === 'Pending' || item.status === 'Review',
-  ).length;
   if (!session || !access.isAdmin)
     return (
       <AccessDenied
@@ -342,11 +294,10 @@ export function AdminDashboardScreen({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
         <View style={[s.hero, { backgroundColor: palette.hero, borderColor: palette.border }]}>
           <View style={s.heroTop}>
-            <DemoBadge palette={palette} />
             <View style={[s.status, { backgroundColor: palette.goldSoft }]}>
               <ShieldCheck size={13} color={palette.saffron} />
               <Text style={{ color: palette.saffron, fontSize: 10, fontWeight: '800' }}>
-                Admin preview
+                Administrator
               </Text>
             </View>
           </View>
@@ -366,17 +317,17 @@ export function AdminDashboardScreen({ navigation }) {
           <Metric
             palette={palette}
             Icon={FileCheck2}
-            value={pending}
+            value="—"
             label="Applications"
-            note="Needs attention"
+            note="Application count unavailable"
             tone={palette.saffron}
           />
           <Metric
             palette={palette}
             Icon={Users}
-            value="248"
+            value="—"
             label="Members"
-            note="Demo presentation"
+            note="Member count unavailable"
             tone={palette.blue || palette.indigo}
           />
           <Metric
@@ -390,80 +341,16 @@ export function AdminDashboardScreen({ navigation }) {
         </View>
         <Section palette={palette} title="Provider applications" action="Review queue">
           <View style={[s.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-            {applications.map((item, index) => (
-              <View
-                key={item.id}
-                style={[
-                  s.application,
-                  index > 0 && { borderTopWidth: 1, borderTopColor: palette.border },
-                ]}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.cardTitle, { color: palette.text }]}>{item.name}</Text>
-                  <Text style={[s.body, { color: palette.text2 }]}>
-                    {item.category} · {item.city}
-                  </Text>
-                  <Text
-                    style={[
-                      s.meta,
-                      {
-                        color:
-                          item.status === 'Approved'
-                            ? palette.indigo
-                            : item.status === 'Rejected'
-                              ? palette.coral
-                              : palette.saffron,
-                      },
-                    ]}
-                  >
-                    {item.status}
-                  </Text>
-                </View>
-                {!['Approved', 'Rejected'].includes(item.status) && (
-                  <View style={s.decisionRow}>
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      accessibilityLabel="Reject application"
-                      onPress={() => decide(item.id, 'Rejected')}
-                      style={[s.decision, { backgroundColor: palette.roseSoft }]}
-                    >
-                      <X size={16} color={palette.coral} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      accessibilityLabel="Approve application"
-                      onPress={() => decide(item.id, 'Approved')}
-                      style={[s.decision, { backgroundColor: palette.goldSoft }]}
-                    >
-                      <Check size={16} color={palette.saffron} />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            ))}
+            <Text style={[s.body, { color: palette.text2 }]}>
+              No application records are available.
+            </Text>
           </View>
         </Section>
         <Section palette={palette} title="Moderation queue">
           <View style={[s.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-            {demoReports.map((item, index) => (
-              <TouchableOpacity
-                key={item.id}
-                onPress={() => Alert.alert('Demo moderation item', item.title)}
-                style={[
-                  s.application,
-                  index > 0 && { borderTopWidth: 1, borderTopColor: palette.border },
-                ]}
-              >
-                <View style={[s.quickIcon, { backgroundColor: palette.roseSoft }]}>
-                  <ShieldCheck size={18} color={palette.coral} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.cardTitle, { color: palette.text }]}>{item.title}</Text>
-                  <Text style={[s.meta, { color: palette.muted }]}>{item.meta}</Text>
-                </View>
-                <ChevronRight size={17} color={palette.muted} />
-              </TouchableOpacity>
-            ))}
+            <Text style={[s.body, { color: palette.text2 }]}>
+              No moderation reports are available.
+            </Text>
           </View>
         </Section>
         <Section palette={palette} title="Platform controls">
@@ -472,38 +359,22 @@ export function AdminDashboardScreen({ navigation }) {
               palette={palette}
               Icon={FileCheck2}
               label="Applications"
-              onPress={() => Alert.alert('Demo', 'Application decisions are interactive above.')}
+              onPress={() => Alert.alert('Applications', 'No application records are available.')}
             />
             <QuickAction
               palette={palette}
               Icon={ShieldCheck}
               label="Moderation"
-              onPress={() =>
-                Alert.alert('Demo', 'Moderation workflow is prepared for backend connection.')
-              }
+              onPress={() => Alert.alert('Moderation', 'No moderation reports are available.')}
             />
             <QuickAction
               palette={palette}
               Icon={BarChart3}
               label="Analytics"
-              onPress={() =>
-                Alert.alert(
-                  'Demo data',
-                  'Live analytics will activate when production tracking is connected.',
-                )
-              }
+              onPress={() => Alert.alert('Analytics', 'Analytics are not available yet.')}
             />
           </View>
         </Section>
-        <View
-          style={[s.notice, { backgroundColor: palette.lavenderSoft, borderColor: palette.indigo }]}
-        >
-          <Clock3 size={18} color={palette.indigo} />
-          <Text style={[s.body, { color: palette.text2, flex: 1 }]}>
-            Admin actions are presentation-safe local demo interactions until role-based
-            authentication is enabled.
-          </Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -538,13 +409,6 @@ const s = StyleSheet.create({
   heroEyebrow: { color: '#E6B85C', fontSize: 9, fontWeight: '900', letterSpacing: 1.4 },
   heroTitle: { color: '#FFFFFF', fontSize: 27, fontWeight: '900', marginTop: 5 },
   heroBody: { color: '#B7C2CF', fontSize: 12, marginTop: 6 },
-  demo: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-  },
   status: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -623,22 +487,5 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     paddingVertical: 11,
-  },
-  decisionRow: { flexDirection: 'row', gap: 8 },
-  decision: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 13,
-    marginTop: 24,
   },
 });

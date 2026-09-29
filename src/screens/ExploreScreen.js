@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Modal,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Text from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check, SlidersHorizontal, X } from 'lucide-react-native';
 import { useAppState } from '../context/AppStateContext';
@@ -29,11 +30,10 @@ export default function ExploreScreen({ navigation, route }) {
   const [openNow, setOpenNow] = useState(false);
   const [nearbyOnly, setNearbyOnly] = useState(false);
   const [activeTab, setActiveTab] = useState('Businesses');
-  const [visibleCount, setVisibleCount] = useState(20);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [sortBy, setSortBy] = useState('Best match');
-  const [price, setPrice] = useState('$$');
-  const [rating, setRating] = useState('4.0+');
+  const [price, setPrice] = useState('Any');
+  const [rating, setRating] = useState('Any');
   const [amenities, setAmenities] = useState(['Dine-in']);
   const [appliedPrice, setAppliedPrice] = useState(null);
   const [appliedRating, setAppliedRating] = useState(null);
@@ -53,11 +53,6 @@ export default function ExploreScreen({ navigation, route }) {
   useEffect(() => {
     if (route.params?.categoryId) setSelectedCategory(route.params.categoryId);
   }, [route.params?.categoryId]);
-  useEffect(
-    () => setVisibleCount(20),
-    [query, selectedCategory, highestRated, openNow, nearbyOnly, activeTab],
-  );
-
   const businessResults = useMemo(() => {
     const selected = categories.find((category) => category.id === selectedCategory);
     const normalize = (value) =>
@@ -75,7 +70,13 @@ export default function ExploreScreen({ navigation, route }) {
         (!appliedPrice || provider.priceRange === appliedPrice) &&
         Number(provider.rating || 0) >= minimumRating &&
         (!openNow || provider.openNow !== false) &&
-        (!nearbyOnly || providerLocations.includes(normalize(location)))
+        (!nearbyOnly ||
+          providerLocations.some(
+            (providerLocation) =>
+              providerLocation === normalize(location) ||
+              providerLocation.includes(normalize(location)) ||
+              normalize(location).includes(providerLocation),
+          ))
       );
     });
     return [...matches].sort((a, b) => {
@@ -117,12 +118,18 @@ export default function ExploreScreen({ navigation, route }) {
     setHighestRated(false);
     setOpenNow(false);
     setNearbyOnly(false);
+    setSortBy('Best match');
+    setPrice('Any');
+    setRating('Any');
+    setAmenities([]);
+    setAppliedPrice(null);
+    setAppliedRating(null);
   };
   const resetFilters = () => {
     setSortBy('Best match');
-    setPrice('$$');
-    setRating('4.0+');
-    setAmenities(['Dine-in']);
+    setPrice('Any');
+    setRating('Any');
+    setAmenities([]);
     setHighestRated(false);
     setAppliedPrice(null);
     setAppliedRating(null);
@@ -131,6 +138,7 @@ export default function ExploreScreen({ navigation, route }) {
   return (
     <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]} edges={['top']}>
       <ScrollView
+        removeClippedSubviews
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.content,
@@ -169,7 +177,7 @@ export default function ExploreScreen({ navigation, route }) {
               All
             </Text>
           </TouchableOpacity>
-          {categories.slice(0, 5).map((category) => (
+          {categories.map((category) => (
             <TouchableOpacity
               key={category.id}
               onPress={() =>
@@ -216,20 +224,26 @@ export default function ExploreScreen({ navigation, route }) {
             <Text style={{ color: palette.text2 }}>Finding providers near you…</Text>
           </View>
         ) : null}
-        {!marketplaceLoading &&
-          activeTab === 'Businesses' &&
-          businessResults
-            .slice(0, visibleCount)
-            .map((provider) => (
+        {!marketplaceLoading && activeTab === 'Businesses' && (
+          <FlatList
+            data={businessResults}
+            keyExtractor={(provider) => String(provider.id)}
+            renderItem={({ item: provider }) => (
               <ExploreBusinessCard
-                key={provider.id}
                 palette={palette}
                 provider={provider}
                 saved={savedIds.includes(provider.id)}
                 onSave={() => (session ? toggleSaved(provider.id) : navigation.navigate('Welcome'))}
                 onPress={() => navigation.navigate('ProviderDetail', { id: provider.id })}
               />
-            ))}
+            )}
+            scrollEnabled={false}
+            initialNumToRender={8}
+            maxToRenderPerBatch={8}
+            windowSize={5}
+            removeClippedSubviews
+          />
+        )}
         {activeTab === 'Events' &&
           eventResults.map((item) => (
             <ExploreEventCard
@@ -241,17 +255,6 @@ export default function ExploreScreen({ navigation, route }) {
           ))}
         {!marketplaceLoading && resultCount === 0 && (
           <ExploreEmpty palette={palette} onClear={clearFilters} />
-        )}
-        {activeTab === 'Businesses' && visibleCount < businessResults.length && (
-          <TouchableOpacity
-            onPress={() => setVisibleCount((count) => count + 20)}
-            style={[
-              styles.more,
-              { backgroundColor: palette.primarySoft, borderColor: palette.border },
-            ]}
-          >
-            <Text style={{ color: palette.primary, fontWeight: '800' }}>Show more results</Text>
-          </TouchableOpacity>
         )}
       </ScrollView>
       <TouchableOpacity
@@ -279,8 +282,8 @@ export default function ExploreScreen({ navigation, route }) {
         onClose={() => setFiltersVisible(false)}
         onApply={() => {
           setHighestRated(sortBy === 'Highest rated');
-          setAppliedPrice(price);
-          setAppliedRating(rating);
+          setAppliedPrice(price === 'Any' ? null : price);
+          setAppliedRating(rating === 'Any' ? null : rating);
           setFiltersVisible(false);
         }}
       />
@@ -361,9 +364,9 @@ function FiltersModal(props) {
               setSortBy,
             )}
             <Text style={[styles.filterHeading, { color: palette.text }]}>Price range</Text>
-            {choices(['$', '$$', '$$$', '$$$$'], price, setPrice, true)}
+            {choices(['Any', '$', '$$', '$$$', '$$$$'], price, setPrice, true)}
             <Text style={[styles.filterHeading, { color: palette.text }]}>Rating</Text>
-            {choices(['4.0+', '4.5+', '4.8+'], rating, setRating, true)}
+            {choices(['Any', '4.0+', '4.5+', '4.8+'], rating, setRating, true)}
             <Text style={[styles.filterHeading, { color: palette.text }]}>Amenities</Text>
             <View style={styles.optionGrid}>
               {[

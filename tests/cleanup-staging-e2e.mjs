@@ -4,6 +4,11 @@ import { createClient } from '@supabase/supabase-js';
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const serviceKey = process.env.E2E_SUPABASE_SERVICE_ROLE_KEY;
 assert.ok(url && serviceKey);
+assert.equal(
+  new URL(url).hostname,
+  'ljhncdzhzoatonhhofbv.supabase.co',
+  'Staging cleanup cannot run against another project',
+);
 const db = createClient(url, serviceKey, { auth: { persistSession: false } });
 const listed = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });
 assert.ifError(listed.error);
@@ -14,7 +19,8 @@ if (ids.length) {
   const providers = await db.from('providers').select('id').in('owner_id', ids);
   assert.ifError(providers.error);
   const providerIds = providers.data.map((row) => row.id);
-  if (providerIds.length) assert.ifError((await db.from('providers').delete().in('id', providerIds)).error);
+  if (providerIds.length)
+    assert.ifError((await db.from('providers').delete().in('id', providerIds)).error);
   assert.ifError((await db.from('business_applications').delete().in('applicant_id', ids)).error);
   assert.ifError((await db.from('verification_requests').delete().in('submitted_by', ids)).error);
   assert.ifError((await db.from('community_posts').delete().in('author_id', ids)).error);

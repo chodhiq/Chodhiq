@@ -1,106 +1,134 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import Text from './AppText';
 import MapView, { Marker } from 'react-native-maps';
-import { MapPin } from 'lucide-react-native';
+import {
+  MapPin,
+  Utensils,
+  Store,
+  Scissors,
+  Building2,
+  Hotel,
+  PartyPopper,
+  LayoutGrid,
+} from 'lucide-react-native';
 import Constants from 'expo-constants';
 
-const CITY_COORDINATES = {
-  london: { latitude: 51.5074, longitude: -0.1278 },
-  birmingham: { latitude: 52.4862, longitude: -1.8904 },
-  manchester: { latitude: 53.4808, longitude: -2.2426 },
-  leicester: { latitude: 52.6369, longitude: -1.1398 },
-  coventry: { latitude: 52.4068, longitude: -1.5197 },
-  nottingham: { latitude: 52.9548, longitude: -1.1581 },
-  bristol: { latitude: 51.4545, longitude: -2.5879 },
-  leeds: { latitude: 53.8008, longitude: -1.5491 },
+const CATEGORY_ICONS = {
+  restaurants: Utensils,
+  grocery: Store,
+  beauty: Scissors,
+  property: Building2,
+  events: PartyPopper,
+  hotels: Hotel,
 };
 
-function coordinatesFor(provider, index) {
-  const city = String(provider.baseCity || '')
-    .trim()
-    .toLowerCase();
-  const known = CITY_COORDINATES[city] || CITY_COORDINATES.leicester;
-  const offset = (index % 4) * 0.008;
-  return { latitude: known.latitude + offset, longitude: known.longitude - offset };
-}
-
-export default function ChodhiQMap({ providers, selected, onSelect, palette }) {
+export default function ChodhiQMap({
+  providers,
+  selected,
+  onSelect,
+  palette,
+  location,
+  onRegionChange,
+  mapType = 'standard',
+}) {
   const mapsEnabled = Constants.expoConfig?.extra?.googleMapsEnabled === true;
+  const mapRef = useRef(null);
+  const coordinates = useMemo(
+    () =>
+      providers
+        .filter(
+          (provider) =>
+            Number.isFinite(provider.baseLatitude) && Number.isFinite(provider.baseLongitude),
+        )
+        .map((provider) => ({
+          provider,
+          latitude: provider.baseLatitude,
+          longitude: provider.baseLongitude,
+        })),
+    [providers],
+  );
+  const groupedCoordinates = useMemo(() => {
+    const groups = new Map();
+    for (const point of coordinates) {
+      const key = `${point.latitude.toFixed(3)}:${point.longitude.toFixed(3)}`;
+      groups.set(key, [...(groups.get(key) || []), point]);
+    }
+    return [...groups.values()];
+  }, [coordinates]);
+  useEffect(() => {
+    if (!mapsEnabled || !mapRef.current || !coordinates.length) return;
+    mapRef.current.fitToCoordinates(
+      coordinates.map((item) => ({ latitude: item.latitude, longitude: item.longitude })),
+      {
+        edgePadding: { top: 150, right: 48, bottom: 170, left: 48 },
+        animated: true,
+      },
+    );
+  }, [coordinates, mapsEnabled]);
+  useEffect(() => {
+    if (!mapsEnabled || !mapRef.current || !location) return;
+    mapRef.current.animateToRegion(location, 450);
+  }, [location?.latitude, location?.longitude, mapsEnabled]);
+  const validProviders = coordinates.map((item) => item.provider);
   if (!mapsEnabled) {
     return (
       <View style={[styles.fallback, { backgroundColor: palette.surfaceAlt }]}>
-        <View style={[styles.park, styles.parkOne, { backgroundColor: palette.primarySoft }]} />
-        <View style={[styles.park, styles.parkTwo, { backgroundColor: palette.primarySoft }]} />
-        {[18, 38, 58, 78].map((position) => (
-          <View
-            key={`road-h-${position}`}
-            style={[styles.roadHorizontal, { top: `${position}%` }]}
-          />
-        ))}
-        {[17, 42, 68, 86].map((position) => (
-          <View
-            key={`road-v-${position}`}
-            style={[styles.roadVertical, { left: `${position}%` }]}
-          />
-        ))}
-        {providers.slice(0, 7).map((provider, index) => {
+        <Text style={[styles.fallbackLabel, { color: palette.text2 }]}>
+          Map preview is unavailable. Enable the map provider to browse real business locations.
+        </Text>
+        {validProviders.slice(0, 60).map((provider) => {
           const active = selected?.id === provider.id;
+          const Icon =
+            CATEGORY_ICONS[String(provider.categoryId || '').toLowerCase()] || LayoutGrid;
           return (
-            <View
+            <Text
               key={provider.id}
-              style={[
-                styles.fallbackMarkerPosition,
-                fallbackPositions[index % fallbackPositions.length],
-              ]}
+              style={[styles.fallbackBusiness, { color: active ? palette.primary : palette.text2 }]}
+              onPress={() => onSelect(provider)}
             >
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel={`Select ${provider.name}`}
-                style={[
-                  styles.marker,
-                  {
-                    backgroundColor: active ? palette.primary : palette.surface,
-                    borderColor: palette.primary,
-                  },
-                ]}
-                onPress={() => onSelect(provider)}
-              >
-                <MapPin size={18} color={active ? '#FFFFFF' : palette.primary} strokeWidth={2.5} />
-              </TouchableOpacity>
-            </View>
+              {Icon === LayoutGrid ? '•' : '•'} {provider.name}
+            </Text>
           );
         })}
-        <View style={[styles.mapNotice, { backgroundColor: palette.surface }]}>
-          <Text style={[styles.mapNoticeTitle, { color: palette.text }]}>
-            Explore nearby providers
-          </Text>
-          <Text style={[styles.mapNoticeText, { color: palette.text2 }]}>Location preview</Text>
-        </View>
       </View>
     );
   }
   return (
     <MapView
+      ref={mapRef}
       style={StyleSheet.absoluteFill}
-      initialRegion={{
-        latitude: 53.1,
-        longitude: -1.65,
-        latitudeDelta: 7.4,
-        longitudeDelta: 7.4,
-      }}
+      initialRegion={
+        location || { latitude: 53.1, longitude: -1.65, latitudeDelta: 7.4, longitudeDelta: 7.4 }
+      }
+      mapType={mapType}
       showsUserLocation
-      showsMyLocationButton
+      showsMyLocationButton={false}
       toolbarEnabled={false}
+      onRegionChangeComplete={onRegionChange}
+      mapPadding={{ top: 150, right: 12, bottom: 190, left: 12 }}
     >
-      {providers.map((provider, index) => {
+      {groupedCoordinates.map((cluster) => {
+        const provider = cluster.find((item) => item.id === selected?.id) || cluster[0];
+        const latitude = cluster.reduce((sum, item) => sum + item.baseLatitude, 0) / cluster.length;
+        const longitude =
+          cluster.reduce((sum, item) => sum + item.baseLongitude, 0) / cluster.length;
         const active = selected?.id === provider.id;
+        const Icon = CATEGORY_ICONS[String(provider.categoryId || '').toLowerCase()] || LayoutGrid;
         return (
           <Marker
-            key={provider.id}
-            coordinate={coordinatesFor(provider, index)}
+            key={cluster.map((item) => item.id).join('-')}
+            coordinate={{ latitude, longitude }}
             title={provider.name}
             description={`${provider.category} · ${provider.baseCity}`}
-            onPress={() => onSelect(provider)}
+            onPress={() => {
+              if (cluster.length > 1)
+                mapRef.current?.animateToRegion(
+                  { latitude, longitude, latitudeDelta: 0.045, longitudeDelta: 0.045 },
+                  350,
+                );
+              onSelect(provider);
+            }}
             tracksViewChanges={false}
           >
             <View
@@ -112,7 +140,11 @@ export default function ChodhiQMap({ providers, selected, onSelect, palette }) {
                 },
               ]}
             >
-              <MapPin size={18} color={active ? '#FFFFFF' : palette.primary} strokeWidth={2.5} />
+              {cluster.length > 1 ? (
+                <Text style={styles.clusterText}>{cluster.length}</Text>
+              ) : (
+                <Icon size={17} color="#FFFFFF" strokeWidth={2.4} />
+              )}
             </View>
           </Marker>
         );
@@ -121,48 +153,10 @@ export default function ChodhiQMap({ providers, selected, onSelect, palette }) {
   );
 }
 
-const fallbackPositions = [
-  { left: '20%', top: '26%' },
-  { left: '54%', top: '22%' },
-  { left: '73%', top: '39%' },
-  { left: '34%', top: '48%' },
-  { left: '61%', top: '60%' },
-  { left: '17%', top: '68%' },
-  { left: '78%', top: '72%' },
-];
-
 const styles = StyleSheet.create({
-  fallback: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
-  roadHorizontal: {
-    position: 'absolute',
-    left: -20,
-    right: -20,
-    height: 12,
-    backgroundColor: '#FFFFFF',
-    transform: [{ rotate: '-5deg' }],
-  },
-  roadVertical: {
-    position: 'absolute',
-    top: -20,
-    bottom: -20,
-    width: 10,
-    backgroundColor: '#FFFFFF',
-    transform: [{ rotate: '8deg' }],
-  },
-  park: { position: 'absolute', borderRadius: 28, opacity: 0.72 },
-  parkOne: { width: 120, height: 90, right: 18, top: 130, transform: [{ rotate: '-12deg' }] },
-  parkTwo: { width: 100, height: 130, left: 22, bottom: 105, transform: [{ rotate: '16deg' }] },
-  fallbackMarkerPosition: { position: 'absolute' },
-  mapNotice: {
-    position: 'absolute',
-    left: 16,
-    bottom: 132,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-  mapNoticeTitle: { fontSize: 12, fontWeight: '700' },
-  mapNoticeText: { fontSize: 10, marginTop: 2 },
+  fallback: { ...StyleSheet.absoluteFillObject, padding: 30, justifyContent: 'center', gap: 8 },
+  fallbackLabel: { fontSize: 14, lineHeight: 21, textAlign: 'center' },
+  fallbackBusiness: { fontSize: 12, textAlign: 'center' },
   marker: {
     width: 38,
     height: 38,
@@ -176,4 +170,5 @@ const styles = StyleSheet.create({
     shadowRadius: 7,
     elevation: 4,
   },
+  clusterText: { color: '#FFFFFF', fontWeight: '900', fontSize: 13 },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Image, Text, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
+import Text from './AppText';
 import * as Icons from 'lucide-react-native';
 import { colors, radius, shadows } from '../theme/theme';
 import { PressableScale } from './Motion';

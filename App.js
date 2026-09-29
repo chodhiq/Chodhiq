@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import React from 'react';
-import { Text, Button } from 'react-native';
+import { Button } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
@@ -16,17 +16,20 @@ import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
 import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
 import { Inter_800ExtraBold } from '@expo-google-fonts/inter/800ExtraBold';
 import { useFonts } from '@expo-google-fonts/inter/useFonts';
-
-Text.defaultProps = Text.defaultProps || {};
-Text.defaultProps.style = [{ fontFamily: 'Inter_400Regular' }, Text.defaultProps.style];
+import { redactSentryEvent } from './src/lib/sentryUtils';
+import Text from './src/components/AppText';
 
 // Initialize Sentry for error tracking
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '',
-  environment: __DEV__ ? 'development' : 'production',
+  environment: process.env.EXPO_PUBLIC_APP_ENV || (__DEV__ ? 'development' : 'production'),
+  release: process.env.EXPO_PUBLIC_RELEASE_COMMIT || undefined,
   tracesSampleRate: 0.1, // 10% of transactions in production
   enableAutoPerformanceMonitoring: true,
   attachStacktrace: true,
+  beforeBreadcrumb(breadcrumb) {
+    return redactSentryEvent(breadcrumb);
+  },
   beforeSend(event, hint) {
     // Don't send events in development unless explicitly needed
     if (__DEV__) {
@@ -34,21 +37,21 @@ Sentry.init({
       return null;
     }
     event.user = undefined;
-    return event;
+    return redactSentryEvent(event, hint);
   },
 });
 
 configureNotificationHandler();
 
 function AppContent() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
     Inter_800ExtraBold,
   });
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded && !fontError) return null;
   return (
     <Sentry.ErrorBoundary
       fallback={({ error, resetError }) => <ErrorFallback error={error} resetError={resetError} />}
@@ -71,19 +74,33 @@ export default Sentry.wrap(AppContent);
 function ErrorFallback({ resetError }) {
   return (
     <SafeAreaProvider>
-      <GestureHandlerRootView
-        style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}
-      >
-        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>
-          Oops, something went wrong!
-        </Text>
-        <Text style={{ fontSize: 14, marginBottom: 20, textAlign: 'center' }}>
-          Your account data is safe. Try reopening this screen. If the problem continues, contact
-          support.
-        </Text>
-        <Button title="Try again" onPress={resetError} />
-      </GestureHandlerRootView>
+      <ChodhiQThemeProvider>
+        <ErrorFallbackContent resetError={resetError} />
+      </ChodhiQThemeProvider>
     </SafeAreaProvider>
+  );
+}
+
+function ErrorFallbackContent({ resetError }) {
+  const { palette } = useChodhiQTheme();
+  return (
+    <GestureHandlerRootView
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+        backgroundColor: palette.background,
+      }}
+    >
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: palette.text }}>
+        Oops, something went wrong!
+      </Text>
+      <Text style={{ fontSize: 14, marginBottom: 20, textAlign: 'center', color: palette.text2 }}>
+        Try reopening this screen. If the problem continues, contact support.
+      </Text>
+      <Button title="Try again" onPress={resetError} color={palette.primary} />
+    </GestureHandlerRootView>
   );
 }
 

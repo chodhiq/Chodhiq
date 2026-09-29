@@ -8,6 +8,7 @@ const missing=required.filter(key=>!process.env[key]);
 if(missing.length) throw new Error(`Refusing reset. Missing: ${missing.join(', ')}`);
 const ref=new URL(process.env.STAGING_SUPABASE_URL).hostname.split('.')[0];
 assert.equal(ref,process.env.CONFIRM_STAGING_PROJECT_REF,'Confirmed project ref does not match the Supabase URL');
+assert.equal(ref,'ljhncdzhzoatonhhofbv','Staging reset cannot run against another project');
 if(!/^[a-z]{20}$/.test(ref)) throw new Error('Refusing reset: invalid project ref');
 if(process.env.CONFIRM_RESET !== 'RESET DEMO DATA') throw new Error('Refusing reset. Set CONFIRM_RESET exactly to RESET DEMO DATA');
 

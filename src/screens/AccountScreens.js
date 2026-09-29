@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
+import AppTextInput from '../components/AppTextInput';
 import {
   ActivityIndicator,
   Alert,
   Image,
-  ImageBackground,
   Linking,
   Platform,
   ScrollView,
   StyleSheet,
   Switch,
-  Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Bell,
@@ -93,6 +93,7 @@ const pageStyles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: { color: '#fff', fontWeight: '700' },
+  link: { color: colors.primary, fontWeight: '700', fontSize: 13 },
   empty: {
     alignItems: 'center',
     paddingVertical: 56,
@@ -115,7 +116,7 @@ function PasswordInput({ value, onChangeText, placeholder, palette, style, ...pr
   const [visible, setVisible] = useState(false);
   return (
     <View style={pageStyles.passwordField}>
-      <TextInput
+      <AppTextInput
         {...props}
         style={[style, pageStyles.passwordInput]}
         value={value}
@@ -271,7 +272,7 @@ export function WelcomeScreen({ navigation, route }) {
             ]}
           >
             {mode === 'signup' && (
-              <TextInput
+              <AppTextInput
                 accessibilityLabel="Full name"
                 style={inputStyle}
                 value={name}
@@ -280,7 +281,7 @@ export function WelcomeScreen({ navigation, route }) {
                 placeholderTextColor={palette.muted}
               />
             )}
-            <TextInput
+            <AppTextInput
               accessibilityLabel="Email address"
               style={inputStyle}
               value={email}
@@ -672,14 +673,15 @@ const stylesWelcome = StyleSheet.create({
 });
 
 export function LocationScreen({ navigation }) {
-  const { location, selectLocation } = useAppState();
+  const { location, selectLocation, setCurrentLocation } = useAppState();
   const { palette } = useChodhiQTheme();
   const [selected, setSelected] = useState(location);
   const [detecting, setDetecting] = useState(false);
-  const choose = (city) => {
+  const choose = (city, coordinates = null) => {
     Haptics.selectionAsync().catch(() => {});
     setSelected(city);
-    selectLocation(city);
+    if (coordinates) setCurrentLocation(city, coordinates);
+    else selectLocation(city);
     setTimeout(() => navigation.goBack(), 190);
   };
   const detect = async () => {
@@ -704,7 +706,10 @@ export function LocationScreen({ navigation }) {
           city.toLowerCase() === detected.toLowerCase() ||
           detected.toLowerCase().includes(city.toLowerCase()),
       );
-      choose(match || detected);
+      choose(match || detected, {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      });
     } catch (error) {
       Alert.alert('Could not detect location', 'Choose your nearest city manually.');
     } finally {
@@ -996,12 +1001,13 @@ export function BookingsScreen({ navigation }) {
 }
 
 export function ReviewsScreen({ navigation, route }) {
-  const { providers, reviews, addReview } = useAppState();
+  const { providers, reviews, addReview, editReview, removeReview } = useAppState();
   const providerId = route.params?.providerId;
   const provider = providers.find((p) => p.id === providerId);
   const { palette } = useChodhiQTheme();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
+  const [editingId, setEditingId] = useState(null);
   const submit = () => {
     if (!comment.trim())
       return Alert.alert('Add a review', 'Tell the community about your experience.');
@@ -1014,6 +1020,33 @@ export function ReviewsScreen({ navigation, route }) {
     setComment('');
     Alert.alert('Thank you', 'Your review has been added.');
   };
+  const saveEdit = async (item) => {
+    if (!comment.trim())
+      return Alert.alert('Add a review', 'Tell the community about your experience.');
+    try {
+      await editReview(item.id, { rating, comment: comment.trim() });
+      setEditingId(null);
+      setComment('');
+      Alert.alert('Review updated', 'Your review has been saved.');
+    } catch (error) {
+      Alert.alert('Could not update review', error.message);
+    }
+  };
+  const confirmDelete = (item) =>
+    Alert.alert('Delete review?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await removeReview(item.id);
+          } catch (error) {
+            Alert.alert('Could not delete review', error.message);
+          }
+        },
+      },
+    ]);
   return (
     <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
       <ScreenHeader navigation={navigation} title={provider ? 'Write a review' : 'My reviews'} />
@@ -1034,7 +1067,7 @@ export function ReviewsScreen({ navigation, route }) {
                 </TouchableOpacity>
               ))}
             </View>
-            <TextInput
+            <AppTextInput
               accessibilityLabel={label}
               style={[pageStyles.input, { minHeight: 100, textAlignVertical: 'top' }]}
               multiline
@@ -1053,12 +1086,56 @@ export function ReviewsScreen({ navigation, route }) {
         )}
         {reviews.map((item) => (
           <View key={item.id} style={pageStyles.card}>
-            <View style={pageStyles.row}>
-              <Text style={[pageStyles.title, pageStyles.grow]}>{item.providerName}</Text>
-              <Text style={{ color: colors.star }}>★ {item.rating}</Text>
-            </View>
-            <Text style={pageStyles.body}>{item.comment}</Text>
-            <Text style={pageStyles.muted}>{item.createdAt}</Text>
+            {editingId === item.id ? (
+              <>
+                <AppTextInput
+                  accessibilityLabel="Edit review"
+                  style={[pageStyles.input, { minHeight: 90, textAlignVertical: 'top' }]}
+                  multiline
+                  value={comment}
+                  onChangeText={setComment}
+                />
+                <TouchableOpacity
+                  style={[pageStyles.button, { marginTop: spacing.sm }]}
+                  onPress={() => saveEdit(item)}
+                >
+                  <Text style={pageStyles.buttonText}>Save changes</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setEditingId(null);
+                    setComment('');
+                  }}
+                >
+                  <Text style={[pageStyles.muted, { marginTop: spacing.sm }]}>Cancel</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <View style={pageStyles.row}>
+                  <Text style={[pageStyles.title, pageStyles.grow]}>{item.providerName}</Text>
+                  <Text style={{ color: colors.star }}>★ {item.rating}</Text>
+                </View>
+                <Text style={pageStyles.body}>{item.comment}</Text>
+                <Text style={pageStyles.muted}>{item.createdAt}</Text>
+                {item.userId && (
+                  <View style={[pageStyles.row, { marginTop: spacing.sm }]}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setEditingId(item.id);
+                        setRating(item.rating);
+                        setComment(item.comment || item.text || '');
+                      }}
+                    >
+                      <Text style={pageStyles.link}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => confirmDelete(item)}>
+                      <Text style={[pageStyles.link, { color: colors.danger }]}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </>
+            )}
           </View>
         ))}
         {!provider && !reviews.length && (
@@ -1092,7 +1169,7 @@ export function EditProfileScreen({ navigation }) {
         ].map(([label, key]) => (
           <View key={key}>
             <Text style={[pageStyles.label, { color: palette.text2 }]}>{label}</Text>
-            <TextInput
+            <AppTextInput
               accessibilityLabel={label}
               style={[
                 pageStyles.input,
@@ -1295,7 +1372,7 @@ export function BecomeProviderScreen({ navigation }) {
         ].map(([label, key]) => (
           <View key={key}>
             <Text style={pageStyles.label}>{label}</Text>
-            <TextInput
+            <AppTextInput
               style={pageStyles.input}
               value={form[key]}
               onChangeText={(value) => setForm((p) => ({ ...p, [key]: value }))}

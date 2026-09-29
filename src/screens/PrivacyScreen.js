@@ -1,14 +1,8 @@
 import React, { useState } from 'react';
-import {
-  Alert,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import AppTextInput from '../components/AppTextInput';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+
+import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Database, Download, FileLock2, Trash2 } from 'lucide-react-native';
 import ScreenHeader from '../components/ScreenHeader';
@@ -150,7 +144,7 @@ export default function PrivacyScreen({ navigation }) {
             <Text style={[styles.body, { color: palette.text2 }]}>
               Type DELETE to enable permanent deletion.
             </Text>
-            <TextInput
+            <AppTextInput
               accessibilityLabel="Type DELETE to confirm account deletion"
               autoCapitalize="characters"
               value={confirmation}

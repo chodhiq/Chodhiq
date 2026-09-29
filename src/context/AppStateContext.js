@@ -1,4 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   getOrCreateSession,
   signInWithEmail,
@@ -15,22 +23,24 @@ import {
   setSaved,
   updateProfile,
 } from '../data/accountRepository';
-import { saveLocalReview } from '../data/localDatabase';
-import { createReview } from '../data/reviewRepository';
+import { clearLocalUserData, saveLocalReview } from '../data/localDatabase';
+import { createReview, deleteReview, updateReview } from '../data/reviewRepository';
 import { cancelBooking as cancelBookingRecord, createBooking } from '../data/bookingRepository';
 import { cleanEmail, cleanPassword, cleanText, validateProfile } from '../lib/validation';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearPushToken } from '../lib/pushNotifications';
 import { useCommunicationPreferences } from '../hooks/useCommunicationPreferences';
-import { formatQuote } from '../data/accountMappers';
+import { formatQuote, mapProfile } from '../data/accountMappers';
 import { useOfflineSync } from '../hooks/useOfflineSync';
 import { useMarketplaceState } from '../features/marketplace/useMarketplaceState';
 import { useNotificationState } from '../features/notifications/useNotificationState';
 
 const AppStateContext = createContext(null);
+const LOCATION_COORDINATES_KEY = 'chodhiq-location-coordinates';
 
 export function AppStateProvider({ children }) {
+  const activeUserId = useRef(null);
   const [session, setSession] = useState(null);
   const [savedIds, setSavedIds] = useState([]);
   const [profile, setProfile] = useState({
@@ -41,6 +51,7 @@ export function AppStateProvider({ children }) {
     avatarUri: null,
     memberSince: null,
   });
+  const [locationCoordinates, setLocationCoordinates] = useState(null);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState([]);
   const [quoteRequests, setQuoteRequests] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -48,9 +59,11 @@ export function AppStateProvider({ children }) {
   const [authReady, setAuthReady] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [access, setAccess] = useState({ isAdmin: false, ownedProviders: [] });
-  const { preferences, setPreferences: updatePreferences } = useCommunicationPreferences(
-    session?.user?.id,
-  );
+  const {
+    preferences,
+    setPreferences: updatePreferences,
+    clearPreferences,
+  } = useCommunicationPreferences(session?.user?.id);
   const { syncStatus, retryPendingOperations } = useOfflineSync();
   const {
     categories,
@@ -84,6 +97,7 @@ export function AppStateProvider({ children }) {
         return;
       }
       setSession(nextSession);
+      activeUserId.current = nextSession.user.id;
       setSignedIn(true);
       setHasCompletedOnboarding(true);
       setAuthReady(true);
@@ -95,27 +109,18 @@ export function AppStateProvider({ children }) {
       );
       const localAvatar = await AsyncStorage.getItem('chodhiq-profile-avatar').catch(() => null);
       const account = await loadAccount(nextSession.user.id);
+      if (!active || activeUserId.current !== nextSession.user.id) return;
       const profileRow = account.profile;
       if (profileRow) {
-        const nextProfile = {
-          name:
-            profileRow.full_name || nextSession.user.user_metadata?.full_name || 'ChodhiQ member',
-          email: nextSession.user.email || '',
-          phone: profileRow.phone || '',
-          location: profileRow.city || 'Birmingham',
-          avatarUri: localAvatar || profileRow.avatar_url || null,
-          memberSince: new Date(profileRow.created_at || nextSession.user.created_at)
-            .getFullYear()
-            .toString(),
-        };
-        setProfile(nextProfile);
+        setProfile(mapProfile(profileRow, nextSession.user, localAvatar));
       }
       setSavedIds(account.saved.map((item) => item.provider_id));
       setQuoteRequests(account.quotes.map((row) => formatQuote(row, marketplace.providers)));
       setBookings(account.bookings || []);
       if (marketplace.offline) setReviews(account.reviews || []);
       replaceNotifications(account.notifications);
-      setAccess(await getAccessContext(nextSession.user));
+      const nextAccess = await getAccessContext(nextSession.user);
+      if (active && activeUserId.current === nextSession.user.id) setAccess(nextAccess);
     })()
       .catch((error) => console.warn('App startup will retry available data later.', error.message))
       .finally(() => {
@@ -125,6 +130,17 @@ export function AppStateProvider({ children }) {
       active = false;
     };
   }, [refreshMarketplace]);
+
+  useEffect(() => {
+    AsyncStorage.getItem(LOCATION_COORDINATES_KEY)
+      .then((value) => {
+        if (!value) return;
+        const coordinates = JSON.parse(value);
+        if (Number.isFinite(coordinates.latitude) && Number.isFinite(coordinates.longitude))
+          setLocationCoordinates(coordinates);
+      })
+      .catch(() => {});
+  }, []);
 
   const toggleSaved = useCallback(
     async (providerId) => {
@@ -171,6 +187,29 @@ export function AppStateProvider({ children }) {
     },
     [refreshMarketplace, session],
   );
+  const editReview = useCallback(
+    async (reviewId, input) => {
+      if (!session) throw new Error('Please sign in to edit a review.');
+      const persisted = supabase
+        ? await updateReview(session.user.id, reviewId, input)
+        : { ...input, id: reviewId };
+      setReviews((current) =>
+        current.map((item) => (item.id === reviewId ? { ...item, ...persisted } : item)),
+      );
+      await refreshMarketplace();
+      return persisted;
+    },
+    [refreshMarketplace, session],
+  );
+  const removeReview = useCallback(
+    async (reviewId) => {
+      if (!session) throw new Error('Please sign in to delete a review.');
+      if (supabase) await deleteReview(session.user.id, reviewId);
+      setReviews((current) => current.filter((item) => item.id !== reviewId));
+      await refreshMarketplace();
+    },
+    [refreshMarketplace, session],
+  );
   const addBooking = useCallback(
     async (booking) => {
       if (!session) throw new Error('Please sign in before requesting a booking.');
@@ -211,6 +250,7 @@ export function AppStateProvider({ children }) {
             : await signInWithOAuth(method);
       if (nextSession) {
         setSession(nextSession);
+        activeUserId.current = nextSession.user.id;
         setSignedIn(true);
         setHasCompletedOnboarding(true);
         AsyncStorage.setItem('chodhiq-onboarding-complete', 'true').catch(() => {});
@@ -218,15 +258,28 @@ export function AppStateProvider({ children }) {
         // Load these after the session is accepted so a slow database response
         // cannot leave the sign-in button showing "Please wait" indefinitely.
         getAccessContext(nextSession.user)
-          .then(setAccess)
+          .then((nextAccess) => {
+            if (activeUserId.current === nextSession.user.id) setAccess(nextAccess);
+          })
           .catch((error) => console.warn('Account access will refresh later.', error.message));
-        refreshNotifications(nextSession.user.id).catch((error) =>
-          console.warn('Notifications will refresh later.', error.message),
-        );
+        loadAccount(nextSession.user.id)
+          .then(async (account) => {
+            const localAvatar = await AsyncStorage.getItem('chodhiq-profile-avatar').catch(
+              () => null,
+            );
+            if (activeUserId.current !== nextSession.user.id) return;
+            setProfile(mapProfile(account.profile || {}, nextSession.user, localAvatar));
+            setSavedIds(account.saved.map((item) => item.provider_id));
+            setQuoteRequests(account.quotes.map((row) => formatQuote(row, providers)));
+            setBookings(account.bookings || []);
+            replaceNotifications(account.notifications || []);
+            if (account.reviews?.length) setReviews(account.reviews);
+          })
+          .catch((error) => console.warn('Account details will refresh later.', error.message));
       }
       return nextSession;
     },
-    [refreshNotifications],
+    [providers, replaceNotifications, setReviews],
   );
 
   const saveProfile = useCallback(
@@ -243,11 +296,19 @@ export function AppStateProvider({ children }) {
 
   const selectLocation = useCallback(
     (city) => {
+      setLocationCoordinates(null);
+      AsyncStorage.removeItem(LOCATION_COORDINATES_KEY).catch(() => {});
       setProfile((current) => ({ ...current, location: city }));
       if (session) updateProfile(session.user.id, { ...profile, location: city }).catch(() => {});
     },
     [session, profile],
   );
+
+  const setCurrentLocation = useCallback((city, coordinates) => {
+    setLocationCoordinates(coordinates);
+    AsyncStorage.setItem(LOCATION_COORDINATES_KEY, JSON.stringify(coordinates)).catch(() => {});
+    setProfile((current) => ({ ...current, location: city }));
+  }, []);
 
   const recordProviderView = useCallback((providerId) => {
     setRecentlyViewedIds((current) =>
@@ -256,13 +317,31 @@ export function AppStateProvider({ children }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    if (session?.user?.id) await clearPushToken(session.user.id).catch(() => {});
-    if (supabase) await supabase.auth.signOut();
+    const userId = session?.user?.id;
+    activeUserId.current = null;
+    if (userId) await clearPushToken(userId).catch(() => {});
+    let cleanupError;
+    try {
+      if (userId) await clearLocalUserData(userId);
+      await AsyncStorage.multiRemove(['chodhiq-profile-avatar', LOCATION_COORDINATES_KEY]);
+      await clearPreferences();
+    } catch (error) {
+      cleanupError = error;
+    }
+    let signOutError;
+    if (supabase) {
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      signOutError = error;
+    }
     setSession(null);
     setSignedIn(false);
     setSavedIds([]);
     setQuoteRequests([]);
     setBookings([]);
+    setReviews([]);
+    setNotifications([]);
+    setLocationCoordinates(null);
+    setRecentlyViewedIds([]);
     setAccess({ isAdmin: false, ownedProviders: [] });
     setProfile({
       name: 'Guest',
@@ -272,19 +351,33 @@ export function AppStateProvider({ children }) {
       avatarUri: null,
       memberSince: null,
     });
-  }, [session]);
+    if (signOutError) throw signOutError;
+    if (cleanupError) throw cleanupError;
+  }, [session, setNotifications, setReviews, clearPreferences]);
 
   const deleteAccount = useCallback(async () => {
     if (!session) throw new Error('Please sign in to delete your account.');
+    activeUserId.current = null;
     await clearPushToken(session.user.id).catch(() => {});
     await deleteCurrentAccount();
-    await AsyncStorage.clear();
+    let cleanupError;
+    try {
+      await clearLocalUserData(session.user.id);
+      await AsyncStorage.multiRemove(['chodhiq-profile-avatar', LOCATION_COORDINATES_KEY]);
+      await clearPreferences();
+    } catch (error) {
+      cleanupError = error;
+    }
+    if (supabase) await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
     setSession(null);
     setSignedIn(false);
     setSavedIds([]);
     setQuoteRequests([]);
     setBookings([]);
+    setReviews([]);
     setNotifications([]);
+    setLocationCoordinates(null);
+    setRecentlyViewedIds([]);
     setAccess({ isAdmin: false, ownedProviders: [] });
     setProfile({
       name: 'Guest',
@@ -294,7 +387,8 @@ export function AppStateProvider({ children }) {
       avatarUri: null,
       memberSince: null,
     });
-  }, [session]);
+    if (cleanupError) throw cleanupError;
+  }, [session, setNotifications, setReviews, clearPreferences]);
 
   const reportProvider = useCallback(
     async (providerId, reason, details) => {
@@ -321,7 +415,9 @@ export function AppStateProvider({ children }) {
       profile,
       setProfile,
       location: profile.location || 'Birmingham',
+      locationCoordinates,
       selectLocation,
+      setCurrentLocation,
       recentlyViewedIds,
       recordProviderView,
       quoteRequests,
@@ -331,6 +427,8 @@ export function AppStateProvider({ children }) {
       cancelBooking,
       reviews,
       addReview,
+      editReview,
+      removeReview,
       notifications,
       markAllNotificationsRead,
       unreadCount,
@@ -339,6 +437,7 @@ export function AppStateProvider({ children }) {
       signedIn,
       authenticate,
       continueAsGuest: () => {
+        activeUserId.current = null;
         setSession(null);
         setSignedIn(false);
         setHasCompletedOnboarding(true);
@@ -364,7 +463,9 @@ export function AppStateProvider({ children }) {
       savedIds,
       toggleSaved,
       profile,
+      locationCoordinates,
       selectLocation,
+      setCurrentLocation,
       recentlyViewedIds,
       recordProviderView,
       quoteRequests,
@@ -374,6 +475,8 @@ export function AppStateProvider({ children }) {
       cancelBooking,
       reviews,
       addReview,
+      editReview,
+      removeReview,
       notifications,
       unreadCount,
       preferences,

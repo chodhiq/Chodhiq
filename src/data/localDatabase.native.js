@@ -34,11 +34,16 @@ async function openDatabase() {
     CREATE INDEX IF NOT EXISTS idx_quotes_user ON quote_requests(user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_posts_created ON community_posts(created_at DESC);
   `);
+  const communityColumns = await db.getAllAsync('PRAGMA table_info(community_posts)');
+  if (!communityColumns.some((column) => column.name === 'region_key'))
+    await db.execAsync('ALTER TABLE community_posts ADD COLUMN region_key TEXT');
+  if (!communityColumns.some((column) => column.name === 'location_city'))
+    await db.execAsync('ALTER TABLE community_posts ADD COLUMN location_city TEXT');
 
   const seeded = await db.getFirstAsync(
     "SELECT value FROM app_meta WHERE key = 'catalog_seed_version'",
   );
-  const seedVersion = DEMO_MODE ? '2-demo' : '2-production';
+  const seedVersion = DEMO_MODE ? '2-demo' : '3-production-clean';
   if (seeded?.value !== seedVersion) {
     await db.withTransactionAsync(async () => {
       await db.runAsync('DELETE FROM categories');
@@ -265,10 +270,12 @@ export async function createLocalPost(userId, input) {
     post_type: input.postType,
     body: input.body,
     image_url: null,
+    region_key: input.regionKey || null,
+    location_city: input.locationCity || null,
     created_at: new Date().toISOString(),
   };
   await db.runAsync(
-    'INSERT INTO community_posts (id, author_id, provider_id, post_type, body, image_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO community_posts (id, author_id, provider_id, post_type, body, image_url, created_at, region_key, location_city) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     row.id,
     row.author_id,
     row.provider_id,
@@ -276,6 +283,8 @@ export async function createLocalPost(userId, input) {
     row.body,
     row.image_url,
     row.created_at,
+    row.region_key,
+    row.location_city,
   );
   return row;
 }
@@ -292,7 +301,7 @@ export async function cacheCommunityPosts(posts) {
     await db.runAsync("DELETE FROM community_posts WHERE id NOT LIKE 'post-%'");
     for (const post of posts) {
       await db.runAsync(
-        'INSERT OR REPLACE INTO community_posts (id, author_id, provider_id, post_type, body, image_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT OR REPLACE INTO community_posts (id, author_id, provider_id, post_type, body, image_url, created_at, region_key, location_city) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         String(post.id),
         post.author_id || 'remote',
         post.provider_id ? String(post.provider_id) : null,
@@ -300,6 +309,8 @@ export async function cacheCommunityPosts(posts) {
         post.body,
         post.image_url || null,
         post.created_at,
+        post.region_key || null,
+        post.location_city || null,
       );
     }
   });
@@ -329,4 +340,20 @@ export async function removePendingOperation(id) {
 export async function updatePendingOperation(id, payload) {
   const db = await getLocalDatabase();
   await db.runAsync('UPDATE pending_operations SET payload = ? WHERE id = ?', json(payload), id);
+}
+
+export async function clearLocalUserData(userId) {
+  if (!userId) return;
+  const db = await getLocalDatabase();
+  const userPattern = `%${userId}%`;
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM profiles WHERE user_id = ?', userId);
+    await db.runAsync('DELETE FROM saved_items WHERE user_id = ?', userId);
+    await db.runAsync('DELETE FROM quote_requests WHERE user_id = ?', userId);
+    await db.runAsync('DELETE FROM reviews WHERE user_id = ?', userId);
+    await db.runAsync('DELETE FROM notifications WHERE user_id IN (?, ?)', userId, 'local');
+    await db.runAsync('DELETE FROM provider_reports WHERE user_id = ?', userId);
+    await db.runAsync('DELETE FROM community_posts WHERE author_id = ?', userId);
+    await db.runAsync('DELETE FROM pending_operations WHERE payload LIKE ?', userPattern);
+  });
 }

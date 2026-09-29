@@ -11,7 +11,7 @@ type AdminRow = {
   user_id?: string;
   title?: string;
   body?: string;
-  read_at?: string;
+  read_at?: string | null;
   created_at?: string;
   action?: string;
   entity_type?: string;

@@ -28,6 +28,11 @@ export function useCommunicationPreferences(userId) {
     });
   }, []);
 
+  const clearPreferences = useCallback(async () => {
+    setPreferencesState(defaults);
+    await AsyncStorage.removeItem(PREFERENCES_KEY);
+  }, []);
+
   useEffect(() => {
     if (!ready || !userId) return undefined;
     const sync = preferences.push ? registerPushToken : clearPushToken;
@@ -35,5 +40,5 @@ export function useCommunicationPreferences(userId) {
     return undefined;
   }, [preferences.push, ready, userId]);
 
-  return { preferences, setPreferences, preferencesReady: ready };
+  return { preferences, setPreferences, clearPreferences, preferencesReady: ready };
 }

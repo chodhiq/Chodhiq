@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
+import Text from './AppText';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useChodhiQTheme } from '../context/ThemeContext';
 

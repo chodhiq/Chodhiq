@@ -20,6 +20,20 @@ for (const file of sourceFiles) {
   lines.forEach((line, index) => {
     if (line.length > 300) failures.push(`${relative}:${index + 1} exceeds 300 characters`);
   });
+  const portableRelative = relative.split(path.sep).join('/');
+  if (!['src/components/AppText.js', 'src/components/AppTextInput.js'].includes(portableRelative)) {
+    const source = lines.join('\n');
+    if (/import\s+\{[^}]*\bText\s*(?:,|\})[^}]*\}\s*from\s+['"]react-native['"]/.test(source)) {
+      failures.push(`${relative} must use AppText instead of importing Text from react-native`);
+    }
+    if (
+      /import\s+\{[^}]*\bTextInput\s*(?:,|\})[^}]*\}\s*from\s+['"]react-native['"]/.test(source)
+    ) {
+      failures.push(
+        `${relative} must use AppTextInput instead of importing TextInput from react-native`,
+      );
+    }
+  }
 }
 
 for (const relative of [

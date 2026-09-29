@@ -28,6 +28,20 @@ Never use an `EXPO_PUBLIC_*` prefix for server secrets.
 - Restore a backup only after impact assessment because it can discard valid writes made after the backup.
 - Record the incident timeline, affected users, recovery action and follow-up owner.
 
+### Release rollback procedure
+
+1. Declare the incident and freeze migrations and releases. Record the deployed commit, mobile build IDs, dashboard deployment IDs, and latest applied migration.
+2. Web dashboards: redeploy the last-known-good artifact tied to a verified git tag, then run authentication and role-isolation smoke tests.
+3. Mobile: halt the store rollout. If the faulty build is already public, ship the pre-signed last-known-good or forward-fix build; store binaries cannot be remotely replaced.
+4. Edge Functions: redeploy the function versions associated with the last-known-good commit. Disable webhook destinations first if unsafe writes are occurring.
+5. Database: prefer a forward-compatible corrective migration. A backup restore requires incident-commander approval, a measured recovery point, and an accepted plan for writes after that point.
+6. Verify customer/provider/admin isolation, private storage access, booking/quote writes, notifications, and account deletion before resuming rollout.
+7. Attach logs, command output, timestamps, approvers, and validation results to the incident record.
+
+### Backup status
+
+On 2026-09-21, `supabase backups list --project-ref ljhncdzhzoatonhhofbv` reported no available backup entries and `pitr_enabled: false` for staging (region `ap-south-1`; WAL-G enabled). A recoverable backup and a successful non-production restore drill are therefore not confirmed.
+
 ## Alert priorities
 
 - P0: account crossover, leaked verification media, unauthorized ownership or payment privilege.

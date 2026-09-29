@@ -3,8 +3,18 @@
 
 import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import type { Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import {
+  businessNavigation as nav,
+  businessWeek as week,
+  type ClaimableProvider,
+  type Lead,
+  type Provider,
+  type Review,
+  type Section,
+  type Service,
+} from '../lib/business-dashboard-domain';
+import { useBusinessDashboard } from '../lib/use-business-dashboard';
 import {
   validateOptionalUrl,
   validateService,
@@ -19,92 +29,6 @@ import { BusinessApplication, CreateAccount } from './business-application';
 const paymentsEnabled = process.env.NEXT_PUBLIC_ENABLE_PAYMENTS?.trim().toLowerCase() === 'true';
 const freePromotionsEnabled =
   process.env.NEXT_PUBLIC_ENABLE_FREE_PROMOTIONS?.trim().toLowerCase() === 'true';
-
-type Section =
-  | 'overview'
-  | 'profile'
-  | 'services'
-  | 'hours'
-  | 'reviews'
-  | 'promotions'
-  | 'leads'
-  | 'analytics'
-  | 'plans';
-type Provider = {
-  id: string;
-  owner_id: string;
-  business_name: string;
-  description: string | null;
-  base_city: string | null;
-  base_postcode: string | null;
-  phone: string | null;
-  whatsapp: string | null;
-  website: string | null;
-  cover_image_url: string | null;
-  avg_rating: number;
-  review_count: number;
-  is_verified: boolean;
-  verification_status: string;
-};
-type Service = {
-  id: string;
-  name: string;
-  description: string | null;
-  starting_price: number | null;
-  is_featured: boolean;
-};
-type Review = {
-  id: string;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-  review_replies?: { id: string; body: string }[];
-};
-type Lead = {
-  id: string;
-  user_id: string;
-  message: string | null;
-  preferred_contact: string;
-  status: string;
-  response_message: string | null;
-  responded_at: string | null;
-  created_at: string;
-};
-type Notification = {
-  id: string;
-  title: string;
-  body: string;
-  read_at: string | null;
-  created_at: string;
-};
-type ClaimableProvider = {
-  id: string;
-  business_name: string;
-  base_city: string | null;
-  base_postcode: string | null;
-};
-const nav: { id: Section; label: string; icon: string }[] = [
-  { id: 'overview', label: 'Dashboard', icon: '⌂' },
-  { id: 'profile', label: 'Business profile', icon: '▣' },
-  { id: 'promotions', label: 'Posts & offers', icon: '◎' },
-  ...(paymentsEnabled ? ([{ id: 'plans', label: 'Subscription', icon: '◇' }] as const) : []),
-  { id: 'leads', label: 'Leads & messages', icon: '✉' },
-  { id: 'analytics', label: 'Insights', icon: '↗' },
-  { id: 'reviews', label: 'Reviews', icon: '★' },
-  { id: 'services', label: 'Services', icon: '✦' },
-  { id: 'hours', label: 'Opening hours', icon: '◷' },
-];
-const week = [
-  { label: 'Monday', dayOfWeek: 1 },
-  { label: 'Tuesday', dayOfWeek: 2 },
-  { label: 'Wednesday', dayOfWeek: 3 },
-  { label: 'Thursday', dayOfWeek: 4 },
-  { label: 'Friday', dayOfWeek: 5 },
-  { label: 'Saturday', dayOfWeek: 6 },
-  { label: 'Sunday', dayOfWeek: 0 },
-];
-const providerColumns =
-  'id,owner_id,business_name,description,base_city,base_postcode,phone,whatsapp,website,cover_image_url,avg_rating,review_count,is_verified,verification_status';
 
 function ProviderReviews({
   providerId,
@@ -329,100 +253,28 @@ function VerificationPanel({
 }
 
 export default function BusinessDashboard() {
-  const [session, setSession] = useState<Session | null>(null),
-    [authLoading, setAuthLoading] = useState(isSupabaseConfigured),
-    [recovering, setRecovering] = useState(
-      () => typeof window !== 'undefined' && window.location.hash.includes('type=recovery'),
-    ),
-    [loading, setLoading] = useState(false);
+  const {
+    session,
+    authLoading,
+    recovering,
+    setRecovering,
+    loading,
+    provider,
+    setProvider,
+    services,
+    reviews,
+    leads,
+    events,
+    plan,
+    notifications,
+    setNotifications,
+    toast,
+    notify,
+    loadDashboard,
+  } = useBusinessDashboard();
   const [section, setSection] = useState<Section>('overview'),
-    [provider, setProvider] = useState<Provider | null>(null),
-    [services, setServices] = useState<Service[]>([]),
-    [reviews, setReviews] = useState<Review[]>([]),
     [reviewsSeen, setReviewsSeen] = useState(false),
-    [leads, setLeads] = useState<Lead[]>([]),
-    [events, setEvents] = useState<{ event_type: string; created_at: string }[]>([]),
-    [plan, setPlan] = useState('free'),
-    [notifications, setNotifications] = useState<Notification[]>([]),
-    [notificationsOpen, setNotificationsOpen] = useState(false),
-    [toast, setToast] = useState('');
-  const notify = useCallback((m: string) => {
-    setToast(m);
-    setTimeout(() => setToast(''), 2600);
-  }, []);
-  const loadDashboard = useCallback(async () => {
-    if (!session) return;
-    setLoading(true);
-    const uid = session.user.id;
-    const { data: p, error } = await supabase
-      .from('providers')
-      .select(providerColumns)
-      .eq('owner_id', uid)
-      .limit(1)
-      .maybeSingle();
-    if (error) notify(error.message);
-    setProvider(p);
-    const n = await supabase
-      .from('notifications')
-      .select('id,title,body,read_at,created_at')
-      .eq('user_id', uid)
-      .order('created_at', { ascending: false })
-      .limit(30);
-    if (n.error) notify(n.error.message);
-    else setNotifications(n.data || []);
-    if (p) {
-      const [s, r, a, e, l] = await Promise.all([
-        supabase.from('services').select('*').eq('provider_id', p.id).order('created_at'),
-        supabase
-          .from('reviews')
-          .select('id,rating,comment,created_at,review_replies(id,body)')
-          .eq('provider_id', p.id)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('provider_analytics_events')
-          .select('event_type,created_at')
-          .eq('provider_id', p.id),
-        supabase
-          .from('provider_entitlements')
-          .select('plan_code')
-          .eq('provider_id', p.id)
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from('quote_requests')
-          .select(
-            'id,user_id,message,preferred_contact,status,response_message,responded_at,created_at',
-          )
-          .eq('provider_id', p.id)
-          .order('created_at', { ascending: false }),
-      ]);
-      setServices(s.data || []);
-      setReviews((r.data || []) as unknown as Review[]);
-      setEvents(a.data || []);
-      setPlan(e.data?.plan_code || 'free');
-      setLeads((l.data || []) as Lead[]);
-    }
-    setLoading(false);
-  }, [session, notify]);
-  useEffect(() => {
-    if (!isSupabaseConfigured) return;
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        setSession(data.session);
-        setAuthLoading(false);
-      })
-      .catch(() => setAuthLoading(false));
-    const { data } = supabase.auth.onAuthStateChange((event, s) => {
-      if (event === 'PASSWORD_RECOVERY') setRecovering(true);
-      setSession(s);
-      setAuthLoading(false);
-    });
-    return () => data.subscription.unsubscribe();
-  }, []);
-  useEffect(() => {
-    if (session) queueMicrotask(() => void loadDashboard());
-  }, [session, loadDashboard]);
+    [notificationsOpen, setNotificationsOpen] = useState(false);
   if (authLoading) return <Loading label="Securing your workspace…" />;
   if (!isSupabaseConfigured) return <Setup />;
   if (recovering) return <ResetPassword onComplete={() => setRecovering(false)} />;
@@ -489,7 +341,7 @@ export default function BusinessDashboard() {
           </span>
           <div>
             <strong>{brand.name}</strong>
-            <small>BUSINESS STUDIO</small>
+            <small>BUSINESS</small>
           </div>
         </div>
         <nav aria-label="Business sections">
@@ -581,7 +433,7 @@ export default function BusinessDashboard() {
             go={setSection}
           />
         )}{' '}
-        {section === 'profile' && (
+        {(section === 'profile' || section === 'team' || section === 'settings') && (
           <>
             <Profile
               provider={provider}
@@ -605,15 +457,19 @@ export default function BusinessDashboard() {
             notify={notify}
           />
         )}{' '}
-        {section === 'hours' && <Hours providerId={provider.id} notify={notify} />}{' '}
-        {section === 'reviews' && (
+        {(section === 'hours' || section === 'calendar') && (
+          <Hours providerId={provider.id} notify={notify} />
+        )}{' '}
+        {(section === 'reviews' || section === 'customers') && (
           <ProviderReviews providerId={provider.id} uid={session.user.id} notify={notify} />
         )}{' '}
         {section === 'promotions' && (
           <Promotions provider={provider} uid={session.user.id} plan={plan} notify={notify} />
         )}{' '}
-        {section === 'leads' && <Leads leads={leads} reload={loadDashboard} notify={notify} />}{' '}
-        {section === 'analytics' && <Analytics events={events} />}{' '}
+        {(section === 'leads' || section === 'bookings') && (
+          <Leads leads={leads} reload={loadDashboard} notify={notify} />
+        )}{' '}
+        {(section === 'analytics' || section === 'earnings') && <Analytics events={events} />}{' '}
         {section === 'plans' && <Plans providerId={provider.id} current={plan} notify={notify} />}
       </section>
       {toast && <div className="toast">✓ {toast}</div>}
@@ -624,20 +480,37 @@ export default function BusinessDashboard() {
 function Login() {
   const [creating, setCreating] = useState(false);
   const emailInput = useRef<HTMLInputElement>(null);
-  const [emailError, setEmailError] = useState("");
+  const [emailError, setEmailError] = useState('');
   function checkEmail() {
     const input = emailInput.current;
     if (!input) return false;
     const valid = input.validity.valid;
-    setEmailError(valid ? "" : input.validity.valueMissing ? "Enter your email address." : "Enter a valid email address, such as name@example.com.");
+    setEmailError(
+      valid
+        ? ''
+        : input.validity.valueMissing
+          ? 'Enter your email address.'
+          : 'Enter a valid email address, such as name@example.com.',
+    );
     return valid;
   }
   const [email, setEmail] = useState(''),
     [password, setPassword] = useState(''),
     [showPassword, setShowPassword] = useState(false),
+    [rememberEmail, setRememberEmail] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [notice, setNotice] = useState('');
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const remembered = window.localStorage.getItem('chodhiq-business-email');
+      if (remembered) {
+        setEmail(remembered);
+        setRememberEmail(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (busy || !checkEmail()) return;
@@ -650,6 +523,8 @@ function Login() {
       if (result.error) setError(signInErrorMessage(result.error));
       else if (!result.data.session)
         setError('Sign-in did not create a session. Please try again.');
+      else if (rememberEmail) window.localStorage.setItem('chodhiq-business-email', email.trim());
+      else window.localStorage.removeItem('chodhiq-business-email');
     } catch (signInError) {
       setError(signInErrorMessage(signInError));
     } finally {
@@ -676,36 +551,74 @@ function Login() {
       setBusy(false);
     }
   }
+  async function resendConfirmation() {
+    if (busy || !checkEmail()) return;
+    setError('');
+    setNotice('');
+    setBusy(true);
+    try {
+      const result = await withAuthTimeout(
+        supabase.auth.resend({
+          type: 'signup',
+          email: email.trim(),
+          options: { emailRedirectTo: window.location.origin },
+        }),
+      );
+      if (result.error)
+        setError('The confirmation email could not be sent. Please try again later.');
+      else
+        setNotice(
+          'If this account still needs confirmation, a new email has been sent. Use the latest link.',
+        );
+    } catch {
+      setError('Could not connect. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
   if (creating) return <CreateAccount onBack={() => setCreating(false)} />;
   return (
-    <main className="auth-page">
-      <section className="auth-brand">
-        <span className="brand-mark">
-          <Image src={brand.logoPath} alt={`${brand.name} logo`} width={54} height={54} />
-        </span>
-        <p>{brand.name.toUpperCase()} BUSINESS</p>
-        <h1>Your business, professionally managed.</h1>
-        <span>
-          Update your listing, publish offers, understand customers and grow across the UK South
-          Indian community.
-        </span>
+    <main className="auth-page business-login-page">
+      <section className="auth-brand business-login-brand">
+        <Image
+          className="business-login-art"
+          src="/business-login-side.png"
+          alt="ChodhiQ business dashboard: run your business with confidence"
+          fill
+          priority
+          sizes="(max-width: 820px) 100vw, 50vw"
+        />
       </section>
-      <section className="auth-card">
-        <small>SECURE OWNER ACCESS</small>
+      <section className="auth-card business-login-card">
+        <small>BUSINESS DASHBOARD</small>
         <h2>Welcome back</h2>
-        <p>Sign in with your approved provider account.</p>
+        <p>Sign in to manage your {brand.name} business.</p>
         <form onSubmit={submit}>
           <label>
             Email address
-            <input type="email" required autoComplete="username" ref={emailInput}
+            <input
+              type="email"
+              required
+              autoComplete="username"
+              ref={emailInput}
               maxLength={254}
               autoCapitalize="none"
               spellCheck={false}
               aria-invalid={Boolean(emailError)}
               aria-describedby="login-email-error"
-              onBlur={checkEmail} value={email} onChange={(e) => { setEmail(e.target.value); setError(""); setNotice(""); checkEmail(); }} />
+              placeholder="name@business.com"
+              onBlur={checkEmail}
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError('');
+                setNotice('');
+              }}
+            />
           </label>
-          <p id="login-email-error" className="form-error" aria-live="polite">{emailError}</p>
+          <p id="login-email-error" className="form-error" aria-live="polite">
+            {emailError}
+          </p>
           <label>
             Password
             <span className="password-field">
@@ -714,6 +627,7 @@ function Login() {
                 required
                 minLength={6}
                 autoComplete="current-password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -728,7 +642,29 @@ function Login() {
               </button>
             </span>
           </label>
-          {error && <p className="form-error" role="alert">{error}</p>}
+          <div className="login-options">
+            <label className="remember-option">
+              <input
+                type="checkbox"
+                checked={rememberEmail}
+                onChange={(event) => setRememberEmail(event.target.checked)}
+              />
+              <span>Remember my email</span>
+            </label>
+            <button
+              type="button"
+              className="inline-login-action"
+              disabled={busy}
+              onClick={forgotPassword}
+            >
+              Forgot password?
+            </button>
+          </div>
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
           {notice && (
             <p className="form-notice" role="status">
               {notice}
@@ -737,11 +673,27 @@ function Login() {
           <button className="primary" disabled={busy}>
             {busy ? 'Please wait…' : 'Sign in'}
           </button>
-          <button type="button" className="text-button" disabled={busy} onClick={forgotPassword}>
-            Forgot password?
+          <button
+            type="button"
+            className="text-button"
+            disabled={busy}
+            onClick={resendConfirmation}
+          >
+            Resend confirmation email
           </button>
-          <button type="button" className="text-button" disabled={busy} onClick={() => setCreating(true)}>Create account</button>
+          <button
+            type="button"
+            className="text-button"
+            disabled={busy}
+            onClick={() => setCreating(true)}
+          >
+            Create account
+          </button>
         </form>
+        <p className="login-security">Your data is encrypted and secure</p>
+        <p className="login-support">
+          Need help? <a href={`mailto:${brand.businessEmail}`}>Contact support</a>
+        </p>
       </section>
     </main>
   );
@@ -750,18 +702,68 @@ function ResetPassword({ onComplete }: { onComplete: () => void }) {
   const [password, setPassword] = useState(''),
     [confirmation, setConfirmation] = useState(''),
     [showPassword, setShowPassword] = useState(false),
+    [ready, setReady] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
+  useEffect(() => {
+    let active = true;
+    async function prepareRecoverySession() {
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+      if (accessToken && refreshToken) {
+        const established = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (!active) return;
+        if (established.error || !established.data.session) {
+          setError('This reset link is invalid or has expired. Request a new reset link.');
+          return;
+        }
+        window.history.replaceState({}, '', window.location.pathname);
+        setReady(true);
+        return;
+      }
+      const current = await supabase.auth.getSession();
+      if (!active) return;
+      if (current.error || !current.data.session) {
+        setError('This reset link is invalid or has expired. Request a new reset link.');
+        return;
+      }
+      setReady(true);
+    }
+    void prepareRecoverySession().catch(() => {
+      if (active) setError('The recovery session could not be verified. Request a new reset link.');
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError('');
+    if (!ready) return setError('Wait while the secure recovery session is verified.');
     if (password.length < 10) return setError('Use at least 10 characters.');
     if (password !== confirmation) return setError('The passwords do not match.');
     setBusy(true);
-    const result = await supabase.auth.updateUser({ password });
+    const session = await supabase.auth.getSession();
+    if (session.error || !session.data.session) {
+      setBusy(false);
+      return setError('This reset link is invalid or has expired. Request a new reset link.');
+    }
+    const result = await withAuthTimeout(supabase.auth.updateUser({ password }));
     setBusy(false);
-    if (result.error)
-      return setError('The password could not be updated. Request a new reset link.');
+    if (result.error) {
+      const code = String(result.error.code || '');
+      if (code.includes('same_password'))
+        return setError('Choose a password you have not used before.');
+      if (code.includes('weak_password'))
+        return setError('Choose a stronger password with at least 10 characters.');
+      if (code.includes('session') || code.includes('token'))
+        return setError('This reset link is invalid or has expired. Request a new reset link.');
+      return setError('The password could not be updated. Please try again.');
+    }
     window.history.replaceState({}, '', window.location.pathname);
     onComplete();
   }
@@ -810,7 +812,7 @@ function ResetPassword({ onComplete }: { onComplete: () => void }) {
               {error}
             </p>
           )}
-          <button className="primary" disabled={busy}>
+          <button className="primary" disabled={busy || !ready}>
             {busy ? 'Updating…' : 'Update password'}
           </button>
         </form>
@@ -1033,18 +1035,18 @@ function Overview({
       <div className="reference-welcome">
         <div>
           <span className="eyebrow">WELCOME BACK</span>
-          <h2>{provider.business_name} 👋</h2>
-          <p>Manage your business and grow with the South Indian community.</p>
+          <h2>Business Overview</h2>
+          <p>Here&apos;s what&apos;s happening at {provider.business_name} today.</p>
         </div>
-        <button className="primary" onClick={() => go('promotions')}>
-          ＋ Create new post
+        <button className="primary" onClick={() => go('services')}>
+          + Add service
         </button>
       </div>
       <div className="stat-grid">
-        <Stat label="Profile views" value={String(count('view'))} note="+18% this month" />
-        <Stat label="Post impressions" value={String(events.length)} note="+23% this month" />
-        <Stat label="Total leads" value={String(leads.length)} note="Customer enquiries" />
-        <Stat label="Saved by users" value={String(count('save'))} note="+15% this month" />
+        <Stat label="Customer enquiries" value={String(leads.length)} note="Live requests" />
+        <Stat label="Profile views" value={String(count('view'))} note="Marketplace activity" />
+        <Stat label="Customer actions" value={String(events.length)} note="All interactions" />
+        <Stat label="Saved by users" value={String(count('save'))} note="Customer interest" />
       </div>
       <div className="reference-grid">
         {paymentsEnabled && (
@@ -1531,7 +1533,7 @@ function Reviews({
           <div className="review-head">
             <span className="avatar">C</span>
             <div>
-              <b>Customer</b>
+              <b>Customer review</b>
               <strong>{'★'.repeat(r.rating)}</strong>
               <small>{new Date(r.created_at).toLocaleDateString('en-GB')}</small>
             </div>
@@ -1653,8 +1655,8 @@ function Promotions({
         </div>
         <span className="rating-chip">{plan.toUpperCase()}</span>
       </div>
-      <section className="panel form-card">
-        <label>
+      <section className="panel form-card offer-composer">
+        <label className="field offer-caption">
           <span>Offer caption</span>
           <textarea
             maxLength={2000}
@@ -1663,7 +1665,7 @@ function Promotions({
             placeholder="Tell customers what is special, when it ends, and how to claim it."
           />
         </label>
-        <label className="upload">
+        <label className="upload offer-upload">
           ＋ Choose poster/image
           <input
             type="file"
@@ -1672,7 +1674,7 @@ function Promotions({
           />
         </label>
         {image && <p>{image.name}</p>}
-        <button className="primary" disabled={busy} onClick={publish}>
+        <button className="primary offer-submit" disabled={busy} onClick={publish}>
           {busy ? 'Publishing…' : 'Publish offer'}
         </button>
       </section>
@@ -1682,8 +1684,8 @@ function Promotions({
           Request a clearly labelled campaign. Nothing is published until ChodhiQ approves the
           creative, targeting, schedule and invoice.
         </p>
-        <form onSubmit={enquireAboutCampaign}>
-          <label>
+        <form className="campaign-form" onSubmit={enquireAboutCampaign}>
+          <label className="field">
             <span>Contact email</span>
             <input
               type="email"
@@ -1692,7 +1694,7 @@ function Promotions({
               onChange={(e) => setCampaignEmail(e.target.value)}
             />
           </label>
-          <label>
+          <label className="field">
             <span>Campaign objective</span>
             <textarea
               required
@@ -1702,7 +1704,7 @@ function Promotions({
               onChange={(e) => setCampaignObjective(e.target.value)}
             />
           </label>
-          <label>
+          <label className="field">
             <span>Indicative budget (£)</span>
             <input
               type="number"
@@ -1713,8 +1715,8 @@ function Promotions({
               onChange={(e) => setCampaignBudget(e.target.value)}
             />
           </label>
-          <div className="add-service">
-            <label>
+          <div className="campaign-dates">
+            <label className="field">
               <span>Preferred start</span>
               <input
                 type="date"
@@ -1722,7 +1724,7 @@ function Promotions({
                 onChange={(e) => setCampaignStart(e.target.value)}
               />
             </label>
-            <label>
+            <label className="field">
               <span>Preferred end</span>
               <input
                 type="date"

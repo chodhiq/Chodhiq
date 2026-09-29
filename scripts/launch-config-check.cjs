@@ -55,6 +55,33 @@ for (const target of targets) {
 }
 
 const appEnv = readEnv('.env.local');
+const appDefaultEnv = readEnv('.env');
+const businessEnv = readEnv('business-dashboard/.env.local');
+const adminEnv = readEnv('admin-dashboard/.env.local');
+const productionUrl = 'https://gfjhvsajwjrrlylgrkhf.supabase.co';
+for (const [name, values, key] of [
+  ['customer app .env', appDefaultEnv, 'EXPO_PUBLIC_SUPABASE_URL'],
+  ['customer app .env.local', appEnv, 'EXPO_PUBLIC_SUPABASE_URL'],
+  ['business dashboard', businessEnv, 'NEXT_PUBLIC_SUPABASE_URL'],
+  ['admin dashboard', adminEnv, 'NEXT_PUBLIC_SUPABASE_URL'],
+]) {
+  if (values[key] !== productionUrl) failures.push(`${name}: must target ChodhiQ Production`);
+}
+const productionKey = businessEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+if (
+  !productionKey ||
+  appDefaultEnv.EXPO_PUBLIC_SUPABASE_ANON_KEY !== productionKey ||
+  appEnv.EXPO_PUBLIC_SUPABASE_ANON_KEY !== productionKey ||
+  adminEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY !== productionKey
+) {
+  failures.push('public Supabase keys must match across all three production apps');
+}
+if (businessEnv.SITE_URL !== 'https://chodhiq-business-dashboard.chodhiq.workers.dev') {
+  failures.push('business dashboard: SITE_URL must target the hosted Production dashboard');
+}
+if (adminEnv.SITE_URL !== 'https://chodhiq-admin-dashboard.chodhiq.workers.dev') {
+  failures.push('admin dashboard: SITE_URL must target the hosted Production dashboard');
+}
 if (String(appEnv.EXPO_PUBLIC_DEMO_MODE).toLowerCase() === 'true') {
   failures.push('customer app: EXPO_PUBLIC_DEMO_MODE must not be true');
 }

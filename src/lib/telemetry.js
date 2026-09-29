@@ -3,8 +3,8 @@ import { supabase } from './supabase';
 
 const redact = (value) =>
   String(value || 'Unknown error')
-    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]')
-    .replace(/(?:\+?\d[\d\s().-]{7,}\d)/g, '[phone]')
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2}/gi, '[email]')
+    .replace(/(?:\+?\d[\d\s().-]{7}\d)/g, '[phone]')
     .slice(0, 1000);
 
 export async function recordError(error, context = {}) {

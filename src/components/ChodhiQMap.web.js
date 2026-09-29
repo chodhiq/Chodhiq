@@ -1,30 +1,22 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import Text from './AppText';
 import { MapPin } from 'lucide-react-native';
 
 export default function ChodhiQMap({ providers, selected, onSelect, palette }) {
+  const mappable = providers.filter(
+    (provider) => Number.isFinite(provider.baseLatitude) && Number.isFinite(provider.baseLongitude),
+  );
   return (
     <View style={[styles.map, { backgroundColor: palette.surfaceAlt }]}>
-      <Text style={[styles.label, { color: palette.text2 }]}>UNITED KINGDOM</Text>
-      {providers.map((provider, index) => (
-        <TouchableOpacity
-          key={provider.id}
-          accessibilityRole="button"
-          accessibilityLabel={`Select ${provider.name} on map`}
-          onPress={() => onSelect(provider)}
-          style={[
-            styles.marker,
-            {
-              left: `${16 + ((index * 13) % 68)}%`,
-              top: `${16 + ((index * 17) % 56)}%`,
-              backgroundColor: selected?.id === provider.id ? palette.primary : palette.surface,
-              borderColor: palette.border,
-            },
-          ]}
-        >
-          <MapPin size={16} color={selected?.id === provider.id ? '#FFFFFF' : palette.primary} />
-        </TouchableOpacity>
-      ))}
+      <Text style={[styles.label, { color: palette.text2 }]}>
+        Interactive map requires the native map provider
+      </Text>
+      <Text style={{ color: palette.text2, textAlign: 'center', marginTop: 36 }}>
+        {mappable.length
+          ? 'Open the native map view to explore these locations.'
+          : 'No businesses with location data in this area yet.'}
+      </Text>
     </View>
   );
 }

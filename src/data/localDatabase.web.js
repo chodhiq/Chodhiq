@@ -3,6 +3,7 @@ import { categories, providers } from './mockData';
 import { DEMO_MODE } from '../config/runtime';
 
 const key = (name, userId = 'local') => `chodhiq-local:${name}:${userId}`;
+const CATALOG_CACHE_REVISION = DEMO_MODE ? '2-demo' : '3-production-clean';
 const read = async (name, userId, fallback = []) => {
   try {
     const value = await AsyncStorage.getItem(key(name, userId));
@@ -18,6 +19,14 @@ export async function getLocalDatabase() {
   return null;
 }
 export async function loadLocalMarketplace() {
+  const cachedRevision = await read('catalog-cache-revision', 'shared', '');
+  if (cachedRevision !== CATALOG_CACHE_REVISION) {
+    await Promise.all([
+      write('catalog-categories', 'shared', []),
+      write('catalog-providers', 'shared', []),
+      write('catalog-cache-revision', 'shared', CATALOG_CACHE_REVISION),
+    ]);
+  }
   const [cachedCategories, cachedProviders] = await Promise.all([
     read('catalog-categories', 'shared', DEMO_MODE ? categories : []),
     read('catalog-providers', 'shared', DEMO_MODE ? providers : []),
@@ -28,6 +37,7 @@ export async function cacheMarketplace(nextCategories, nextProviders) {
   await Promise.all([
     write('catalog-categories', 'shared', nextCategories),
     write('catalog-providers', 'shared', nextProviders),
+    write('catalog-cache-revision', 'shared', CATALOG_CACHE_REVISION),
   ]);
 }
 
@@ -141,6 +151,8 @@ export async function createLocalPost(userId, input) {
     post_type: input.postType,
     body: input.body,
     image_url: null,
+    region_key: input.regionKey || null,
+    location_city: input.locationCity || null,
     created_at: new Date().toISOString(),
   };
   await write('community', 'shared', [row, ...(await read('community', 'shared'))]);
@@ -178,4 +190,29 @@ export async function updatePendingOperation(id, payload) {
     'shared',
     (await read('pending', 'shared')).map((item) => (item.id === id ? { ...item, payload } : item)),
   );
+}
+
+export async function clearLocalUserData(userId) {
+  if (!userId) return;
+  await Promise.all(
+    ['profile', 'saved', 'quotes', 'notifications', 'reviews', 'reports'].map((name) =>
+      AsyncStorage.removeItem(key(name, userId)),
+    ),
+  );
+  const [community, pending] = await Promise.all([
+    read('community', 'shared'),
+    read('pending', 'shared'),
+  ]);
+  await Promise.all([
+    write(
+      'community',
+      'shared',
+      community.filter((post) => post.author_id !== userId),
+    ),
+    write(
+      'pending',
+      'shared',
+      pending.filter((item) => !JSON.stringify(item.payload ?? {}).includes(userId)),
+    ),
+  ]);
 }

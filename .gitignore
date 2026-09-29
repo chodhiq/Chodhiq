@@ -19,3 +19,10 @@ tsconfig.tsbuildinfo
 load-test-summary.json
 tmp/
 .git-history-backups/
+
+output/
+release-artifacts/
+audit-packages/
+*.zip
+*.apk
+__pycache__/

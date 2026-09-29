@@ -1,43 +1,29 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {
-  isReadyForSync,
-  nextFailureState,
-  normalizePendingOperation,
-  operationSignature,
-  stableStringify,
-} from '../../src/data/syncPolicy.js';
+import { isReadyForSync, prepareQueuedPayload, remotePayload } from '../../src/data/syncPolicy.js';
 
-test('stableStringify and operation signatures ignore object key order', () => {
-  assert.equal(stableStringify({ b: 2, a: 1 }), stableStringify({ a: 1, b: 2 }));
-  assert.equal(
-    operationSignature('quote', { b: 2, a: 1 }),
-    operationSignature('quote', { a: 1, b: 2 }),
+test('queued operations keep remote data separate from local sync metadata', () => {
+  const payload = prepareQueuedPayload(
+    { remote: { message: 'hello' }, localId: 'local-one' },
+    1,
+    { status: 503, message: 'offline' },
+    Date.parse('2026-08-19T00:00:00Z'),
   );
+  assert.deepEqual(remotePayload(payload), { message: 'hello' });
+  assert.equal(payload._sync.attempts, 1);
+  assert.equal(payload._sync.status, 'pending');
 });
 
-test('legacy pending operations are normalized without losing payload data', () => {
-  const item = normalizePendingOperation({
-    id: 'one',
-    operation: 'quote',
-    payload: { message: 'hello' },
-  });
-  assert.deepEqual(item.data, { message: 'hello' });
-  assert.equal(item.sync.attempts, 0);
-  assert.equal(item.sync.deadLetter, false);
-});
-
-test('failed operations use exponential backoff and eventually dead-letter', () => {
-  let operation = normalizePendingOperation({ payload: { message: 'hello' } });
+test('failed operations use exponential backoff and eventually stop retrying', () => {
   const now = Date.parse('2026-08-19T00:00:00Z');
-  operation = { ...operation, sync: nextFailureState(operation, 'offline', now) };
-  assert.equal(operation.sync.attempts, 1);
-  assert.equal(operation.sync.nextAttemptAt, '2026-08-19T00:00:05.000Z');
+  let payload = prepareQueuedPayload({ message: 'hello' }, 1, { status: 503 }, now);
+  let operation = { payload };
+  assert.equal(payload._sync.nextAttemptAt, '2026-08-19T00:00:01.000Z');
   assert.equal(isReadyForSync(operation, now), false);
-  for (let index = 1; index < 5; index += 1)
-    operation = { ...operation, sync: nextFailureState(operation, 'offline', now) };
-  assert.equal(operation.sync.deadLetter, true);
-  assert.equal(operation.sync.attempts, 5);
+  payload = prepareQueuedPayload(payload, 5, { status: 503 }, now);
+  operation = { payload };
+  assert.equal(payload._sync.status, 'failed');
+  assert.equal(payload._sync.attempts, 5);
   assert.equal(isReadyForSync(operation, now + 999999), false);
 });

@@ -17,7 +17,7 @@ test('every literal navigation destination is registered as a stack or tab scree
     ...screenSource.matchAll(/navigation\.(?:navigate|replace)\(['"]([^'"]+)['"]/g),
   ].map((match) => match[1]);
   const registered = new Set(
-    [...navigator.matchAll(/<(?:Stack|Tab)\.Screen name="([^"]+)"/g)].map((match) => match[1]),
+    [...navigator.matchAll(/<(?:Stack|Tab)\.Screen\s+name="([^"]+)"/g)].map((match) => match[1]),
   );
   assert.deepEqual([...new Set(destinations.filter((name) => !registered.has(name)))], []);
 });
@@ -27,7 +27,7 @@ test('every account menu destination is registered', () => {
     (match) => match[1],
   );
   const registered = new Set(
-    [...navigator.matchAll(/<(?:Stack|Tab)\.Screen name="([^"]+)"/g)].map((match) => match[1]),
+    [...navigator.matchAll(/<(?:Stack|Tab)\.Screen\s+name="([^"]+)"/g)].map((match) => match[1]),
   );
   assert.deepEqual([...new Set(menuRoutes.filter((name) => !registered.has(name)))], []);
 });

@@ -126,6 +126,21 @@ export async function updatePassword(password) {
 
 export async function signInWithOAuth(provider) {
   if (!supabase) throw new Error('Supabase is not configured.');
+  if (provider === 'google' && Platform.OS === 'android') {
+    try {
+      // Load the native module only after the user chooses Google sign-in. A
+      // missing or misconfigured native module must never prevent app startup.
+      const { getNativeGoogleIdToken } = await import('./googleSignIn');
+      const token = await getNativeGoogleIdToken();
+      const { data, error } = await withAuthTimeout(
+        supabase.auth.signInWithIdToken({ provider: 'google', token }),
+      );
+      if (error) throw error;
+      return data.session;
+    } catch (nativeError) {
+      console.warn('Native Google sign-in unavailable; using browser OAuth.', nativeError);
+    }
+  }
   // Keep the native redirect identical to the URL registered in Supabase. Expo can
   // otherwise produce a triple-slash URI that Android opens but Supabase rejects.
   const redirectTo =

@@ -133,7 +133,7 @@ export function CommunityPage() {
           <button className="text" onClick={() => void load()} disabled={loading}>
             Refresh now
           </button>
-          <b>{total} posts</b>
+          <b>{`${total} posts`}</b>
         </div>
         <label className="field moderation-reason" htmlFor="community-moderation-reason">
           <span>Moderation reason</span>
@@ -277,7 +277,7 @@ export function ActivityPage() {
         title="Marketplace activity"
         note="Read-only quote request and booking demand visibility."
       >
-        <div className="columns">
+        <div className="columns activity-grid">
           <section className="panel table">
             <h3>Quote requests ({counts[0]})</h3>
             {table(quotes)}

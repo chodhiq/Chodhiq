@@ -36,10 +36,10 @@ export default function CampaignsPage() {
   }
 
   return <AdminShell title="Advertising campaigns"><Page title="Campaign operations" note="Qualify enquiries, approve creatives and schedules, pause delivery, and inspect measured performance.">
-    {loading ? <Skeleton rows={8} /> : <>
+    {loading ? <Skeleton rows={8} /> : <div className="campaign-operations-grid">
       <section className="panel table"><h3>Campaign enquiries</h3>{enquiries.length ? <table><thead><tr><th>Provider</th><th>Objective</th><th>Dates</th><th>Budget</th><th>Status</th></tr></thead><tbody>{enquiries.map(row => <tr key={row.id}><td>{row.providers?.business_name}<small>{row.contact_email}</small></td><td>{row.objective}</td><td>{row.requested_start || "Flexible"} – {row.requested_end || "Flexible"}</td><td>{row.budget_pence ? `£${(row.budget_pence / 100).toFixed(2)}` : "—"}</td><td><Status value={row.status} /></td></tr>)}</tbody></table> : <EmptyState title="No campaign enquiries" />}</section>
       <section className="panel table"><h3>Scheduled inventory</h3>{campaigns.length ? <table><thead><tr><th>Campaign</th><th>Provider</th><th>Window</th><th>Status</th><th>Controls</th></tr></thead><tbody>{campaigns.map(row => <tr key={row.id}><td>{row.headline}</td><td>{row.providers?.business_name}</td><td>{new Date(row.starts_at).toLocaleDateString("en-GB")} – {new Date(row.ends_at).toLocaleDateString("en-GB")}</td><td><Status value={row.status} /></td><td>{row.status === "in_review" && <button onClick={() => transition(row, "approved")}>Approve</button>}{["approved","scheduled","active"].includes(row.status) && <button className="danger" onClick={() => transition(row, "paused")}>Pause</button>}</td></tr>)}</tbody></table> : <EmptyState title="No campaign inventory" detail="Approved campaigns will appear here." />}</section>
       <section className="panel table"><h3>Performance reporting</h3>{performance.length ? <table><thead><tr><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>CTR</th></tr></thead><tbody>{performance.map(row => <tr key={row.id}><td>{row.name}</td><td>{row.impressions}</td><td>{row.clicks}</td><td>{row.click_through_rate}%</td></tr>)}</tbody></table> : <EmptyState title="No delivery data" />}</section>
-    </>}
+    </div>}
   </Page></AdminShell>;
 }

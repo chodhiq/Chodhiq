@@ -26,10 +26,24 @@ export function CreateAccount({ onBack }: { onBack: () => void }) {
     } catch { setError('Could not connect. Please try again.'); }
     finally { setBusy(false); }
   }
+  async function resendConfirmation() {
+    if (busy || !email.trim()) return;
+    setBusy(true); setError('');
+    try {
+      const result = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim(),
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (result.error) setError('The confirmation email could not be sent. Please try again later.');
+      else setNotice('If this account still needs confirmation, a new email has been sent. Use the latest link.');
+    } catch { setError('Could not connect. Please try again.'); }
+    finally { setBusy(false); }
+  }
   return <main className="auth-page"><section className="auth-card onboarding-card">
     <small>BUSINESS ACCOUNT</small><h2>Create your account</h2>
     <p>Confirm your email, submit your UK business details and proof, then wait for administrator approval.</p>
-    {notice ? <p role="status">{notice}</p> : <form onSubmit={submit}>
+    {notice ? <><p role="status">{notice}</p>{error && <p className="form-error" role="alert">{error}</p>}<button className="text-button" disabled={busy} onClick={resendConfirmation}>{busy ? 'Sending…' : 'Resend confirmation email'}</button></> : <form onSubmit={submit}>
       <label htmlFor="signup-email">Email address<input id="signup-email" type="email" required maxLength={254} autoComplete="username" autoCapitalize="none" spellCheck={false} value={email} aria-invalid={!!emailError} aria-describedby="signup-email-error" onChange={event => { setEmail(event.target.value); setEmailError(event.target.validity.valid ? '' : 'Enter a valid email address.'); }} /></label>
       <p id="signup-email-error" className="form-error" aria-live="polite">{emailError}</p>
       <label htmlFor="signup-password">Password<input id="signup-password" type="password" required minLength={10} maxLength={128} autoComplete="new-password" value={password} aria-describedby="signup-password-help" onChange={event => setPassword(event.target.value)} /></label>

@@ -83,6 +83,11 @@ export function categoryFallback(category, categoryId) {
     categoryAssets.professional
   );
 }
+export function categoryArtwork(category, categoryId) {
+  return (
+    categoryAssets[categoryId] || categoryNameAssets[String(category || '').toLowerCase()] || null
+  );
+}
 export function isPlaceholderImage(image) {
   return typeof image === 'string' && /picsum\.photos|placeholder\.com|placehold\.co/i.test(image);
 }

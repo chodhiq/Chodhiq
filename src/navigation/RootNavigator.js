@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Animated, View, useWindowDimensions } from 'react-native';
+import Text from '../components/AppText';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -41,33 +42,34 @@ const Stack = createNativeStackNavigator();
 function MainTabs() {
   const { palette } = useChodhiQTheme();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const compactTabs = width < 380;
-  const bottomSpace = Math.max(insets.bottom, 18);
+  const bottomSpace = Math.max(insets.bottom, 10);
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: !compactTabs,
+        tabBarShowLabel: true,
         tabBarActiveTintColor: palette.primary,
         tabBarInactiveTintColor: palette.muted,
         tabBarStyle: {
           backgroundColor: palette.nav,
           borderTopWidth: 1,
           borderTopColor: palette.border,
-          paddingTop: 8,
+          paddingTop: 6,
           paddingBottom: bottomSpace,
-          height: 60 + bottomSpace,
+          height: 56 + bottomSpace,
           ...shadows.soft,
         },
-        tabBarItemStyle: { height: 50, maxWidth: 140 },
-        tabBarIconStyle: { marginTop: 1 },
+        tabBarItemStyle: { height: 50, flex: 1, minWidth: 0, paddingHorizontal: 0 },
+        tabBarIconStyle: { marginTop: 0 },
         tabBarLabelStyle: {
           fontSize: 9,
           lineHeight: 11,
           fontFamily: fonts.semibold,
-          marginBottom: 2,
-          letterSpacing: 0.2,
+          marginBottom: 1,
+          letterSpacing: -0.25,
+          textAlign: 'center',
+          includeFontPadding: false,
+          flexShrink: 1,
         },
       }}
       screenListeners={{
@@ -79,37 +81,78 @@ function MainTabs() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarIcon: (props) => <TabIcon Icon={Home} {...props} /> }}
+        options={{
+          tabBarLabel: (props) => <TabLabel title="Home" {...props} />,
+          tabBarIcon: (props) => <TabIcon Icon={Home} {...props} />,
+        }}
       />
       <Tab.Screen
         name="Explore"
         component={ExploreScreen}
-        options={{ title: 'Search', tabBarIcon: (props) => <TabIcon Icon={Search} {...props} /> }}
+        options={{
+          title: 'Search',
+          tabBarLabel: (props) => <TabLabel title="Search" {...props} />,
+          tabBarIcon: (props) => <TabIcon Icon={Search} {...props} />,
+        }}
       />
       <Tab.Screen
         name="MapTab"
         component={MapScreen}
-        options={{ title: 'Map', tabBarIcon: (props) => <TabIcon Icon={Map} {...props} /> }}
+        options={{
+          title: 'Map',
+          tabBarLabel: (props) => <TabLabel title="Map" {...props} />,
+          tabBarIcon: (props) => <TabIcon Icon={Map} {...props} />,
+        }}
       />
       <Tab.Screen
         name="CommunityTab"
         component={CommunityScreen}
         options={{
           title: 'Community',
+          tabBarLabel: (props) => <TabLabel title="Community" {...props} />,
           tabBarIcon: (props) => <TabIcon Icon={Users} {...props} />,
         }}
       />
       <Tab.Screen
         name="Saved"
         component={SavedScreen}
-        options={{ tabBarIcon: (props) => <TabIcon Icon={Heart} {...props} /> }}
+        options={{
+          tabBarLabel: (props) => <TabLabel title="Saved" {...props} />,
+          tabBarIcon: (props) => <TabIcon Icon={Heart} {...props} />,
+        }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ tabBarIcon: (props) => <TabIcon Icon={User} {...props} /> }}
+        options={{
+          tabBarLabel: (props) => <TabLabel title="Profile" {...props} />,
+          tabBarIcon: (props) => <TabIcon Icon={User} {...props} />,
+        }}
       />
     </Tab.Navigator>
+  );
+}
+
+function TabLabel({ title, color }) {
+  const { width } = useWindowDimensions();
+  return (
+    <Text
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={0.68}
+      style={{
+        color,
+        width: '100%',
+        textAlign: 'center',
+        fontSize: width < 390 ? 8 : 9,
+        lineHeight: 11,
+        fontFamily: fonts.semibold,
+        letterSpacing: -0.25,
+        includeFontPadding: false,
+      }}
+    >
+      {title}
+    </Text>
   );
 }
 
@@ -153,7 +196,23 @@ function TabIcon({ Icon, color, size, focused }) {
 export default function RootNavigator() {
   const { palette, isDark } = useChodhiQTheme();
   const { session, authReady, hasCompletedOnboarding } = useAppState();
-  if (!authReady) return <View style={{ flex: 1, backgroundColor: palette.background }} />;
+  if (!authReady)
+    return (
+      <View
+        accessibilityRole="progressbar"
+        accessibilityLabel="Loading ChodhiQ"
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+          backgroundColor: palette.background,
+        }}
+      >
+        <ActivityIndicator size="large" color={palette.primary} />
+        <Text style={{ color: palette.text2, fontSize: 14 }}>Getting things ready…</Text>
+      </View>
+    );
   const initialRouteName = session || hasCompletedOnboarding ? 'MainTabs' : 'Opening';
   return (
     <NavigationContainer

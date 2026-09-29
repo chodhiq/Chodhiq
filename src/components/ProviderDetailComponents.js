@@ -4,10 +4,10 @@ import {
   ImageBackground,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Text from './AppText';
 import {
   ArrowLeft,
   BadgeCheck,
@@ -82,6 +82,12 @@ export function ProviderIdentity({ provider, palette }) {
             {provider.name}
           </Text>
           {provider.isVerified && <BadgeCheck size={18} color="#4C8DFF" />}
+          {!provider.isVerified && provider.isDataVerified && (
+            <View style={s.dataCheckedBadge}>
+              <BadgeCheck size={14} color="#08724F" />
+              <Text style={s.dataCheckedText}>Data checked</Text>
+            </View>
+          )}
         </View>
         <Text style={[s.category, { color: palette.text2 }]}>{provider.category}</Text>
         <View style={s.metaRow}>
@@ -360,6 +366,18 @@ const s = StyleSheet.create({
   },
   logo: { width: 82, height: 82, borderRadius: 20 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dataCheckedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#E6FFF4',
+    borderColor: '#5EE0AD',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  dataCheckedText: { color: '#08724F', fontSize: 9, fontWeight: '800' },
   name: { fontSize: 23, lineHeight: 27, fontWeight: '800', flexShrink: 1 },
   category: { fontSize: 13, marginTop: 3 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },

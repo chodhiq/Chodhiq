@@ -63,3 +63,30 @@ test('business hours and quote replies use transactional owner-only functions', 
   assert.match(migration, /current_quote\.status <> expected_status/i);
   assert.match(migration, /revoke all on function/gi);
 });
+
+test('Leicester import contains only FSA exact-match public fields', async () => {
+  const migration = await read(
+    'supabase/migrations/20260924120000_import_fsa_confirmed_leicester_food_businesses.sql',
+  );
+  const sourceIds = [...migration.matchAll(/'leicester-fsa-(\d+)'/g)].map((match) => match[1]);
+  assert.equal(sourceIds.length, 28);
+  assert.equal(new Set(sourceIds).size, 28);
+  assert.doesNotMatch(migration, /Lala\?s/i);
+  assert.doesNotMatch(migration, /\b(phone|contact_email|website|whatsapp)\b/i);
+  assert.match(migration, /false,false,'unverified'/i);
+  assert.match(migration, /on conflict \(business_name,base_postcode\) do update/i);
+});
+
+test('public data verification stays separate from business verification', async () => {
+  const migration = await read(
+    'supabase/migrations/20260924130000_public_data_verification_badges.sql',
+  );
+  const repository = await read('src/data/providerRepository.js');
+  const cards = await read('src/components/ProviderCard.js');
+  assert.match(migration, /data_verification_status/i);
+  assert.match(migration, /source_checked/i);
+  assert.doesNotMatch(migration, /set\s+is_verified\s*=\s*true/i);
+  assert.match(repository, /isDataVerified:\s*row\.data_verification_status === 'source_checked'/i);
+  assert.match(cards, /Data checked/i);
+  assert.match(cards, /dataVerifiedGlow/i);
+});

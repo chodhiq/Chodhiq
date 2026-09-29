@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import Text from './AppText';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { colors, spacing, typography } from '../theme/theme';
 import { useChodhiQTheme } from '../context/ThemeContext';
@@ -7,7 +9,8 @@ import { useChodhiQTheme } from '../context/ThemeContext';
 export default function ScreenHeader({ navigation, title, subtitle, right, showBack = true }) {
   const { palette } = useChodhiQTheme();
   return (
-    <View
+    <SafeAreaView
+      edges={['top']}
       style={[styles.safe, { backgroundColor: palette.surface, borderBottomColor: palette.border }]}
     >
       <View style={styles.row}>
@@ -34,7 +37,7 @@ export default function ScreenHeader({ navigation, title, subtitle, right, showB
         </View>
         {right || <View style={styles.back} />}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -44,7 +47,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
+    paddingTop: 6,
     paddingBottom: spacing.md,
   },
   back: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },

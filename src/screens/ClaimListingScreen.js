@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import AppTextInput from '../components/AppTextInput';
 import {
   ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 import {
@@ -263,7 +264,7 @@ export default function ClaimListingScreen({ navigation }) {
               <>
                 <View style={[styles.search, card]}>
                   <Search size={18} color={palette.muted} />
-                  <TextInput
+                  <AppTextInput
                     style={[styles.grow, { color: palette.text }]}
                     value={query}
                     onChangeText={setQuery}
@@ -301,9 +302,9 @@ export default function ClaimListingScreen({ navigation }) {
                 ].map(([label, key]) => (
                   <View key={key}>
                     <Text style={[styles.label, { color: palette.text2 }]}>{label}</Text>
-                    <TextInput
+                    <AppTextInput
                       accessibilityLabel={label}
-                      style={[styles.input, card, { color: palette.text }]}
+                      style={[styles.input, styles.formInput, card, { color: palette.text }]}
                       value={form[key]}
                       onChangeText={(value) => setForm((current) => ({ ...current, [key]: value }))}
                     />
@@ -329,7 +330,7 @@ export default function ClaimListingScreen({ navigation }) {
                 </ScrollView>
                 <TouchableOpacity
                   disabled={busy}
-                  style={[styles.primary, { backgroundColor: palette.primary }]}
+                  style={[styles.primary, styles.formButton, { backgroundColor: palette.primary }]}
                   onPress={createNew}
                 >
                   <Text style={styles.primaryText}>{busy ? 'Creating…' : 'Create workspace'}</Text>
@@ -366,9 +367,9 @@ export default function ClaimListingScreen({ navigation }) {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            <TextInput
+            <AppTextInput
               multiline
-              style={[styles.input, styles.notes, card, { color: palette.text }]}
+              style={[styles.input, styles.formInput, styles.notes, card, { color: palette.text }]}
               value={notes}
               onChangeText={setNotes}
               placeholder="Optional note for the verification team"
@@ -376,7 +377,7 @@ export default function ClaimListingScreen({ navigation }) {
             />
             <TouchableOpacity
               disabled={busy}
-              style={[styles.upload, { borderColor: palette.primary }]}
+              style={[styles.upload, styles.formButton, { borderColor: palette.primary }]}
               onPress={pickDocument}
             >
               {document ? (
@@ -392,6 +393,7 @@ export default function ClaimListingScreen({ navigation }) {
               disabled={busy || !document}
               style={[
                 styles.primary,
+                styles.formButton,
                 { backgroundColor: palette.primary, opacity: busy || !document ? 0.45 : 1 },
               ]}
               onPress={submit}
@@ -478,7 +480,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.md,
   },
-  form: { flexDirection: 'column', alignItems: 'stretch' },
+  // Forms also use the shared card style, so explicitly override its row layout.
+  form: { flexDirection: 'column', alignItems: 'stretch', width: '100%' },
+  formInput: { width: '100%' },
+  formButton: { width: '100%', flex: 0 },
   title: { fontSize: 16, fontWeight: '800' },
   label: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', marginBottom: 5 },
   input: {

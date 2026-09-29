@@ -9,6 +9,16 @@ The local `.openai/hosting.json` files contain older Sites project references; t
 
 The authoritative source directories are `admin-dashboard` and `business-dashboard` in this workspace. Run `npm run verify` in the changed dashboard before publishing. The generated Worker configuration is `dist/server/wrangler.json`. Preserve hosted variables when updating an existing deployment (`wrangler deploy --config dist/server/wrangler.json --keep-vars`). Never copy credentials into this document.
 
+## Active production workflow — 2026-09-22
+
+Current live checks target ChodhiQ Production (`gfjhvsajwjrrlylgrkhf`) and the two Workers above. The customer app's local `.env` and `.env.local` now use the same Production public Supabase configuration as the dashboards. Run `npm run launch:config` before local release verification; it checks that all three products target the same Production project and that dashboard site URLs are the hosted origins. Keep the older staging reports and scripts as historical evidence; do not point their mutation-heavy test accounts or cleanup commands at Production.
+
+The old staging E2E, staging cleanup, and reset scripts now reject any project URL other than the named Staging project before contacting Supabase. They are retired from the active Production workflow.
+
+The customer `verify:release` command now clears Metro's cache. A cached export initially embedded the Staging host even after the local env switch; the clean 2026-09-22 export embeds the Production host and contains no Staging host. The full release verification passed.
+
+Production Auth URL Configuration uses the business Worker as Site URL and exact redirects for both Workers plus the customer app's `chodhiq://auth/callback` and `chodhiq://auth/reset` routes. The provider confirmation incident and verification evidence are in `PROVIDER_EMAIL_CONFIRMATION_2026-09-22.md`.
+
 ## Responsive layout verification — 2026-09-08
 
 Both dashboards passed their full verification commands (lint, type checks, production builds, and 35 tests total). Responsive styles load after feature and theme styles to prevent desktop overrides from breaking mobile layouts.

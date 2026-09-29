@@ -1,0 +1,39 @@
+.git/
+.github/
+.agents/
+.codex/
+.env
+.env*.local
+.expo/
+.git-history-backups/
+.npm-cache/
+node_modules/
+
+# Native and generated build outputs
+android/
+artifacts/
+output/
+outputs/
+release-artifacts/
+dist/
+dist-*/
+tmp/
+*.apk
+*.aab
+*.ipa
+*.log
+*.tgz
+*.tar.gz
+tsconfig.tsbuildinfo
+load-test-summary.json
+
+# Web apps and operational material are not part of the customer Expo bundle
+admin-dashboard/
+business-dashboard/
+coming-soon/
+project-docs/
+docs/
+
+# Local Supabase state
+supabase/.temp/
+supabase/.branches/

@@ -24,6 +24,7 @@ export async function loadLocalMarketplace() {
     await Promise.all([
       write('catalog-categories', 'shared', []),
       write('catalog-providers', 'shared', []),
+      write('catalog-cache-updated-at', 'shared', null),
       write('catalog-cache-revision', 'shared', CATALOG_CACHE_REVISION),
     ]);
   }
@@ -31,14 +32,18 @@ export async function loadLocalMarketplace() {
     read('catalog-categories', 'shared', DEMO_MODE ? categories : []),
     read('catalog-providers', 'shared', DEMO_MODE ? providers : []),
   ]);
-  return { categories: cachedCategories, providers: cachedProviders, offline: true };
+  const lastUpdatedAt = await read('catalog-cache-updated-at', 'shared', null);
+  return { categories: cachedCategories, providers: cachedProviders, lastUpdatedAt, offline: true };
 }
 export async function cacheMarketplace(nextCategories, nextProviders) {
+  const updatedAt = new Date().toISOString();
   await Promise.all([
     write('catalog-categories', 'shared', nextCategories),
     write('catalog-providers', 'shared', nextProviders),
     write('catalog-cache-revision', 'shared', CATALOG_CACHE_REVISION),
+    write('catalog-cache-updated-at', 'shared', updatedAt),
   ]);
+  return updatedAt;
 }
 
 export async function loadLocalAccount(userId) {
@@ -63,6 +68,9 @@ export async function saveLocalProfile(userId, profile) {
   await write('profile', userId, profile);
   return profile;
 }
+export async function deleteLocalProfile(userId) {
+  await AsyncStorage.removeItem(key('profile', userId));
+}
 export async function setLocalSaved(userId, providerId, saved) {
   const items = await read('saved', userId);
   const id = String(providerId);
@@ -71,6 +79,12 @@ export async function setLocalSaved(userId, providerId, saved) {
     userId,
     saved ? [...new Set([...items, id])] : items.filter((item) => item !== id),
   );
+}
+export async function hasImportedLocalSavedItems(userId) {
+  return (await read('saved-items-imported', userId, false)) === true;
+}
+export async function markLocalSavedItemsImported(userId) {
+  await write('saved-items-imported', userId, true);
 }
 export async function createLocalQuote(userId, input) {
   const row = {
@@ -93,12 +107,15 @@ export async function saveLocalReview(userId, review) {
   await write('reviews', userId, [row, ...(await read('reviews', userId))]);
   return row;
 }
-export async function markLocalNotificationsRead(userId) {
+export async function markLocalNotificationsRead(userId, notificationIds) {
+  const ids = new Set(notificationIds || []);
   const items = await read('notifications', userId);
   await write(
     'notifications',
     userId,
-    items.map((item) => ({ ...item, read_at: item.read_at || new Date().toISOString() })),
+    items.map((item) =>
+      ids.has(item.id) ? { ...item, read_at: item.read_at || new Date().toISOString() } : item,
+    ),
   );
 }
 export async function createLocalReport(userId, providerId, reason, details) {
@@ -165,6 +182,26 @@ export async function removeLocalPost(id) {
     (await read('community', 'shared')).filter((post) => String(post.id) !== String(id)),
   );
 }
+export async function updateLocalPost(id, body) {
+  const posts = await read('community', 'shared');
+  if (!posts.some((post) => String(post.id) === String(id))) return null;
+  await write(
+    'community',
+    'shared',
+    posts.map((post) => (String(post.id) === String(id) ? { ...post, body } : post)),
+  );
+  const operations = await read('pending', 'shared');
+  await write(
+    'pending',
+    'shared',
+    operations.map((item) =>
+      item.operation === 'community_post' && item.payload?.localId === id
+        ? { ...item, payload: { ...item.payload, remote: { ...item.payload.remote, body } } }
+        : item,
+    ),
+  );
+  return { id, body };
+}
 export async function enqueuePendingOperation(operation, payload) {
   const items = await read('pending', 'shared');
   const id = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -195,9 +232,15 @@ export async function updatePendingOperation(id, payload) {
 export async function clearLocalUserData(userId) {
   if (!userId) return;
   await Promise.all(
-    ['profile', 'saved', 'quotes', 'notifications', 'reviews', 'reports'].map((name) =>
-      AsyncStorage.removeItem(key(name, userId)),
-    ),
+    [
+      'profile',
+      'saved',
+      'saved-items-imported',
+      'quotes',
+      'notifications',
+      'reviews',
+      'reports',
+    ].map((name) => AsyncStorage.removeItem(key(name, userId))),
   );
   const [community, pending] = await Promise.all([
     read('community', 'shared'),

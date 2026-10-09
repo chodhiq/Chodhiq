@@ -1,0 +1,44 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(16);
+insert into auth.users(id,aud,role,email,raw_app_meta_data,raw_user_meta_data) values
+('95100000-0000-4000-8000-000000000001','authenticated','authenticated','priv-admin@example.test','{"role":"admin"}','{}'),
+('95100000-0000-4000-8000-000000000002','authenticated','authenticated','priv-member@example.test','{}','{}'),
+('95100000-0000-4000-8000-000000000003','authenticated','authenticated','priv-mod@example.test','{}','{}');
+insert into public.community_spaces(id,slug,name) values('95100000-0000-4000-8000-000000000010','privilege-test','Privilege test');
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"95100000-0000-4000-8000-000000000002"}',true);
+select throws_ok($q$select public.admin_save_community_space(null,'{"slug":"fake-space","name":"Fake space"}',null,'test reason')$q$,'42501','Administrator access required','member cannot create spaces through admin RPC');
+select set_config('request.jwt.claims','{"sub":"95100000-0000-4000-8000-000000000001","app_metadata":{"role":"admin"}}',true);
+select lives_ok($q$select public.admin_save_community_space(null,'{"slug":"priv-created","name":"Created space"}',null,'Test create')$q$,'admin can create a space');
+select public.admin_set_community_member('95100000-0000-4000-8000-000000000010','95100000-0000-4000-8000-000000000002','member',true,true,null,null,'Join test member');
+select public.admin_set_community_member('95100000-0000-4000-8000-000000000010','95100000-0000-4000-8000-000000000003','owner',true,true,null,null,'Join test owner');
+select public.admin_save_community_space(id,to_jsonb(s)||'{"posting_policy":"moderators","comments_enabled":false}'::jsonb,updated_at,'Limit publishing') from public.community_spaces s where id='95100000-0000-4000-8000-000000000010';
+select throws_ok($q$select public.admin_save_community_space('95100000-0000-4000-8000-000000000010','{}','2000-01-01','Stale edit')$q$,'P0001','This space changed. Refresh before saving.','stale space edit is rejected');
+select set_config('request.jwt.claims','{"sub":"95100000-0000-4000-8000-000000000002"}',true);
+select is(public.community_can_contribute('95100000-0000-4000-8000-000000000010','post'),false,'member cannot post in moderator-only space');
+select is(public.community_can_contribute('95100000-0000-4000-8000-000000000010','comment'),false,'space comment switch is enforced');
+select throws_ok($q$insert into public.community_posts(author_id,community_id,body) values('95100000-0000-4000-8000-000000000002','95100000-0000-4000-8000-000000000010','Bypass posting permissions')$q$,'42501',null,'direct publication cannot bypass posting privileges');
+select throws_ok($q$select public.publish_queued_community_post('privilege-queue-test','{"community_id":"95100000-0000-4000-8000-000000000010","body":"Queued restricted post","post_type":"discussion"}'::jsonb)$q$,'42501',null,'offline publication RPC cannot bypass posting privileges');
+select set_config('request.jwt.claims','{"sub":"95100000-0000-4000-8000-000000000003"}',true);
+select is(public.community_can_contribute('95100000-0000-4000-8000-000000000010','post'),true,'owner can publish in moderator-only space');
+insert into public.community_posts(id,author_id,community_id,body) values('95100000-0000-4000-8000-000000000020','95100000-0000-4000-8000-000000000003','95100000-0000-4000-8000-000000000010','Owner announcement');
+select set_config('request.jwt.claims','{"sub":"95100000-0000-4000-8000-000000000002"}',true);
+select throws_ok($q$insert into public.community_comments(post_id,author_id,body) values('95100000-0000-4000-8000-000000000020','95100000-0000-4000-8000-000000000002','Restricted comment')$q$,'42501',null,'direct comment insert respects the space switch');
+select set_config('request.jwt.claims','{"sub":"95100000-0000-4000-8000-000000000003"}',true);
+select throws_ok($q$select public.admin_set_community_member('95100000-0000-4000-8000-000000000010','95100000-0000-4000-8000-000000000002','owner',true,true,'member',null,'Escalate roles')$q$,'42501','Administrator access required','community owner cannot grant privileges');
+select set_config('request.jwt.claims','{"sub":"95100000-0000-4000-8000-000000000001","app_metadata":{"role":"admin"}}',true);
+select throws_ok($q$select public.admin_set_community_member('95100000-0000-4000-8000-000000000010','95100000-0000-4000-8000-000000000003','member',true,true,'owner',null,'Remove last owner')$q$,'P0001','Assign another owner before removing the last owner','last owner removal is protected');
+select public.admin_set_community_member('95100000-0000-4000-8000-000000000010','95100000-0000-4000-8000-000000000002','member',false,false,'member',updated_at,'Restrict test member') from public.community_member_permissions where space_id='95100000-0000-4000-8000-000000000010' and user_id='95100000-0000-4000-8000-000000000002';
+select public.admin_save_community_space(id,to_jsonb(s)||'{"posting_policy":"members","comments_enabled":true}'::jsonb,updated_at,'Reopen space') from public.community_spaces s where id='95100000-0000-4000-8000-000000000010';
+select throws_ok($q$select public.admin_set_community_member('95100000-0000-4000-8000-000000000010','95100000-0000-4000-8000-000000000002','member',true,true,'member',null,'Stale permissions')$q$,'P0001','Permissions changed. Refresh before saving.','stale permission update is rejected');
+select throws_ok($q$select public.admin_save_community_space(id,to_jsonb(s)||'{"status":"archived"}'::jsonb,updated_at,'Archive General') from public.community_spaces s where slug='general'$q$,'P0001','General must remain public and active','General stays available');
+select ok((select count(*) from public.admin_audit_log where entity_id='95100000-0000-4000-8000-000000000010')>=5,'space and membership changes are audited');
+select set_config('request.jwt.claims','{"sub":"95100000-0000-4000-8000-000000000002"}',true);
+delete from public.community_memberships where space_id='95100000-0000-4000-8000-000000000010' and user_id='95100000-0000-4000-8000-000000000002';
+insert into public.community_memberships(space_id,user_id) values('95100000-0000-4000-8000-000000000010','95100000-0000-4000-8000-000000000002');
+select is(public.community_can_contribute('95100000-0000-4000-8000-000000000010','post'),false,'rejoining does not reset posting restrictions');
+select is(public.community_can_contribute('95100000-0000-4000-8000-000000000010','comment'),false,'rejoining does not reset comment restrictions');
+reset role;
+select * from finish();
+rollback;

@@ -11,6 +11,7 @@ import {
 test('sync errors distinguish retryable outages from permanent conflicts', () => {
   assert.equal(classifySyncError({ status: 503 }), 'retryable');
   assert.equal(classifySyncError({ status: 429 }), 'retryable');
+  assert.equal(classifySyncError({ code: 'P0001', status: 400 }), 'permanent');
   assert.equal(classifySyncError({ code: '23505' }), 'permanent');
   assert.equal(classifySyncError({ status: 403 }), 'permanent');
 });

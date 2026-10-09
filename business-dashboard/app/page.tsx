@@ -7,6 +7,7 @@ import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import {
   businessNavigation as nav,
   businessWeek as week,
+  type Booking,
   type ClaimableProvider,
   type Lead,
   type Provider,
@@ -23,6 +24,7 @@ import {
 } from '../lib/validation';
 import { brand } from '../lib/brand';
 import { respondToLead, updateLeadStatus } from '../lib/lead-api';
+import { updateBookingStatus } from '../lib/booking-api';
 import { signInErrorMessage, withAuthTimeout } from '../lib/auth-operations';
 import { BusinessApplication, CreateAccount } from './business-application';
 
@@ -264,6 +266,8 @@ export default function BusinessDashboard() {
     services,
     reviews,
     leads,
+    bookings,
+    bookingsError,
     events,
     plan,
     notifications,
@@ -466,8 +470,15 @@ export default function BusinessDashboard() {
         {section === 'promotions' && (
           <Promotions provider={provider} uid={session.user.id} plan={plan} notify={notify} />
         )}{' '}
-        {(section === 'leads' || section === 'bookings') && (
-          <Leads leads={leads} reload={loadDashboard} notify={notify} />
+        {section === 'leads' && <Leads leads={leads} reload={loadDashboard} notify={notify} />}{' '}
+        {section === 'bookings' && (
+          <Bookings
+            bookings={bookings}
+            error={bookingsError}
+            providerId={provider.id}
+            reload={loadDashboard}
+            notify={notify}
+          />
         )}{' '}
         {(section === 'analytics' || section === 'earnings') && <Analytics events={events} />}{' '}
         {section === 'plans' && <Plans providerId={provider.id} current={plan} notify={notify} />}
@@ -1194,7 +1205,7 @@ function Profile({
     if (error) notify(error.message);
     else {
       const { data } = supabase.storage.from('provider-media').getPublicUrl(path);
-      setDraft({ ...draft, cover_image_url: data.publicUrl });
+      setDraft((current) => ({ ...current, cover_image_url: data.publicUrl }));
       notify('Photo uploaded — save to publish');
     }
     setUploading(false);
@@ -1234,7 +1245,7 @@ function Profile({
               <span>{label}</span>
               <input
                 value={String(draft[key as keyof Provider] || '')}
-                onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+                onChange={(e) => setDraft((current) => ({ ...current, [key]: e.target.value }))}
               />
             </label>
           ))}
@@ -1242,7 +1253,7 @@ function Profile({
             <span>Description</span>
             <textarea
               value={draft.description || ''}
-              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              onChange={(e) => setDraft((current) => ({ ...current, description: e.target.value }))}
             />
           </label>
         </div>
@@ -1741,6 +1752,88 @@ function Promotions({
     </div>
   );
 }
+function Bookings({
+  bookings,
+  error,
+  providerId,
+  reload,
+  notify,
+}: {
+  bookings: Booking[];
+  error: string;
+  providerId: string;
+  reload: () => void;
+  notify: (message: string) => void;
+}) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  async function changeStatus(
+    booking: Booking,
+    nextStatus: 'confirmed' | 'declined' | 'completed',
+  ) {
+    if (busyId) return;
+    setBusyId(booking.id);
+    try {
+      await updateBookingStatus(booking.id, providerId, booking.status, nextStatus);
+      notify(`Booking ${nextStatus}`);
+      reload();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Could not update booking');
+    } finally {
+      setBusyId(null);
+    }
+  }
+  return (
+    <div className="page form-page">
+      <div className="section-title">
+        <div>
+          <h2>Bookings</h2>
+          <p>Customer requests for this business.</p>
+        </div>
+        <button onClick={reload}>Refresh bookings</button>
+      </div>
+      <section className="panel lead-list">
+        {error && <p role="alert">{error}</p>}
+        {bookings.map((booking) => (
+          <div className="booking-request" key={booking.id}>
+            <p>
+              <b>Booking request</b> · {booking.requested_date} at {booking.requested_time}
+            </p>
+            <p>{booking.notes || 'No additional notes.'}</p>
+            <StatusPill text={booking.status} />
+            {booking.status === 'pending' && (
+              <div className="lead-actions">
+                <button
+                  disabled={busyId !== null}
+                  onClick={() => changeStatus(booking, 'confirmed')}
+                >
+                  Confirm
+                </button>
+                <button
+                  disabled={busyId !== null}
+                  onClick={() => changeStatus(booking, 'declined')}
+                >
+                  Decline
+                </button>
+              </div>
+            )}
+            {booking.status === 'confirmed' && (
+              <div className="lead-actions">
+                <button
+                  disabled={busyId !== null}
+                  onClick={() => changeStatus(booking, 'completed')}
+                >
+                  Mark completed
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+        {!error && !bookings.length && <p className="empty">No booking requests yet.</p>}
+      </section>
+    </div>
+  );
+}
+
 function Leads({
   leads,
   reload,

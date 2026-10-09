@@ -29,7 +29,7 @@ export function authErrorMessage(
   if (/too many requests|rate.?limit|over_email_send_rate_limit/.test(comparable))
     return 'Too many attempts. Please wait a few minutes and try again.';
   if (/expired|invalid.*(reset|link|token)|otp_expired/.test(comparable))
-    return 'This secure link has expired. Request a new password reset email.';
+    return 'This secure link has expired. Request a new email and use the latest link.';
   if (/timed out|network request failed|failed to fetch|offline/.test(comparable))
     return 'Check your internet connection and try again.';
 

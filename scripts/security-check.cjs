@@ -10,7 +10,7 @@ const assert = (condition, message) => {
 
 const client = read('src/lib/supabase.js');
 const context = read('src/context/AppStateContext.js');
-const dashboard = read('src/screens/DashboardScreens.js');
+const navigator = read('src/navigation/RootNavigator.js');
 const migration = read('db/20260812_security_hardening.sql');
 const checkout = read('supabase/functions/create-checkout-session/index.ts');
 const webhook = read('supabase/functions/stripe-webhook/index.ts');
@@ -37,8 +37,8 @@ assert(
   'App defaults to an authenticated-looking state.',
 );
 assert(
-  dashboard.includes('access.isAdmin') && dashboard.includes('access.ownedProviders'),
-  'Dashboard role gates are missing.',
+  !/DashboardScreens|BusinessDashboard|AdminDashboard/.test(navigator),
+  'Privileged dashboards must stay outside the customer app navigation.',
 );
 assert(
   migration.includes('protect_provider_security_fields'),
@@ -70,7 +70,8 @@ assert(
   'Successful Stripe checkout does not activate entitlements and record payment state.',
 );
 assert(
-  pushFunction.includes('PUSH_WEBHOOK_SECRET') && pushFunction.includes('.from("notifications")'),
+  pushFunction.includes('PUSH_WEBHOOK_SECRET') &&
+    /\.from\(['"]notifications['"]\)/.test(pushFunction),
   'Push webhook does not authenticate and reload the canonical notification.',
 );
 assert(

@@ -1,33 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { AppAlert as Alert } from '../components/AppDialog';
+import { MotionTouchable as TouchableOpacity } from '../components/Motion';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import AppTextInput from '../components/AppTextInput';
-import {
-  Alert,
-  Image,
-  Linking,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Image, Linking, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import Text from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ArrowLeft,
   Bell,
-  Bookmark,
-  CheckCircle2,
-  Code2,
-  Grid2X2,
   MapPin,
   Layers,
-  Palette,
   Search,
   SlidersHorizontal,
   Star,
-  Video,
   X,
   Utensils,
   Store,
@@ -42,22 +28,24 @@ import {
 } from 'lucide-react-native';
 import ScreenHeader from '../components/ScreenHeader';
 import ChodhiQMap from '../components/ChodhiQMap';
-import { CreatorCard, EventCard, OfferCard } from '../components/DiscoveryCards';
-import { creators, DEMO_MODE, events, offers } from '../data/discoveryData';
-import { categoryArtwork, imageSource, people } from '../data/assetCatalog';
+import { EventCard, OfferCard } from '../components/DiscoveryCards';
+import { events, offers } from '../data/discoveryData';
+import { imageSource } from '../data/assetCatalog';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
-import { radius, shadows, spacing, typography } from '../theme/theme';
+import { radius, shadows, spacing } from '../theme/theme';
 import { features } from '../config/features';
 import { matchesProviderSearch, providerMatchesCategory } from '../data/categoryMatching';
 import * as ExpoLocation from 'expo-location';
-
-const chips = ['All', 'London', 'Birmingham', 'Manchester', 'Leicester'];
+import { showPermissionRecovery } from '../lib/permissionRecovery';
 
 export function OffersScreen({ navigation }) {
   const { palette } = useChodhiQTheme();
   return (
-    <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]}>
+    <SafeAreaView
+      style={[styles.page, { backgroundColor: palette.background }]}
+      edges={['left', 'right', 'bottom']}
+    >
       <ScreenHeader
         navigation={navigation}
         title="Offers near you"
@@ -76,230 +64,13 @@ export function OffersScreen({ navigation }) {
   );
 }
 
-const creatorCategories = [
-  ['All', Grid2X2],
-  ['Photographers', Search],
-  ['Videographers', Video],
-  ['Designers', Palette],
-  ['Developers', Code2],
-  ['More', SlidersHorizontal],
-];
-export function CreatorsScreen({ navigation }) {
-  const { palette } = useChodhiQTheme();
-  const { savedIds, toggleSaved, marketplaceLoading } = useAppState();
-  const [category, setCategory] = useState('All');
-  const [query, setQuery] = useState('');
-  const list = useMemo(
-    () =>
-      creators.filter(
-        (x) =>
-          (category === 'All' || x.category === category) &&
-          `${x.name} ${x.profession} ${x.city} ${x.languages.join(' ')}`
-            .toLowerCase()
-            .includes(query.toLowerCase()),
-      ),
-    [category, query],
-  );
-  const source = (x) =>
-    imageSource(x.image || (DEMO_MODE && x.demo ? x.demoImage : null), people.professional);
-  return (
-    <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]}>
-      <ScrollView contentContainerStyle={styles.creatorPage} showsVerticalScrollIndicator={false}>
-        <View style={styles.creatorHeader}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.creatorTitle, { color: palette.text }]}>
-              Creators & Freelancers
-            </Text>
-            <Text style={[styles.creatorSubtitle, { color: palette.text2 }]}>
-              Connect with talented South Indian creators and professionals across the UK.
-            </Text>
-          </View>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Open saved providers"
-            onPress={() => navigation.navigate('Saved')}
-            style={[
-              styles.circleButton,
-              { backgroundColor: palette.surface, borderColor: palette.border },
-            ]}
-          >
-            <Bookmark size={20} color={palette.text} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Open notifications"
-            onPress={() => navigation.navigate('Notifications')}
-            style={[
-              styles.circleButton,
-              { backgroundColor: palette.surface, borderColor: palette.border },
-            ]}
-          >
-            <Bell size={20} color={palette.text} />
-            <View style={styles.redDot} />
-          </TouchableOpacity>
-        </View>
-        <View
-          style={[
-            styles.creatorSearch,
-            { backgroundColor: palette.surface, borderColor: palette.border },
-          ]}
-        >
-          <Search size={21} color={palette.text2} />
-          <AppTextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search creators, skills, services..."
-            placeholderTextColor={palette.muted}
-            style={[styles.creatorInput, { color: palette.text }]}
-          />
-          <SlidersHorizontal size={20} color={palette.saffron} />
-        </View>
-        <View style={styles.sectionRow}>
-          <Text style={[styles.sectionTitle, { color: palette.text }]}>Browse by category</Text>
-          <Text style={[styles.seeAll, { color: palette.saffron }]}>See all</Text>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryRow}
-        >
-          {creatorCategories.map(([label, Icon]) => (
-            <TouchableOpacity
-              key={label}
-              onPress={() => setCategory(label)}
-              style={styles.categoryItem}
-            >
-              <View
-                style={[
-                  styles.categoryIcon,
-                  {
-                    backgroundColor: category === label ? `${palette.saffron}22` : palette.surface,
-                    borderColor: category === label ? palette.saffron : palette.border,
-                  },
-                ]}
-              >
-                <Icon size={22} color={category === label ? palette.saffron : palette.primary} />
-              </View>
-              <Text
-                style={[
-                  styles.categoryLabel,
-                  { color: category === label ? palette.saffron : palette.text2 },
-                ]}
-              >
-                {label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        <View style={styles.sectionRow}>
-          <Text style={[styles.sectionTitle, { color: palette.text }]}>Top creators near you</Text>
-          <Text style={[styles.seeAll, { color: palette.saffron }]}>See all</Text>
-        </View>
-        {marketplaceLoading ? (
-          <View style={[styles.skeleton, { backgroundColor: palette.surfaceAlt }]} />
-        ) : list.length ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 12 }}
-          >
-            {list.slice(0, 4).map((item) => (
-              <View
-                key={item.id}
-                style={[
-                  styles.topCreator,
-                  { backgroundColor: palette.surface, borderColor: palette.border },
-                ]}
-              >
-                <Image source={source(item)} style={styles.topCreatorImage} />
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    savedIds.includes(item.id)
-                      ? `Remove ${item.name} from saved`
-                      : `Save ${item.name}`
-                  }
-                  accessibilityState={{ selected: savedIds.includes(item.id) }}
-                  onPress={() => toggleSaved(item.id)}
-                  style={styles.saveOverlay}
-                >
-                  <Bookmark
-                    size={18}
-                    color="#fff"
-                    fill={savedIds.includes(item.id) ? '#fff' : 'transparent'}
-                  />
-                </TouchableOpacity>
-                {item.verified && (
-                  <CheckCircle2
-                    size={20}
-                    color="#2F80ED"
-                    fill="#fff"
-                    style={styles.verifyOverlay}
-                  />
-                )}
-                <Text style={[styles.cardName, { color: palette.text }]}>{item.name}</Text>
-                <Text numberOfLines={2} style={[styles.cardMeta, { color: palette.text2 }]}>
-                  {item.profession}
-                </Text>
-                <Text style={[styles.cardMeta, { color: palette.text2 }]}>{item.city}</Text>
-                <View style={styles.rating}>
-                  <Star size={13} color={palette.saffron} fill={palette.saffron} />
-                  <Text style={[styles.ratingText, { color: palette.text }]}>
-                    {item.rating} ({item.reviews})
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-        ) : (
-          <Text style={[styles.empty, { color: palette.text2 }]}>
-            No creators match this search.
-          </Text>
-        )}
-        <View style={styles.sectionRow}>
-          <Text style={[styles.sectionTitle, { color: palette.text }]}>Featured professionals</Text>
-          <Text style={[styles.seeAll, { color: palette.saffron }]}>See all</Text>
-        </View>
-        {list.slice(1, 5).map((item) => (
-          <View
-            key={`featured-${item.id}`}
-            style={[
-              styles.featuredCreator,
-              { backgroundColor: palette.surface, borderColor: palette.border },
-            ]}
-          >
-            <Image source={source(item)} style={styles.featuredImage} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.cardName, { color: palette.text }]}>{item.name}</Text>
-              <Text style={[styles.cardMeta, { color: palette.text2 }]}>{item.profession}</Text>
-              <Text style={[styles.cardMeta, { color: palette.text2 }]}>{item.city}</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end', gap: 10 }}>
-              <View style={styles.rating}>
-                <Star size={13} color={palette.saffron} fill={palette.saffron} />
-                <Text style={[styles.ratingText, { color: palette.text }]}>
-                  {item.rating} ({item.reviews})
-                </Text>
-              </View>
-              {item.available && (
-                <View style={[styles.available, { backgroundColor: `${palette.success}18` }]}>
-                  <Text style={{ color: palette.success, fontSize: 10, fontWeight: '800' }}>
-                    Available
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-        ))}
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
 export function EventsScreen({ navigation }) {
   const { palette } = useChodhiQTheme();
   return (
-    <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]}>
+    <SafeAreaView
+      style={[styles.page, { backgroundColor: palette.background }]}
+      edges={['left', 'right', 'bottom']}
+    >
       <ScreenHeader
         navigation={navigation}
         title="Events"
@@ -341,6 +112,7 @@ export function MapScreen({ navigation, route }) {
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeCity, setActiveCity] = useState(null);
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [viewport, setViewport] = useState(null);
   const [locating, setLocating] = useState(false);
@@ -360,12 +132,12 @@ export function MapScreen({ navigation, route }) {
         .filter(Boolean)
         .map((value) => String(value).toLowerCase());
       return (
-        matchesProviderSearch(provider, query) &&
+        matchesProviderSearch(provider, deferredQuery) &&
         providerMatchesCategory(provider, category) &&
         (!activeCity || areas.includes(activeCity.toLowerCase()))
       );
     });
-  }, [activeCategory, activeCity, categories, providers, query]);
+  }, [activeCategory, activeCity, categories, providers, deferredQuery]);
   const mapProviders = useMemo(() => filteredProviders.filter(hasCoordinates), [filteredProviders]);
   const providersWithMeta = useMemo(
     () =>
@@ -414,7 +186,7 @@ export function MapScreen({ navigation, route }) {
       setLocating(true);
       const permission = await ExpoLocation.requestForegroundPermissionsAsync();
       if (!permission.granted)
-        return Alert.alert(
+        return showPermissionRecovery(
           'Location permission needed',
           'Allow location access to show nearby businesses.',
         );
@@ -461,7 +233,7 @@ export function MapScreen({ navigation, route }) {
     <SafeAreaView style={[styles.mapPage, { backgroundColor: palette.background }]} edges={[]}>
       <View style={[styles.map, { backgroundColor: palette.surfaceAlt, marginTop: insets.top }]}>
         <ChodhiQMap
-          providers={visibleProviders}
+          providers={mapProviders}
           selected={selected}
           onSelect={setSelected}
           palette={palette}
@@ -953,91 +725,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
     gap: 12,
   },
-  search: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-    padding: 13,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-  },
-  chips: { paddingHorizontal: spacing.lg, paddingVertical: 12, gap: 8 },
-  chip: { paddingHorizontal: 13, paddingVertical: 8, borderRadius: radius.pill },
-  creatorPage: { padding: 20, paddingBottom: 110 },
-  creatorHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 20 },
-  creatorTitle: { fontSize: 25, fontWeight: '900' },
-  creatorSubtitle: { fontSize: 13, lineHeight: 19, marginTop: 7, maxWidth: 300 },
-  circleButton: {
-    width: 43,
-    height: 43,
-    borderRadius: 22,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  redDot: {
-    position: 'absolute',
-    right: 7,
-    top: 6,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: '#EF4444',
-  },
-  creatorSearch: {
-    height: 60,
-    borderRadius: 16,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 17,
-    gap: 12,
-  },
-  creatorInput: { flex: 1, fontSize: 14 },
-  sectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 25,
-    marginBottom: 14,
-  },
-  sectionTitle: { fontSize: 17, fontWeight: '900' },
-  seeAll: { fontSize: 12, fontWeight: '800' },
-  categoryRow: { gap: 17 },
-  categoryItem: { width: 67, alignItems: 'center' },
-  categoryIcon: {
-    width: 55,
-    height: 55,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryLabel: { fontSize: 10, fontWeight: '700', marginTop: 7, textAlign: 'center' },
-  topCreator: { width: 172, borderRadius: 17, borderWidth: 1, padding: 10, paddingBottom: 13 },
-  topCreatorImage: { width: '100%', height: 132, borderRadius: 13 },
-  saveOverlay: { position: 'absolute', top: 18, right: 18 },
-  verifyOverlay: { position: 'absolute', top: 18, left: 18 },
-  cardName: { fontSize: 14, fontWeight: '900', marginTop: 9 },
-  cardMeta: { fontSize: 11, marginTop: 4 },
-  rating: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
-  ratingText: { fontSize: 11, fontWeight: '800' },
-  featuredCreator: {
-    minHeight: 100,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 10,
-  },
-  featuredImage: { width: 105, height: 78, borderRadius: 12 },
-  available: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 },
-  skeleton: { height: 230, borderRadius: 17, opacity: 0.65 },
-  empty: { paddingVertical: 32, textAlign: 'center' },
+
   mapPage: { flex: 1 },
   map: {
     flex: 1,
@@ -1059,7 +747,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     zIndex: 2,
   },
-  mapBrandTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+
   mapBrandLogo: { color: '#FFFFFF', fontSize: 25, fontWeight: '800', letterSpacing: -1 },
   mapBell: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
   mapBellDot: {
@@ -1109,15 +797,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   mapCategoryLabel: { fontSize: 11, lineHeight: 14, textAlign: 'center', fontWeight: '700' },
-  mapChip: {
-    height: 34,
-    maxWidth: 132,
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-    borderRadius: radius.pill,
-    ...shadows.soft,
-  },
-  mapChipText: { fontSize: 11, fontWeight: '700' },
+
   mapFilterPanel: { marginTop: 10, borderRadius: 16, borderWidth: 1, padding: 13, ...shadows.soft },
   mapFilterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   mapFilterTitle: { fontSize: 13, fontWeight: '800' },

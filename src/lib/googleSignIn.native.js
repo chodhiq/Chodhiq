@@ -18,10 +18,15 @@ export async function getNativeGoogleIdToken() {
   }
 
   await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  await GoogleSignin.signOut();
   const response = await GoogleSignin.signIn();
   if (response.type === 'cancelled') throw new Error('Google sign-in was cancelled.');
   if (!response.data?.idToken) {
     throw new Error('Google did not return an identity token. Please try again.');
   }
   return response.data.idToken;
+}
+
+export async function signOutNativeGoogleAccount() {
+  await GoogleSignin.signOut();
 }

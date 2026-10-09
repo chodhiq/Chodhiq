@@ -9,8 +9,10 @@ import React, {
 } from 'react';
 import {
   getOrCreateSession,
+  finishEmailConfirmation,
   signInWithEmail,
   signInWithOAuth,
+  signOutGoogleAccount,
   signUpWithEmail,
   supabase,
 } from '../lib/supabase';
@@ -27,7 +29,6 @@ import { clearLocalUserData, saveLocalReview } from '../data/localDatabase';
 import { createReview, deleteReview, updateReview } from '../data/reviewRepository';
 import { cancelBooking as cancelBookingRecord, createBooking } from '../data/bookingRepository';
 import { cleanEmail, cleanPassword, cleanText, validateProfile } from '../lib/validation';
-import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearPushToken } from '../lib/pushNotifications';
 import { useCommunicationPreferences } from '../hooks/useCommunicationPreferences';
@@ -61,6 +62,9 @@ export function AppStateProvider({ children }) {
   const [access, setAccess] = useState({ isAdmin: false, ownedProviders: [] });
   const {
     preferences,
+    preferencesError,
+    preferencesSyncing,
+    retryPreferencesSync,
     setPreferences: updatePreferences,
     clearPreferences,
   } = useCommunicationPreferences(session?.user?.id);
@@ -71,6 +75,7 @@ export function AppStateProvider({ children }) {
     reviews,
     setReviews,
     offline,
+    lastUpdatedAt,
     marketplaceLoading,
     refreshMarketplace,
   } = useMarketplaceState(retryPendingOperations);
@@ -97,6 +102,7 @@ export function AppStateProvider({ children }) {
         return;
       }
       setSession(nextSession);
+      if (nextSession?.user) setProfile(mapProfile({}, nextSession.user));
       activeUserId.current = nextSession.user.id;
       setSignedIn(true);
       setHasCompletedOnboarding(true);
@@ -145,7 +151,7 @@ export function AppStateProvider({ children }) {
   const toggleSaved = useCallback(
     async (providerId) => {
       if (!session) throw new Error('Please sign in to save providers.');
-      Haptics.selectionAsync().catch(() => {});
+
       const wasSaved = savedIds.includes(providerId);
       setSavedIds((current) =>
         wasSaved ? current.filter((id) => id !== providerId) : [...current, providerId],
@@ -247,9 +253,12 @@ export function AppStateProvider({ children }) {
           ? await signInWithEmail(safeValues.email, safeValues.password)
           : method === 'signup'
             ? await signUpWithEmail(safeValues.email, safeValues.password, safeValues.name)
-            : await signInWithOAuth(method);
+            : method === 'callback'
+              ? await finishEmailConfirmation(safeValues)
+              : await signInWithOAuth(method);
       if (nextSession) {
         setSession(nextSession);
+        if (nextSession?.user) setProfile(mapProfile({}, nextSession.user));
         activeUserId.current = nextSession.user.id;
         setSignedIn(true);
         setHasCompletedOnboarding(true);
@@ -286,12 +295,20 @@ export function AppStateProvider({ children }) {
     async (nextProfile) => {
       if (!session) throw new Error('Please sign in to edit your profile.');
       const safeProfile = validateProfile(nextProfile);
-      await updateProfile(session.user.id, safeProfile);
+      const previousProfile = profile;
       setProfile(safeProfile);
-      if (safeProfile.avatarUri)
-        await AsyncStorage.setItem('chodhiq-profile-avatar', safeProfile.avatarUri).catch(() => {});
+      try {
+        await updateProfile(session.user.id, safeProfile);
+        if (safeProfile.avatarUri)
+          await AsyncStorage.setItem('chodhiq-profile-avatar', safeProfile.avatarUri).catch(
+            () => {},
+          );
+      } catch (error) {
+        setProfile(previousProfile);
+        throw error;
+      }
     },
-    [session],
+    [profile, session],
   );
 
   const selectLocation = useCallback(
@@ -299,16 +316,29 @@ export function AppStateProvider({ children }) {
       setLocationCoordinates(null);
       AsyncStorage.removeItem(LOCATION_COORDINATES_KEY).catch(() => {});
       setProfile((current) => ({ ...current, location: city }));
-      if (session) updateProfile(session.user.id, { ...profile, location: city }).catch(() => {});
+      if (session)
+        updateProfile(session.user.id, { ...profile, location: city }).catch((error) => {
+          console.warn('Location change could not be saved.', error.message);
+          setProfile((current) =>
+            current.location === city ? { ...current, location: profile.location } : current,
+          );
+        });
     },
     [session, profile],
   );
 
-  const setCurrentLocation = useCallback((city, coordinates) => {
-    setLocationCoordinates(coordinates);
-    AsyncStorage.setItem(LOCATION_COORDINATES_KEY, JSON.stringify(coordinates)).catch(() => {});
-    setProfile((current) => ({ ...current, location: city }));
-  }, []);
+  const setCurrentLocation = useCallback(
+    (city, coordinates) => {
+      setLocationCoordinates(coordinates);
+      AsyncStorage.setItem(LOCATION_COORDINATES_KEY, JSON.stringify(coordinates)).catch(() => {});
+      setProfile((current) => ({ ...current, location: city }));
+      if (session)
+        updateProfile(session.user.id, { ...profile, location: city }).catch((error) => {
+          console.warn('Current location could not be saved to the profile.', error.message);
+        });
+    },
+    [profile, session],
+  );
 
   const recordProviderView = useCallback((providerId) => {
     setRecentlyViewedIds((current) =>
@@ -318,8 +348,17 @@ export function AppStateProvider({ children }) {
 
   const signOut = useCallback(async () => {
     const userId = session?.user?.id;
-    activeUserId.current = null;
     if (userId) await clearPushToken(userId).catch(() => {});
+    try {
+      await signOutGoogleAccount();
+    } catch (error) {
+      console.warn('Could not clear the Google account selection.', error.message);
+    }
+    if (supabase) {
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) throw error;
+    }
+    activeUserId.current = null;
     let cleanupError;
     try {
       if (userId) await clearLocalUserData(userId);
@@ -327,11 +366,6 @@ export function AppStateProvider({ children }) {
       await clearPreferences();
     } catch (error) {
       cleanupError = error;
-    }
-    let signOutError;
-    if (supabase) {
-      const { error } = await supabase.auth.signOut({ scope: 'local' });
-      signOutError = error;
     }
     setSession(null);
     setSignedIn(false);
@@ -351,15 +385,22 @@ export function AppStateProvider({ children }) {
       avatarUri: null,
       memberSince: null,
     });
-    if (signOutError) throw signOutError;
     if (cleanupError) throw cleanupError;
   }, [session, setNotifications, setReviews, clearPreferences]);
 
   const deleteAccount = useCallback(async () => {
     if (!session) throw new Error('Please sign in to delete your account.');
-    activeUserId.current = null;
     await clearPushToken(session.user.id).catch(() => {});
     await deleteCurrentAccount();
+    try {
+      await signOutGoogleAccount();
+    } catch (error) {
+      console.warn(
+        'Could not clear the Google account selection after account deletion.',
+        error.message,
+      );
+    }
+    activeUserId.current = null;
     let cleanupError;
     try {
       await clearLocalUserData(session.user.id);
@@ -387,7 +428,10 @@ export function AppStateProvider({ children }) {
       avatarUri: null,
       memberSince: null,
     });
-    if (cleanupError) throw cleanupError;
+    if (cleanupError)
+      throw new Error(
+        'Account deleted, but device data could not be cleared. Clear ChodhiQ app storage in Android settings.',
+      );
   }, [session, setNotifications, setReviews, clearPreferences]);
 
   const reportProvider = useCallback(
@@ -403,6 +447,7 @@ export function AppStateProvider({ children }) {
       categories,
       providers,
       offline,
+      lastUpdatedAt,
       syncStatus,
       retryPendingOperations,
       marketplaceLoading,
@@ -433,6 +478,9 @@ export function AppStateProvider({ children }) {
       markAllNotificationsRead,
       unreadCount,
       preferences,
+      preferencesError,
+      preferencesSyncing,
+      retryPreferencesSync,
       setPreferences: updatePreferences,
       signedIn,
       authenticate,
@@ -453,6 +501,7 @@ export function AppStateProvider({ children }) {
       categories,
       providers,
       offline,
+      lastUpdatedAt,
       syncStatus,
       retryPendingOperations,
       marketplaceLoading,
@@ -480,6 +529,9 @@ export function AppStateProvider({ children }) {
       notifications,
       unreadCount,
       preferences,
+      preferencesError,
+      preferencesSyncing,
+      retryPreferencesSync,
       updatePreferences,
       signedIn,
       authenticate,

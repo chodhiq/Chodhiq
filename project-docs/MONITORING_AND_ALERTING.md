@@ -1,6 +1,6 @@
 # Monitoring and alerting
 
-## Current verification (2026-09-28)
+## Last successful Sentry verification (2026-09-28)
 
 - The customer app initializes Sentry with a deployment environment and exact release commit.
 - Sentry organization `chodhiq` and React Native project `chodhiq-mobile` now exist. The project DSN, organization, project slug, Sentry URL, and EAS project ID are configured for preview and production. Preview is tagged `staging`; both EAS environments use the configured release commit.
@@ -10,6 +10,12 @@
 - `npm run monitoring:check` reports the EAS-only `SENTRY_AUTH_TOKEN` missing when run locally; the secret is intentionally unavailable outside EAS. Android preview build `846453eb-ae65-43a6-abd4-e22f65f4c658` succeeded and uploaded the source map for release `com.chodhiq.app@1.0.0+15` (Debug ID `97680a6c-f450-438c-976c-c6ca3965838f`). A runtime event from that build is still needed to verify symbolication. Sentry issue alert `1307693` is active for the mobile project across environments and notifies the signed-in Sentry member; the test notification was received. A backup route has not been configured.
 
 Do not mark monitoring complete until the event ID is visible in Sentry, its stack frames are symbolicated against the matching release, and the routed alert is acknowledged by the named incident owner.
+
+## 2026-10-09 build follow-up
+
+- An Android build reported that the Sentry organization was unavailable even though this document records the Sentry variables in EAS. Verify the selected EAS environment and variable names in the EAS dashboard; do not paste or print the token.
+- The `preview` EAS profile now explicitly selects the `preview` environment. App config omits the Sentry build plugin when the DSN, organization, project, and upload token are not all available. Android Gradle gates upload tasks on token/org/project and emits a skip reason, while the native-debug-upload flag does not disable source-map uploads.
+- The local Android JavaScript export passed. A full isolated `assembleRelease` attempt did not complete because the machine ran out of JVM/native memory; this is not evidence of a successful APK build or source-map upload.
 
 The applications emit structured errors to their platform logs. Production should route those logs to one central alerting service before launch.
 

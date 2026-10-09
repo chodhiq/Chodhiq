@@ -13,6 +13,9 @@ begin
   where n.nspname in ('public', 'storage')
     and c.relkind in ('r', 'p')
     and not c.relrowsecurity
+    -- Supabase documents the PostGIS-owned spatial_ref_sys relation in public
+    -- as an expected platform warning, not customer-data exposure. The
+    -- project SQL role cannot change its platform-owned grants.
     and c.relname not in ('schema_migrations', 'spatial_ref_sys');
   if failures is not null then
     raise exception 'API tables without RLS: %', failures;

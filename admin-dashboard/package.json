@@ -14,18 +14,18 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "typecheck:web": "tsc -p tsconfig.web.json --noEmit",
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
-    "typecheck:functions": "deno check --config supabase/functions/deno.json ../supabase/functions/admin-role-control/index.ts ../supabase/functions/admin-user-control/index.ts ../supabase/functions/create-checkout-session/index.ts ../supabase/functions/delete-account/index.ts ../supabase/functions/deliver-provider-leads/index.ts ../supabase/functions/ingest-mvp-event/index.ts ../supabase/functions/push-notification/index.ts ../supabase/functions/stripe-webhook/index.ts",
+    "typecheck:functions": "deno check --config supabase/functions/deno.json ../supabase/functions/admin-role-control/index.ts ../supabase/functions/admin-user-control/index.ts ../supabase/functions/create-checkout-session/index.ts ../supabase/functions/delete-account/index.ts ../supabase/functions/deliver-provider-leads/index.ts ../supabase/functions/ingest-mvp-event/index.ts ../supabase/functions/push-notification/index.ts ../supabase/functions/check-push-receipts/index.ts ../supabase/functions/stripe-webhook/index.ts",
     "typecheck": "npm run typecheck:web && npm run typecheck:worker && npm run typecheck:functions",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.2",
     "drizzle-orm": "0.45.2",
-    "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.37.1",
+    "@cloudflare/vite-plugin": "^1.63.0",
     "@eslint/js": "9.39.4",
     "@next/eslint-plugin-next": "16.2.6",
     "@tailwindcss/postcss": "4.2.1",
@@ -33,7 +33,7 @@
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
-    "@vitejs/plugin-rsc": "0.5.26",
+    "@vitejs/plugin-rsc": "^0.5.36",
     "deno-bin": "^2.2.7",
     "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
@@ -41,12 +41,12 @@
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.1.1",
     "globals": "16.4.0",
-    "react-server-dom-webpack": "19.2.6",
+    "react-server-dom-webpack": "^19.3.0",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "typescript-eslint": "8.59.3",
-    "vinext": "1.0.0-beta.2",
-    "vite": "8.0.13",
+    "vinext": "^1.0.1",
+    "vite": "^8.3.3",
     "wrangler": "4.92.0"
   },
   "type": "module"

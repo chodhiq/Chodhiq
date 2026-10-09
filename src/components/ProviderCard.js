@@ -1,5 +1,6 @@
+import { MotionTouchable as TouchableOpacity } from './Motion';
 import React from 'react';
-import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, StyleSheet } from 'react-native';
 import Text from './AppText';
 import { Heart, Star, MapPin, BadgeCheck, Crown } from 'lucide-react-native';
 import { colors, radius, shadows, spacing, typography } from '../theme/theme';
@@ -35,6 +36,7 @@ export function ProviderCardCompact({ provider, onPress, onSave, saved }) {
       >
         <View>
           <Image
+            resizeMethod="resize"
             source={imageSource(
               provider.image,
               categoryFallback(provider.category, provider.categoryId),
@@ -123,6 +125,7 @@ export function ProviderCardRow({ provider, onPress, onSave, saved }) {
         style={[styles.rowInner, { backgroundColor: palette.surface, borderColor: palette.border }]}
       >
         <Image
+          resizeMethod="resize"
           source={imageSource(
             provider.image,
             categoryFallback(provider.category, provider.categoryId),
@@ -130,7 +133,7 @@ export function ProviderCardRow({ provider, onPress, onSave, saved }) {
           style={styles.rowImage}
           resizeMode="cover"
         />
-        <View style={{ flex: 1, marginLeft: spacing.md }}>
+        <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
           <View style={styles.rowHeader}>
             <Text style={[typography.label, { flex: 1, color: palette.text }]} numberOfLines={1}>
               {provider.name}
@@ -297,7 +300,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   rowImage: { width: 94, height: 94, borderRadius: 14, backgroundColor: colors.border },
-  rowHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  rowHeader: { flexWrap: 'wrap', flexDirection: 'row', alignItems: 'center', gap: 6 },
   addressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 },
   addressText: { fontSize: 12, color: colors.textMuted, flexShrink: 1 },
   heartButtonRow: { padding: spacing.sm, alignSelf: 'flex-start' },

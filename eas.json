@@ -9,6 +9,7 @@
       "distribution": "internal"
     },
     "preview": {
+      "environment": "preview",
       "distribution": "internal",
       "channel": "preview",
       "env": {
@@ -16,6 +17,40 @@
         "EXPO_PUBLIC_ENABLE_GOOGLE_MAPS": "false",
         "EXPO_PUBLIC_ENABLE_PAYMENTS": "false",
         "EXPO_PUBLIC_ENABLE_GOOGLE_ADS": "false"
+      }
+    },
+    "beta": {
+      "channel": "beta",
+      "environment": "production",
+      "distribution": "store",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_DEMO_MODE": "false",
+        "EXPO_PUBLIC_ENABLE_GOOGLE_MAPS": "false",
+        "EXPO_PUBLIC_ENABLE_PAYMENTS": "false",
+        "EXPO_PUBLIC_ENABLE_CUSTOM_ADS": "true",
+        "EXPO_PUBLIC_ENABLE_GOOGLE_ADS": "false"
+      }
+    },
+    "beta-apk": {
+      "channel": "beta-internal",
+      "environment": "production",
+      "distribution": "internal",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "beta-internal",
+        "EXPO_PUBLIC_DEMO_MODE": "false",
+        "EXPO_PUBLIC_ENABLE_GOOGLE_MAPS": "false",
+        "EXPO_PUBLIC_ENABLE_PAYMENTS": "false",
+        "EXPO_PUBLIC_ENABLE_CUSTOM_ADS": "true",
+        "EXPO_PUBLIC_ENABLE_GOOGLE_ADS": "false",
+        "EXPO_PUBLIC_RELEASE_COMMIT": "51f156e0fb1d0f15a65586babd5d7fe90669b5ea"
       }
     },
     "production": {
@@ -41,7 +76,8 @@
         "EXPO_PUBLIC_DEMO_MODE": "false",
         "EXPO_PUBLIC_ENABLE_GOOGLE_MAPS": "false",
         "EXPO_PUBLIC_ENABLE_PAYMENTS": "false",
-        "EXPO_PUBLIC_ENABLE_GOOGLE_ADS": "false"
+        "EXPO_PUBLIC_ENABLE_GOOGLE_ADS": "false",
+        "EXPO_PUBLIC_RELEASE_COMMIT": "51f156e0fb1d0f15a65586babd5d7fe90669b5ea"
       }
     }
   },

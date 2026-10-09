@@ -32,9 +32,10 @@ export function validateProfile(profile) {
 /** @param {QuoteInput} input */
 export function validateQuote(input) {
   const allowedContacts = new Set(['whatsapp', 'call', 'email']);
-  const preferredContact = allowedContacts.has(input.preferredContact)
-    ? input.preferredContact
-    : 'whatsapp';
+  const preferredContact =
+    input.preferredContact && allowedContacts.has(input.preferredContact)
+      ? input.preferredContact
+      : 'whatsapp';
   return {
     providerId: requireUuid(input.providerId, 'Provider'),
     providerName: cleanText(input.providerName || 'Provider', {

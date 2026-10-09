@@ -1,15 +1,15 @@
+import { AppAlert as Alert } from '../components/AppDialog';
+import ScrollView from '../components/KeyboardAwareScrollView';
+import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import React, { useEffect, useState } from 'react';
 import AppTextInput from '../components/AppTextInput';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Linking,
   Platform,
-  ScrollView,
   StyleSheet,
   Switch,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -39,12 +39,18 @@ import { ukCities } from '../data/mockData';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { FadeInView, FloatingView, PressableScale } from '../components/Motion';
-import * as Haptics from 'expo-haptics';
 import * as ExpoLocation from 'expo-location';
+import { openPermissionSettings, showPermissionRecovery } from '../lib/permissionRecovery';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { generatedAssets } from '../data/assetCatalog';
 import { brand } from '../config/brand';
-import { preparePasswordRecovery, requestPasswordReset, updatePassword } from '../lib/supabase';
+import { legalLinks, publishedLegalLinksReady } from '../config/legal';
+import {
+  preparePasswordRecovery,
+  requestPasswordReset,
+  resendEmailConfirmation,
+  updatePassword,
+} from '../lib/supabase';
 import { cleanEmail, cleanPassword } from '../lib/validation';
 import { authErrorMessage } from '../lib/authOperations';
 
@@ -65,7 +71,14 @@ const pageStyles = StyleSheet.create({
     padding: spacing.md,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  grow: { flex: 1 },
+  tab: {
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    flex: 1,
+    paddingVertical: 10,
+  },
+  grow: { flex: 1, minWidth: 0 },
   title: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
   body: { fontSize: 13, lineHeight: 19, color: colors.textSecondary },
   label: {
@@ -154,6 +167,7 @@ export function WelcomeScreen({ navigation, route }) {
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState(null);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   useEffect(() => {
     const requestedMode = route.params?.initialMode;
     if (requestedMode === 'signup' || requestedMode === 'signin') {
@@ -175,9 +189,11 @@ export function WelcomeScreen({ navigation, route }) {
     try {
       setBusy(true);
       setAuthMessage(null);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+
       const nextSession = await authenticate(method, { name, email: email.trim(), password });
       if (method === 'signup' && !nextSession) {
+        setAwaitingConfirmation(true);
+        setMode('signin');
         setAuthMessage({
           type: 'success',
           text: 'Check your email. Confirm your address, then return to ChodhiQ and sign in.',
@@ -185,10 +201,9 @@ export function WelcomeScreen({ navigation, route }) {
         return;
       }
       if (!nextSession) throw new Error('Authentication completed without creating a session.');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+
       finish();
     } catch (error) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setAuthMessage({ type: 'error', text: authErrorMessage(error) });
     } finally {
       setBusy(false);
@@ -216,6 +231,21 @@ export function WelcomeScreen({ navigation, route }) {
           'Password reset is temporarily unavailable. Please try again.',
         ),
       });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const resendConfirmation = async () => {
+    try {
+      setBusy(true);
+      await resendEmailConfirmation(cleanEmail(email));
+      setAwaitingConfirmation(true);
+      setAuthMessage({
+        type: 'success',
+        text: 'If this account needs confirmation, a new email has been sent. Use the latest link, then return here to sign in.',
+      });
+    } catch (error) {
+      setAuthMessage({ type: 'error', text: authErrorMessage(error) });
     } finally {
       setBusy(false);
     }
@@ -342,14 +372,29 @@ export function WelcomeScreen({ navigation, route }) {
                   {consent ? <Check size={13} color="#FFFFFF" /> : null}
                 </View>
                 <Text style={[stylesWelcome.consentText, { color: palette.text2 }]}>
-                  I agree to the{' '}
-                  <Text style={{ color: palette.primary, fontWeight: '600' }}>
-                    Terms of Service
-                  </Text>{' '}
-                  and{' '}
-                  <Text style={{ color: palette.primary, fontWeight: '600' }}>Privacy Policy</Text>
+                  {publishedLegalLinksReady
+                    ? 'I agree to the Terms of Service and have read the Privacy Policy.'
+                    : 'I understand ChodhiQ uses my account details, posts and bookings to provide this test service.'}
                 </Text>
               </TouchableOpacity>
+            ) : null}
+            {mode === 'signup' && publishedLegalLinksReady ? (
+              <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
+                <TouchableOpacity
+                  accessibilityRole="link"
+                  onPress={() => void Linking.openURL(legalLinks.terms)}
+                >
+                  <Text style={{ color: palette.primary, fontWeight: '700' }}>Read terms</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityRole="link"
+                  onPress={() => void Linking.openURL(legalLinks.privacy)}
+                >
+                  <Text style={{ color: palette.primary, fontWeight: '700' }}>
+                    Read privacy policy
+                  </Text>
+                </TouchableOpacity>
+              </View>
             ) : null}
             {authMessage ? (
               <View
@@ -397,6 +442,18 @@ export function WelcomeScreen({ navigation, route }) {
               <TouchableOpacity disabled={busy} onPress={forgotPassword}>
                 <Text style={{ textAlign: 'right', color: palette.primary, fontWeight: '800' }}>
                   Forgot password?
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+            {awaitingConfirmation || (mode === 'signin' && emailValid) ? (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Resend confirmation email"
+                disabled={busy || !emailValid}
+                onPress={resendConfirmation}
+              >
+                <Text style={{ textAlign: 'center', color: palette.primary, fontWeight: '700' }}>
+                  Resend confirmation email
                 </Text>
               </TouchableOpacity>
             ) : null}
@@ -516,7 +573,10 @@ export function ResetPasswordScreen({ navigation, route }) {
   ];
   return (
     <SafeAreaView style={[pageStyles.page, { backgroundColor: palette.background }]}>
-      <View style={[pageStyles.content, { flex: 1, justifyContent: 'center' }]}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[pageStyles.content, { flexGrow: 1, justifyContent: 'center' }]}
+      >
         <Text style={[typography.h1, { color: palette.text }]}>Choose a new password</Text>
         <Text style={[pageStyles.body, { color: palette.text2 }]}>
           Use at least 10 characters. Avoid reusing a password from another account.
@@ -563,7 +623,7 @@ export function ResetPasswordScreen({ navigation, route }) {
             Back to sign in
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -678,7 +738,6 @@ export function LocationScreen({ navigation }) {
   const [selected, setSelected] = useState(location);
   const [detecting, setDetecting] = useState(false);
   const choose = (city, coordinates = null) => {
-    Haptics.selectionAsync().catch(() => {});
     setSelected(city);
     if (coordinates) setCurrentLocation(city, coordinates);
     else selectLocation(city);
@@ -689,7 +748,7 @@ export function LocationScreen({ navigation }) {
       setDetecting(true);
       const permission = await ExpoLocation.requestForegroundPermissionsAsync();
       if (!permission.granted)
-        return Alert.alert(
+        return showPermissionRecovery(
           'Location permission needed',
           'Allow location access to detect your nearest area.',
         );
@@ -749,7 +808,7 @@ export function LocationScreen({ navigation }) {
           </PressableScale>
         </FadeInView>
         {ukCities.map((city, index) => (
-          <FadeInView key={city} delay={50 + index * 28}>
+          <FadeInView key={city} delay={0} duration={0} distance={0}>
             <PressableScale onPress={() => choose(city)}>
               <View
                 style={[
@@ -803,24 +862,47 @@ const stylesLocation = StyleSheet.create({
 export function NotificationsScreen({ navigation }) {
   const { notifications, markAllNotificationsRead } = useAppState();
   const { palette } = useChodhiQTheme();
-  useEffect(() => {
-    void markAllNotificationsRead();
-  }, []);
+  const [clearing, setClearing] = useState(false);
+  const unread = notifications.filter((item) => !item.read);
+  const clearAll = async () => {
+    if (clearing) return;
+    setClearing(true);
+    try {
+      await markAllNotificationsRead();
+    } catch {
+      Alert.alert('Could not clear notifications', 'Please check your connection and try again.');
+    } finally {
+      setClearing(false);
+    }
+  };
   return (
     <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
       <ScreenHeader
         navigation={navigation}
         title="Notifications"
         right={
-          <TouchableOpacity onPress={markAllNotificationsRead}>
-            <Text style={{ color: palette.primary, fontSize: 12 }}>Read all</Text>
+          <TouchableOpacity
+            style={{ minHeight: 44, justifyContent: 'center' }}
+            accessibilityRole="button"
+            accessibilityLabel="Mark all notifications read and clear the list"
+            disabled={clearing || !unread.length}
+            onPress={clearAll}
+          >
+            <Text style={{ color: palette.primary, fontSize: 12 }}>
+              {clearing ? 'Clearing…' : 'Read all'}
+            </Text>
           </TouchableOpacity>
         }
       />
       <ScrollView contentContainerStyle={pageStyles.content}>
-        {notifications.map((item) => (
-          <View
+        {!unread.length && <Text style={{ color: palette.text2 }}>You're all caught up.</Text>}
+        {unread.map((item) => (
+          <TouchableOpacity
             key={item.id}
+            accessibilityRole="button"
+            accessibilityLabel={item.communityPostId ? `Open ${item.title}` : item.title}
+            disabled={!item.communityPostId}
+            onPress={() => navigation.navigate('Community', { postId: item.communityPostId })}
             style={[
               pageStyles.card,
               pageStyles.row,
@@ -836,7 +918,7 @@ export function NotificationsScreen({ navigation }) {
               <Text style={[pageStyles.body, { color: palette.text2 }]}>{item.body}</Text>
               <Text style={[pageStyles.muted, { color: palette.muted }]}>{item.time}</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     </View>
@@ -856,11 +938,18 @@ export function QuoteRequestsScreen({ navigation }) {
       <ScrollView contentContainerStyle={pageStyles.content}>
         {!quoteRequests.length ? (
           <View style={pageStyles.empty}>
-            <MessageCircle size={34} color={colors.textMuted} />
-            <Text style={pageStyles.title}>No quote requests yet</Text>
-            <Text style={[pageStyles.body, { textAlign: 'center' }]}>
+            <MessageCircle size={34} color={palette.text2} />
+            <Text style={[pageStyles.title, { color: palette.text }]}>No quote requests yet</Text>
+            <Text style={[pageStyles.body, { textAlign: 'center', color: palette.text2 }]}>
               Open a provider and request a quote to track it here.
             </Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              style={[pageStyles.button, { backgroundColor: palette.primary }]}
+              onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
+            >
+              <Text style={{ color: palette.onPrimary, fontWeight: '700' }}>Find a business</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           quoteRequests.map((item) => (
@@ -919,6 +1008,17 @@ export function QuoteRequestsScreen({ navigation }) {
 export function BookingsScreen({ navigation }) {
   const { bookings, cancelBooking } = useAppState();
   const { palette } = useChodhiQTheme();
+  const [bookingTab, setBookingTab] = useState('Upcoming');
+  const now = Date.now();
+  const timestamp = (item) =>
+    new Date(`${item.requestedDate}T${item.requestedTime || '00:00'}:00`).getTime();
+  const isUpcoming = (item) =>
+    !['completed', 'cancelled', 'declined'].includes(item.status) && timestamp(item) >= now;
+  const visibleBookings = bookings
+    .filter((item) => (bookingTab === 'Upcoming' ? isUpcoming(item) : !isUpcoming(item)))
+    .sort((a, b) =>
+      bookingTab === 'Upcoming' ? timestamp(a) - timestamp(b) : timestamp(b) - timestamp(a),
+    );
   const cancel = (item) =>
     Alert.alert(
       'Cancel booking?',
@@ -940,17 +1040,40 @@ export function BookingsScreen({ navigation }) {
         title="My bookings"
         subtitle="Track requested and confirmed appointments"
       />
+      <View style={[pageStyles.row, { paddingHorizontal: spacing.lg, gap: spacing.sm }]}>
+        {['Upcoming', 'Past'].map((tab) => (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityState={{ selected: bookingTab === tab }}
+            key={tab}
+            onPress={() => setBookingTab(tab)}
+            style={[
+              pageStyles.tab,
+              {
+                backgroundColor: bookingTab === tab ? palette.primarySoft : palette.surface,
+                borderColor: bookingTab === tab ? palette.primary : palette.border,
+              },
+            ]}
+          >
+            <Text style={{ color: bookingTab === tab ? palette.primary : palette.text2 }}>
+              {tab}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <ScrollView contentContainerStyle={pageStyles.content}>
-        {!bookings.length ? (
+        {!visibleBookings.length ? (
           <View style={pageStyles.empty}>
             <CalendarDays size={34} color={palette.muted} />
-            <Text style={[pageStyles.title, { color: palette.text }]}>No bookings yet</Text>
+            <Text style={[pageStyles.title, { color: palette.text }]}>
+              {bookings.length ? `No ${bookingTab.toLowerCase()} bookings` : 'No bookings yet'}
+            </Text>
             <Text style={[pageStyles.body, { color: palette.text2, textAlign: 'center' }]}>
               Open a provider and select Book to request an appointment.
             </Text>
           </View>
         ) : (
-          bookings.map((item) => (
+          visibleBookings.map((item) => (
             <View
               key={item.id}
               style={[
@@ -1001,24 +1124,48 @@ export function BookingsScreen({ navigation }) {
 }
 
 export function ReviewsScreen({ navigation, route }) {
-  const { providers, reviews, addReview, editReview, removeReview } = useAppState();
+  const { providers, reviews, addReview, editReview, removeReview, session } = useAppState();
   const providerId = route.params?.providerId;
   const provider = providers.find((p) => p.id === providerId);
   const { palette } = useChodhiQTheme();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [editingId, setEditingId] = useState(null);
-  const submit = () => {
+  const ownProviderReview = reviews.find(
+    (item) => item.providerId === providerId && item.userId === session?.user?.id,
+  );
+  const visibleReviews = reviews.filter(
+    (item) => item.userId === session?.user?.id && (!providerId || item.providerId === providerId),
+  );
+  useEffect(() => {
+    if (!ownProviderReview) return;
+    setEditingId(ownProviderReview.id);
+    setRating(ownProviderReview.rating);
+    setComment(ownProviderReview.comment || ownProviderReview.text || '');
+  }, [ownProviderReview?.id]);
+  const submit = async () => {
     if (!comment.trim())
       return Alert.alert('Add a review', 'Tell the community about your experience.');
-    addReview({
-      providerId,
-      providerName: provider?.name || 'Provider',
-      rating,
-      comment: comment.trim(),
-    });
-    setComment('');
-    Alert.alert('Thank you', 'Your review has been added.');
+    try {
+      if (editingId) {
+        await editReview(editingId, { rating, comment: comment.trim() });
+        Alert.alert('Review updated', 'Your review has been saved.');
+      } else {
+        await addReview({
+          providerId,
+          providerName: provider?.name || 'Provider',
+          rating,
+          comment: comment.trim(),
+        });
+        Alert.alert('Thank you', 'Your review has been added.');
+      }
+      setComment('');
+    } catch (error) {
+      Alert.alert(
+        editingId ? 'Could not update review' : 'Could not publish review',
+        error.message,
+      );
+    }
   };
   const saveEdit = async (item) => {
     if (!comment.trim())
@@ -1052,8 +1199,13 @@ export function ReviewsScreen({ navigation, route }) {
       <ScreenHeader navigation={navigation} title={provider ? 'Write a review' : 'My reviews'} />
       <ScrollView contentContainerStyle={pageStyles.content}>
         {provider && (
-          <View style={pageStyles.card}>
-            <Text style={pageStyles.title}>{provider.name}</Text>
+          <View
+            style={[
+              pageStyles.card,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
+          >
+            <Text style={[pageStyles.title, { color: palette.text }]}>{provider.name}</Text>
             <View style={[pageStyles.row, { marginVertical: spacing.md }]}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <TouchableOpacity
@@ -1068,7 +1220,7 @@ export function ReviewsScreen({ navigation, route }) {
               ))}
             </View>
             <AppTextInput
-              accessibilityLabel={label}
+              accessibilityLabel="Review"
               style={[pageStyles.input, { minHeight: 100, textAlignVertical: 'top' }]}
               multiline
               value={comment}
@@ -1080,11 +1232,13 @@ export function ReviewsScreen({ navigation, route }) {
               style={[pageStyles.button, { marginTop: spacing.md }]}
               onPress={submit}
             >
-              <Text style={pageStyles.buttonText}>Publish review</Text>
+              <Text style={pageStyles.buttonText}>
+                {editingId ? 'Save changes' : 'Publish review'}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
-        {reviews.map((item) => (
+        {visibleReviews.map((item) => (
           <View key={item.id} style={pageStyles.card}>
             {editingId === item.id ? (
               <>
@@ -1116,7 +1270,7 @@ export function ReviewsScreen({ navigation, route }) {
                   <Text style={[pageStyles.title, pageStyles.grow]}>{item.providerName}</Text>
                   <Text style={{ color: colors.star }}>★ {item.rating}</Text>
                 </View>
-                <Text style={pageStyles.body}>{item.comment}</Text>
+                <Text style={[pageStyles.body, { color: palette.text2 }]}>{item.comment}</Text>
                 <Text style={pageStyles.muted}>{item.createdAt}</Text>
                 {item.userId && (
                   <View style={[pageStyles.row, { marginTop: spacing.sm }]}>
@@ -1140,9 +1294,18 @@ export function ReviewsScreen({ navigation, route }) {
         ))}
         {!provider && !reviews.length && (
           <View style={pageStyles.empty}>
-            <Star size={34} color={colors.textMuted} />
-            <Text style={pageStyles.title}>No reviews yet</Text>
-            <Text style={pageStyles.body}>Reviews you publish will appear here.</Text>
+            <Star size={34} color={palette.text2} />
+            <Text style={[pageStyles.title, { color: palette.text }]}>No reviews yet</Text>
+            <Text style={[pageStyles.body, { color: palette.text2 }]}>
+              Reviews you publish will appear here.
+            </Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              style={[pageStyles.button, { backgroundColor: palette.primary }]}
+              onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
+            >
+              <Text style={{ color: palette.onPrimary, fontWeight: '700' }}>Browse providers</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -1239,6 +1402,7 @@ export function SettingsScreen({ navigation }) {
         <Text style={[pageStyles.label, { color: palette.text2 }]}>Communication</Text>
         {[
           ['push', 'Push notifications'],
+          ['vibration', 'Notification vibration'],
           ['email', 'Email updates'],
           ['marketing', 'Tips and offers'],
         ].map(([key, label]) => (
@@ -1262,6 +1426,22 @@ export function SettingsScreen({ navigation }) {
             />
           </View>
         ))}
+        {Platform.OS !== 'web' && preferences.push && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Open device notification settings"
+            onPress={openPermissionSettings}
+            style={[
+              pageStyles.card,
+              pageStyles.row,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
+          >
+            <Text style={[pageStyles.title, { color: palette.text }]}>
+              Notifications denied? Open device settings
+            </Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           accessibilityRole="button"
           style={[
@@ -1340,51 +1520,30 @@ export function HelpScreen({ navigation }) {
 }
 
 export function BecomeProviderScreen({ navigation }) {
-  const [form, setForm] = useState({ business: '', service: '', city: '', phone: '' });
-  const submit = () => {
-    if (!form.business || !form.service || !form.city)
-      return Alert.alert(
-        'Missing information',
-        'Please complete the business, service and city fields.',
-      );
-    Alert.alert('Application received', 'We will contact you about verification.');
-    navigation.goBack();
-  };
+  const { palette } = useChodhiQTheme();
   return (
-    <View style={pageStyles.page}>
+    <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
       <ScreenHeader
         navigation={navigation}
-        title="List your business"
-        subtitle="Join ChodhiQ as a verified provider"
+        title="Grow your business"
+        subtitle="Join the ChodhiQ community"
       />
-      <ScrollView contentContainerStyle={pageStyles.content}>
-        <View style={[pageStyles.card, pageStyles.row]}>
-          <ShieldCheck size={28} color={colors.primary} />
-          <Text style={[pageStyles.body, pageStyles.grow]}>
-            Applications are reviewed before a verified listing goes live.
-          </Text>
-        </View>
-        {[
-          ['Business name', 'business'],
-          ['Service category', 'service'],
-          ['Base city', 'city'],
-          ['Contact number', 'phone'],
-        ].map(([label, key]) => (
-          <View key={key}>
-            <Text style={pageStyles.label}>{label}</Text>
-            <AppTextInput
-              style={pageStyles.input}
-              value={form[key]}
-              onChangeText={(value) => setForm((p) => ({ ...p, [key]: value }))}
-              placeholder={label}
-              placeholderTextColor={colors.textMuted}
-            />
-          </View>
-        ))}
-        <TouchableOpacity style={pageStyles.button} onPress={submit}>
-          <Text style={pageStyles.buttonText}>Submit application</Text>
+      <View style={pageStyles.content}>
+        <Text style={[pageStyles.title, { color: palette.text }]}>
+          Help local customers find your services
+        </Text>
+        <Text style={[pageStyles.body, { color: palette.text2 }]}>
+          Build a business listing, describe what you offer and submit ownership evidence for
+          review. Claim an existing listing or create a new one through the business setup flow.
+        </Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          style={[pageStyles.button, { backgroundColor: palette.primary }]}
+          onPress={() => navigation.replace('ClaimListing')}
+        >
+          <Text style={{ color: palette.onPrimary, fontWeight: '700' }}>Set up my business</Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
     </View>
   );
 }

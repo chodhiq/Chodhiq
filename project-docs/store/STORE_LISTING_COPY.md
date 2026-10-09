@@ -45,7 +45,7 @@ Provider verification means that specified evidence has been reviewed; it is not
 - The app supports email/password authentication. Supply a stable review account with representative customer data through App Store Connect; never place its credentials in this repository.
 - Account deletion: Profile → Privacy & your data → type DELETE → Delete my account.
 - Data export: Profile → Privacy & your data → Export my data.
-- Advertising requires an explicit privacy choice and requests non-personalised ads; state whether advertising is enabled in the submitted binary.
+- The first beta may show an approved, clearly labelled ChodhiQ sponsored card; it is absent when no campaign is active. Google banner advertising is disabled in the beta profile. If third-party Google ads are enabled in a later binary, require the appropriate privacy choice and request non-personalised ads only. Reconcile this copy and Data safety disclosures with the exact submitted binary.
 - Provider subscriptions are disabled for the initial launch build.
 - Provider verification documents are private and accessible only to the submitting owner and authorised reviewers.
 
@@ -55,10 +55,14 @@ Provider verification means that specified evidence has been reviewed; it is not
 
 **Full description:** Use the Apple description above, replacing typographic bullets only if Play Console validation requires plain characters.
 
-**App category:** Lifestyle  
-**Contact email:** `{{SUPPORT_EMAIL}}`  
-**Website:** `{{PUBLIC_BASE_URL}}`  
-**Privacy policy:** `{{PUBLIC_BASE_URL}}/privacy`  
+**App category:** Lifestyle
+
+**Contact email:** `chodhiq@gmail.com`
+
+**Website:** `{{PUBLIC_BASE_URL}}`
+
+**Privacy policy:** `{{PUBLIC_BASE_URL}}/privacy`
+
 **Account deletion URL:** `{{PUBLIC_BASE_URL}}/delete-account`
 
 ## Copy verification

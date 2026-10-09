@@ -1,13 +1,9 @@
+import ScrollView from '../components/KeyboardAwareScrollView';
+import { AppAlert as Alert } from '../components/AppDialog';
+import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import React, { useEffect, useMemo, useState } from 'react';
 import AppTextInput from '../components/AppTextInput';
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -39,6 +35,7 @@ export default function ClaimListingScreen({ navigation }) {
   const { session } = useAppState();
   const { palette } = useChodhiQTheme();
   const [mode, setMode] = useState('claim');
+  const [showBenefits, setShowBenefits] = useState(false);
   const [query, setQuery] = useState('');
   const [listings, setListings] = useState([]),
     [categories, setCategories] = useState([]);
@@ -150,7 +147,10 @@ export default function ClaimListingScreen({ navigation }) {
   const card = { backgroundColor: palette.surface, borderColor: palette.border };
   if (!session)
     return (
-      <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]}>
+      <SafeAreaView
+        style={[styles.page, { backgroundColor: palette.background }]}
+        edges={['left', 'right', 'bottom']}
+      >
         <ScreenHeader navigation={navigation} title="Claim a listing" />
         <View style={styles.center}>
           <Text style={{ color: palette.text }}>
@@ -173,7 +173,10 @@ export default function ClaimListingScreen({ navigation }) {
       </SafeAreaView>
     );
   return (
-    <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]}>
+    <SafeAreaView
+      style={[styles.page, { backgroundColor: palette.background }]}
+      edges={['left', 'right', 'bottom']}
+    >
       <ScreenHeader
         navigation={navigation}
         title={provider ? 'Verify your business' : 'Claim listing / Create new'}
@@ -200,26 +203,62 @@ export default function ClaimListingScreen({ navigation }) {
                 Build a trusted business profile, appear in local discovery and receive enquiries
                 directly from the community.
               </Text>
-              <View style={styles.infoGrid}>
-                <Info
-                  Icon={Store}
-                  title="Be discovered"
-                  body="Show your services, location and contact details."
-                  palette={palette}
-                />
-                <Info
-                  Icon={BadgeCheck}
-                  title="Build trust"
-                  body="Submit ownership evidence for verification."
-                  palette={palette}
-                />
-                <Info
-                  Icon={Clock3}
-                  title="Quick setup"
-                  body="Save your workspace first, then complete verification."
-                  palette={palette}
-                />
-              </View>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityState={{ expanded: showBenefits }}
+                onPress={() => setShowBenefits((value) => !value)}
+                style={{ paddingVertical: 12 }}
+              >
+                <Text style={{ color: palette.primary, fontWeight: '800' }}>
+                  {showBenefits ? 'Hide joining details' : 'Why join? Benefits and what you need'}
+                </Text>
+              </TouchableOpacity>
+              {showBenefits && (
+                <View style={styles.infoGrid}>
+                  <Info
+                    Icon={Store}
+                    title="Be discovered"
+                    body="Show your services, location and contact details."
+                    palette={palette}
+                  />
+                  <Info
+                    Icon={BadgeCheck}
+                    title="Build trust"
+                    body="Submit ownership evidence for verification."
+                    palette={palette}
+                  />
+                  <Info
+                    Icon={Clock3}
+                    title="A clear review process"
+                    body="Claim or create your listing, then submit ownership evidence for administrator review. Verification is granted after approval."
+                    palette={palette}
+                  />
+                  <Info
+                    Icon={Building2}
+                    title="A profile that represents your business"
+                    body="Describe your services, display your business name and service area, and help customers decide whether you are the right fit."
+                    palette={palette}
+                  />
+                  <Info
+                    Icon={CheckCircle2}
+                    title="Turn interest into conversations"
+                    body="Customers can discover your listing and send enquiries or quote requests. Availability and customer demand determine results."
+                    palette={palette}
+                  />
+                  <Info
+                    Icon={FileUp}
+                    title="Have these details ready"
+                    body="Business name, service category, city and postcode. Prepare a PDF, JPEG or PNG showing your right to manage the business, such as registration evidence. Contact details and services can be completed on your profile."
+                    palette={palette}
+                  />
+                  <Text style={{ color: palette.text2, lineHeight: 21 }}>
+                    Listing verification and business-dashboard access are separate review
+                    processes. Business-dashboard applications require trading evidence and contact
+                    details; access stays locked until approval. A verified listing does not
+                    guarantee bookings.
+                  </Text>
+                </View>
+              )}
             </View>
             <Text style={[styles.stepLabel, { color: palette.text2 }]}>1 CHOOSE HOW TO JOIN</Text>
             <View style={[styles.tabs, card]}>
@@ -272,6 +311,13 @@ export default function ClaimListingScreen({ navigation }) {
                     placeholderTextColor={palette.muted}
                   />
                 </View>
+                <Text style={{ color: palette.text2, marginVertical: 10 }}>
+                  {query.trim()
+                    ? matches.length
+                      ? 'Choose your business from the results below.'
+                      : 'No matching listing. Try another city or postcode, or choose Create new.'
+                    : 'Search for your business name, city or postcode. If it is already listed, claim it to avoid creating a duplicate.'}
+                </Text>
                 {matches.map((item) => (
                   <TouchableOpacity
                     disabled={busy}
@@ -294,13 +340,13 @@ export default function ClaimListingScreen({ navigation }) {
                 ))}
               </>
             ) : (
-              <View style={[styles.form, styles.card, card]}>
+              <View style={[styles.card, styles.form, styles.createForm, card]}>
                 {[
                   ['Business name', 'businessName'],
                   ['Base city', 'city'],
                   ['Postcode', 'postcode'],
                 ].map(([label, key]) => (
-                  <View key={key}>
+                  <View key={key} style={styles.formField}>
                     <Text style={[styles.label, { color: palette.text2 }]}>{label}</Text>
                     <AppTextInput
                       accessibilityLabel={label}
@@ -310,24 +356,32 @@ export default function ClaimListingScreen({ navigation }) {
                     />
                   </View>
                 ))}
-                <Text style={[styles.label, { color: palette.text2 }]}>Category</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {categories.map((item) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[
-                        styles.choice,
-                        { borderColor: palette.border },
-                        form.categoryId === item.id && { backgroundColor: palette.primary },
-                      ]}
-                      onPress={() => setForm((current) => ({ ...current, categoryId: item.id }))}
-                    >
-                      <Text style={{ color: form.categoryId === item.id ? '#fff' : palette.text }}>
-                        {item.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                <View style={styles.formField}>
+                  <Text style={[styles.label, { color: palette.text2 }]}>Category</Text>
+                  <View style={styles.categoryChoices}>
+                    {categories.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={[
+                          styles.choice,
+                          styles.categoryChoice,
+                          { borderColor: palette.border },
+                          form.categoryId === item.id && { backgroundColor: palette.primary },
+                        ]}
+                        onPress={() => setForm((current) => ({ ...current, categoryId: item.id }))}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryText,
+                            { color: form.categoryId === item.id ? '#fff' : palette.text },
+                          ]}
+                        >
+                          {item.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
                 <TouchableOpacity
                   disabled={busy}
                   style={[styles.primary, styles.formButton, { backgroundColor: palette.primary }]}
@@ -339,7 +393,7 @@ export default function ClaimListingScreen({ navigation }) {
             )}
           </>
         ) : (
-          <View style={[styles.form, styles.card, card]}>
+          <View style={[styles.card, styles.form, card]}>
             <Text style={[styles.title, { color: palette.text }]}>Ownership evidence</Text>
             <Text style={{ color: palette.text2 }}>
               Upload a Companies House document, licence, utility bill or other proof. PDF, JPG and
@@ -482,6 +536,11 @@ const styles = StyleSheet.create({
   },
   // Forms also use the shared card style, so explicitly override its row layout.
   form: { flexDirection: 'column', alignItems: 'stretch', width: '100%' },
+  createForm: { maxWidth: 680, alignSelf: 'center', padding: 20, gap: 18 },
+  formField: { width: '100%', minWidth: 0 },
+  categoryChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  categoryChoice: { marginRight: 0, maxWidth: '100%', minHeight: 44, justifyContent: 'center' },
+  categoryText: { fontSize: 13, lineHeight: 18, flexShrink: 1 },
   formInput: { width: '100%' },
   formButton: { width: '100%', flex: 0 },
   title: { fontSize: 16, fontWeight: '800' },

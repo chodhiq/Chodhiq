@@ -1,4 +1,4 @@
-.git/
+.git
 .github/
 .agents/
 .codex/
@@ -37,3 +37,14 @@ docs/
 # Local Supabase state
 supabase/.temp/
 supabase/.branches/
+
+# Exclude old upload archives and audit packages from release source
+*.zip
+audit-packages/
+
+# Firebase client files are supplied through the EAS file environment
+google-services.json
+*service-account*.json
+*firebase-adminsdk*.json
+
+backup-*.sql

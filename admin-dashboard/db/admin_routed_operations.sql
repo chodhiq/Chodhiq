@@ -42,12 +42,20 @@ create or replace function public.admin_resolve_report(
 ) returns jsonb
 language plpgsql security definer set search_path = public
 as $$
-declare current_report record; target_id uuid; previous_target jsonb; new_target jsonb;
+declare
+  current_report record;
+  target_id uuid;
+  target_comment uuid;
+  previous_target jsonb;
+  new_target jsonb;
+  target_space uuid;
+  target_entity text;
+  allowed_moderator boolean;
 begin
-  if not public.is_admin() then raise exception using errcode='42501', message='administrator required'; end if;
   if report_kind not in ('provider','community') or next_status not in ('reviewing','resolved','dismissed') then raise exception using errcode='22023', message='invalid transition'; end if;
   if next_status in ('resolved','dismissed') and length(trim(coalesce(resolution_note,''))) < 8 then raise exception using errcode='22023', message='resolution note required'; end if;
   if report_kind = 'provider' then
+    if not public.is_admin() then raise exception using errcode='42501', message='administrator required'; end if;
     select * into current_report from public.provider_reports where id=report_id for update;
   else
     select * into current_report from public.community_post_reports where id=report_id for update;
@@ -55,20 +63,41 @@ begin
   if not found then raise exception using errcode='P0002', message='report not found'; end if;
   if current_report.status <> expected_status or (expected_updated_at is not null and (to_jsonb(current_report)->>'updated_at')::timestamptz is distinct from expected_updated_at) then raise exception using errcode='40001', message='report changed; reload and retry'; end if;
   if current_report.status not in ('open','reviewing') or (current_report.status='reviewing' and next_status='reviewing') then raise exception using errcode='40001', message='illegal or repeated report transition'; end if;
-  if next_status='resolved' then
-    if report_kind='provider' then
-      target_id:=current_report.provider_id;
+  if report_kind='provider' then
+    target_id:=nullif(to_jsonb(current_report)->>'provider_id','')::uuid;
+    if next_status='resolved' then
       select to_jsonb(p) into previous_target from public.providers p where id=target_id for update;
       update public.providers set verification_status='suspended',is_verified=false where id=target_id returning to_jsonb(providers) into new_target;
+    end if;
+    target_entity:='provider';
+  else
+    target_id:=nullif(to_jsonb(current_report)->>'post_id','')::uuid;
+    target_comment:=nullif(to_jsonb(current_report)->>'comment_id','')::uuid;
+    if target_comment is not null then
+      select p.community_id into target_space from public.community_comments c join public.community_posts p on p.id=c.post_id where c.id=target_comment;
+      if target_space is null then raise exception using errcode='P0002', message='reported comment not found'; end if;
+      select exists(select 1 from public.community_memberships m where m.space_id=target_space and m.user_id=auth.uid() and m.role in ('moderator','owner')) into allowed_moderator;
+      if not public.is_admin() and not allowed_moderator then raise exception using errcode='42501', message='community moderator access required'; end if;
+      target_entity:='community_comment';
+      if next_status='resolved' then
+        select to_jsonb(c) into previous_target from public.community_comments c where id=target_comment for update;
+        update public.community_comments set status='removed' where id=target_comment returning to_jsonb(community_comments) into new_target;
+      end if;
     else
-      target_id:=current_report.post_id;
-      select to_jsonb(p) into previous_target from public.community_posts p where id=target_id for update;
-      update public.community_posts set status='removed' where id=target_id returning to_jsonb(community_posts) into new_target;
+      select p.community_id into target_space from public.community_posts p where id=target_id;
+      if target_space is null then raise exception using errcode='P0002', message='reported post not found'; end if;
+      select exists(select 1 from public.community_memberships m where m.space_id=target_space and m.user_id=auth.uid() and m.role in ('moderator','owner')) into allowed_moderator;
+      if not public.is_admin() and not allowed_moderator then raise exception using errcode='42501', message='community moderator access required'; end if;
+      target_entity:='community_post';
+      if next_status='resolved' then
+        select to_jsonb(p) into previous_target from public.community_posts p where id=target_id for update;
+        update public.community_posts set status='removed' where id=target_id returning to_jsonb(community_posts) into new_target;
+      end if;
     end if;
   end if;
   if report_kind='provider' then update public.provider_reports set status=next_status where id=report_id;
-  else update public.community_post_reports set status=next_status where id=report_id; end if;
-  insert into public.admin_audit_log(admin_id,action,entity_type,entity_id,details) values(auth.uid(),report_kind||'_report_'||next_status,report_kind||'_report',report_id,jsonb_build_object('source','admin_report_rpc','reason',resolution_note,'outcome','succeeded','previous_values',jsonb_build_object('status',expected_status,'target',previous_target),'new_values',jsonb_build_object('status',next_status,'target',new_target),'correlation_id',gen_random_uuid()));
+  else update public.community_post_reports set status=next_status,updated_at=now() where id=report_id; end if;
+  insert into public.admin_audit_log(admin_id,action,entity_type,entity_id,details) values(auth.uid(),report_kind||'_report_'||next_status,report_kind||'_report',report_id,jsonb_build_object('source','admin_report_rpc','target_type',target_entity,'target_id',coalesce(target_comment,target_id),'reason',resolution_note,'outcome','succeeded','previous_values',jsonb_build_object('status',expected_status,'target',previous_target),'new_values',jsonb_build_object('status',next_status,'target',new_target),'correlation_id',gen_random_uuid()));
   return jsonb_build_object('ok',true,'status',next_status);
 end $$;
 

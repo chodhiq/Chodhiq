@@ -1,4 +1,6 @@
+const { androidPushConfigPath } = require('./scripts/android-push-config.cjs');
 const base = require('./app.base.json').expo;
+const googleServicesFile = androidPushConfigPath();
 const brandName = process.env.EXPO_PUBLIC_BRAND_NAME || base.name;
 const googleAdsEnabled = process.env.EXPO_PUBLIC_ENABLE_GOOGLE_ADS === 'true';
 const googleMapsEnabled = process.env.EXPO_PUBLIC_ENABLE_GOOGLE_MAPS === 'true';
@@ -7,8 +9,11 @@ const easProjectId =
   process.env.EXPO_PUBLIC_EAS_PROJECT_ID || '599ec186-c5e2-4228-b7f4-17ea866c409b';
 const productionBuild =
   process.env.EAS_BUILD === 'true' &&
-  (process.env.EAS_BUILD_PROFILE === 'production' ||
+  (process.env.EAS_BUILD_PROFILE === 'beta' ||
+    process.env.EAS_BUILD_PROFILE === 'production' ||
     process.env.EAS_BUILD_PROFILE === 'production-apk');
+const internalBetaBuild =
+  process.env.EAS_BUILD === 'true' && process.env.EAS_BUILD_PROFILE === 'beta-apk';
 const googleTestPublisher = '3940256099942544';
 const requiredAdIds = [
   ['GOOGLE_MOBILE_ADS_ANDROID_APP_ID', process.env.GOOGLE_MOBILE_ADS_ANDROID_APP_ID],
@@ -24,32 +29,79 @@ const requiredProductionValues = [
   ['EXPO_PUBLIC_SUPABASE_ANON_KEY', process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY],
   ['EXPO_PUBLIC_EAS_PROJECT_ID', process.env.EXPO_PUBLIC_EAS_PROJECT_ID],
   ['EXPO_PUBLIC_RELEASE_COMMIT', process.env.EXPO_PUBLIC_RELEASE_COMMIT],
+  ['EXPO_PUBLIC_TERMS_URL', process.env.EXPO_PUBLIC_TERMS_URL],
+  ['EXPO_PUBLIC_PRIVACY_URL', process.env.EXPO_PUBLIC_PRIVACY_URL],
+  ['EXPO_PUBLIC_DELETE_ACCOUNT_URL', process.env.EXPO_PUBLIC_DELETE_ACCOUNT_URL],
 ];
-const sentryValues = [
-  ['EXPO_PUBLIC_SENTRY_DSN', process.env.EXPO_PUBLIC_SENTRY_DSN],
-  ['SENTRY_ORG', process.env.SENTRY_ORG],
-  ['SENTRY_PROJECT', process.env.SENTRY_PROJECT],
-  ['SENTRY_AUTH_TOKEN', process.env.SENTRY_AUTH_TOKEN],
-];
-const sentryConfigured = sentryValues.every(([, value]) => Boolean(value));
+const validLegalUrl = (value) => {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === 'https:' &&
+      !url.username &&
+      !url.password &&
+      !['localhost', 'example.com', 'example.org', 'example.net'].includes(url.hostname) &&
+      !url.hostname.endsWith('.test')
+    );
+  } catch {
+    return false;
+  }
+};
+const sentryConfigured = [
+  process.env.EXPO_PUBLIC_SENTRY_DSN,
+  process.env.SENTRY_ORG,
+  process.env.SENTRY_PROJECT,
+  process.env.SENTRY_AUTH_TOKEN,
+].every(Boolean);
 
 if (googleMapsEnabled && !googleMapsApiKey) {
   throw new Error('Google Maps cannot be enabled without GOOGLE_MAPS_API_KEY.');
 }
 
-if (productionBuild) {
-  const missing = requiredProductionValues.filter(([, value]) => !value).map(([name]) => name);
-  if (missing.length) throw new Error(`Production builds require: ${missing.join(', ')}`);
+if (productionBuild || internalBetaBuild) {
+  // Direct-install beta testing uses the live backend, but unpublished legal
+  // drafts must not be presented as approved policies. Store profiles continue
+  // to require all three published legal URLs.
+  const requiredValues = internalBetaBuild
+    ? requiredProductionValues.filter(
+        ([name]) =>
+          ![
+            'EXPO_PUBLIC_TERMS_URL',
+            'EXPO_PUBLIC_PRIVACY_URL',
+            'EXPO_PUBLIC_DELETE_ACCOUNT_URL',
+          ].includes(name),
+      )
+    : requiredProductionValues;
+  const missing = requiredValues.filter(([, value]) => !value).map(([name]) => name);
+  const buildLabel = internalBetaBuild ? 'Internal beta' : 'Production';
+  if (missing.length) throw new Error(`${buildLabel} builds require: ${missing.join(', ')}`);
+  const invalidLegal = (productionBuild ? requiredProductionValues : [])
+    .filter(
+      ([name, value]) =>
+        name.endsWith('_URL') && name !== 'EXPO_PUBLIC_SUPABASE_URL' && !validLegalUrl(value),
+    )
+    .map(([name]) => name);
+  if (invalidLegal.length) {
+    throw new Error(
+      `Production builds require published HTTPS legal pages: ${invalidLegal.join(', ')}`,
+    );
+  }
   if (process.env.EXPO_PUBLIC_SUPABASE_URL !== 'https://gfjhvsajwjrrlylgrkhf.supabase.co') {
     throw new Error('Production builds must target ChodhiQ Production Supabase.');
   }
   if (process.env.EXPO_PUBLIC_DEMO_MODE === 'true') {
     throw new Error('Production builds cannot enable EXPO_PUBLIC_DEMO_MODE.');
   }
-  if (sentryValues.some(([, value]) => Boolean(value)) && !sentryConfigured) {
-    const missingSentry = sentryValues.filter(([, value]) => !value).map(([name]) => name);
-    throw new Error(`Production Sentry setup is incomplete: ${missingSentry.join(', ')}`);
-  }
+}
+
+if (
+  (productionBuild || internalBetaBuild) &&
+  process.env.EAS_BUILD_PLATFORM !== 'ios' &&
+  !googleServicesFile
+) {
+  throw new Error(
+    'Android beta/release push setup is incomplete. Configure the GOOGLE_SERVICES_JSON file variable in EAS and FCM v1 credentials before building.',
+  );
 }
 
 if (productionBuild && googleAdsEnabled) {
@@ -114,6 +166,7 @@ module.exports = {
   },
   android: {
     ...base.android,
+    ...(googleServicesFile ? { googleServicesFile } : {}),
     package: process.env.EXPO_ANDROID_PACKAGE || base.android.package,
     config: {
       ...base.android?.config,
@@ -122,6 +175,7 @@ module.exports = {
   },
   plugins: [
     ...plugins,
+    '@react-native-community/datetimepicker',
     'expo-secure-store',
     '@react-native-google-signin/google-signin',
     ...(sentryConfigured

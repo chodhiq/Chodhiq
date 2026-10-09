@@ -1,9 +1,12 @@
+import { AppAlert as Alert } from '../components/AppDialog';
+import { MotionScrollView as ScrollView } from '../components/Motion';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, Linking, RefreshControl, StyleSheet, View } from 'react-native';
 import Text from '../components/AppText';
+import { Store } from 'lucide-react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ExpoLocation from 'expo-location';
-import * as Haptics from 'expo-haptics';
+import { showPermissionRecovery } from '../lib/permissionRecovery';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { banners } from '../data/assetCatalog';
@@ -21,7 +24,9 @@ import {
 import { MarketplaceSkeleton } from '../components/Skeleton';
 import AdPlacement from '../components/AdPlacement';
 import { loadActiveCampaigns, recordCampaignEvent } from '../data/adCampaignRepository';
+import { distanceKm, isProviderOpenNow } from '../data/providerDiscovery';
 import { FadeInView } from '../components/Motion';
+import MarketplaceStatusBanner from '../components/MarketplaceStatusBanner';
 
 export default function HomeScreen({ navigation }) {
   const {
@@ -32,6 +37,8 @@ export default function HomeScreen({ navigation }) {
     location,
     locationCoordinates,
     unreadCount,
+    offline,
+    lastUpdatedAt,
     marketplaceLoading,
     refreshMarketplace,
     session,
@@ -51,13 +58,26 @@ export default function HomeScreen({ navigation }) {
   const [locating, setLocating] = useState(false);
   useEffect(() => {
     let active = true;
-    loadActiveCampaigns(location)
-      .then((rows) => active && setCampaigns(rows))
-      .catch(() => active && setCampaigns([]));
+    const refreshCampaigns = () =>
+      loadActiveCampaigns(location)
+        .then((rows) => active && setCampaigns(rows))
+        .catch(() => active && setCampaigns([]));
+    void refreshCampaigns();
+    const listener = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void refreshCampaigns();
+        void refreshMarketplace();
+      }
+    });
+    const interval = setInterval(() => {
+      if (AppState.currentState === 'active') void refreshCampaigns();
+    }, 60_000);
     return () => {
       active = false;
+      listener.remove();
+      clearInterval(interval);
     };
-  }, [location]);
+  }, [location, refreshMarketplace]);
   const recordImpression = useCallback((campaign) => {
     recordCampaignEvent(campaign.id, 'impression').catch(() => {});
   }, []);
@@ -71,7 +91,7 @@ export default function HomeScreen({ navigation }) {
       setLocating(true);
       const permission = await ExpoLocation.requestForegroundPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(
+        showPermissionRecovery(
           'Location permission needed',
           'Allow location access to find businesses near you.',
         );
@@ -116,7 +136,7 @@ export default function HomeScreen({ navigation }) {
             distance == null
               ? null
               : `${distance < 10 ? distance.toFixed(1) : Math.round(distance)} km`,
-          openNow: getOpenNow(provider.openingHours),
+          openNow: isProviderOpenNow(provider.openingHours),
         };
       });
       const categoryProviders = selectedCategoryId
@@ -203,7 +223,6 @@ export default function HomeScreen({ navigation }) {
             colors={[palette.primary]}
             progressBackgroundColor={palette.surface}
             onRefresh={async () => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
               await refreshMarketplace();
             }}
           />
@@ -220,6 +239,13 @@ export default function HomeScreen({ navigation }) {
           onCurrentLocation={useCurrentLocation}
           onSearch={() => navigation.navigate('Explore')}
           onProfile={() => navigation.navigate('Profile')}
+        />
+        <MarketplaceStatusBanner
+          offline={offline}
+          loading={marketplaceLoading}
+          lastUpdatedAt={lastUpdatedAt}
+          onRetry={refreshMarketplace}
+          palette={palette}
         />
         <ScrollView
           horizontal
@@ -325,6 +351,15 @@ export default function HomeScreen({ navigation }) {
                 { backgroundColor: palette.surface, borderColor: palette.border },
               ]}
             >
+              {discoveryMode === 'popular' && (
+                <Store
+                  size={72}
+                  strokeWidth={1.25}
+                  color={palette.text2}
+                  accessible={false}
+                  style={{ marginBottom: 12 }}
+                />
+              )}
               <Text style={[styles.emptyTitle, { color: palette.text }]}>
                 {discoveryMode === 'topRated'
                   ? 'No reviewed businesses to rank yet'
@@ -332,14 +367,16 @@ export default function HomeScreen({ navigation }) {
                     ? 'Choose your current location'
                     : discoveryMode === 'open'
                       ? 'No businesses are marked open right now'
-                      : 'No businesses in this category yet'}
+                      : `No ${categories.find((category) => category.id === selectedCategoryId)?.name || 'business'} listings here yet`}
               </Text>
               <Text style={[styles.emptyBody, { color: palette.text2 }]}>
-                {discoveryMode === 'topRated'
-                  ? 'Ratings will appear when customers leave genuine reviews.'
-                  : discoveryMode === 'nearby' && !locationCoordinates
-                    ? 'Allow location access or choose an area to see nearby listings.'
-                    : 'Try another category or explore all available listings.'}
+                {offline
+                  ? 'Connect to the internet and retry to load business listings.'
+                  : discoveryMode === 'topRated'
+                    ? 'Ratings will appear when customers leave genuine reviews.'
+                    : discoveryMode === 'nearby' && !locationCoordinates
+                      ? 'Allow location access or choose an area to see nearby listings.'
+                      : 'Check back soon or try another category.'}
               </Text>
             </View>
           )}
@@ -412,48 +449,14 @@ export default function HomeScreen({ navigation }) {
             onPress={openCampaign}
           />
 
-          <HomeCommunityCTA palette={palette} onPress={() => navigation.navigate('CreatePost')} />
+          <HomeCommunityCTA
+            palette={palette}
+            onPress={() => navigation.navigate('Community', { compose: true })}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
-}
-
-function distanceKm(lat1, lon1, lat2, lon2) {
-  const radians = (degrees) => (degrees * Math.PI) / 180;
-  const dLat = radians(lat2 - lat1);
-  const dLon = radians(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(radians(lat1)) * Math.cos(radians(lat2)) * Math.sin(dLon / 2) ** 2;
-  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function getOpenNow(hours = []) {
-  if (!hours.length) return null;
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/London',
-    weekday: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(new Date());
-  const weekday = parts.find((part) => part.type === 'weekday')?.value;
-  const hour = Number(parts.find((part) => part.type === 'hour')?.value);
-  const minute = Number(parts.find((part) => part.type === 'minute')?.value);
-  const dayOfWeek = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }[weekday];
-  const today = hours.find((item) => Number(item.day_of_week) === dayOfWeek);
-  if (!today) return null;
-  if (today.is_closed) return false;
-  if (!today.open_time || !today.close_time) return null;
-  const now = hour * 60 + minute;
-  const toMinutes = (time) => {
-    const [h, m] = String(time).split(':').map(Number);
-    return h * 60 + m;
-  };
-  const opens = toMinutes(today.open_time);
-  const closes = toMinutes(today.close_time);
-  return closes < opens ? now >= opens || now < closes : now >= opens && now < closes;
 }
 
 function parseDistance(value) {

@@ -59,6 +59,16 @@ export type Lead = {
   created_at: string;
 };
 
+export type Booking = {
+  id: string;
+  requested_date: string;
+  requested_time: string;
+  status: string;
+  notes: string | null;
+  provider_message: string | null;
+  created_at: string;
+};
+
 export type Notification = {
   id: string;
   title: string;

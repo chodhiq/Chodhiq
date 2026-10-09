@@ -1,0 +1,16 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(7);
+select has_column('public','push_delivery_attempts','expo_ticket_id','tickets can be linked to receipts');
+select has_column('public','push_delivery_attempts','recipient_token_hash','token replacement can be protected without logging tokens');
+select ok(exists(select 1 from cron.job where jobname='chodhiq-push-receipts'),'receipt polling job exists');
+insert into public.push_delivery_attempts(notification_id,outcome,delivery_state,expo_ticket_id) values('96500000-0000-4000-8000-000000000020','accepted','accepted','test-ticket');
+select is((select outcome from public.push_delivery_attempts where expo_ticket_id='test-ticket'),'accepted','accepted tickets are not reported as delivered');
+update public.push_delivery_attempts set outcome='delivered',delivery_state='receipt_ok',receipt_checked_at=now() where expo_ticket_id='test-ticket';
+select is((select delivery_state from public.push_delivery_attempts where expo_ticket_id='test-ticket'),'receipt_ok','confirmed receipts have an explicit state');
+set local role authenticated;
+select throws_ok($q$select public.dispatch_push_receipt_check()$q$,'42501',null,'authenticated clients cannot invoke the secret scheduler');
+reset role;
+select ok((select relrowsecurity from pg_class where oid='public.push_delivery_attempts'::regclass),'push monitoring remains protected by RLS');
+select * from finish();
+rollback;

@@ -22,19 +22,50 @@ const monetisationEnabled =
 
 const navGroups = [
   {
-    label: 'Operations',
+    label: 'Marketplace',
     items: [
       ['/', 'Dashboard'],
+      ['/applications', 'Business applications'],
       ['/providers', 'Providers'],
-      ['/demand', 'Bookings'],
+      ['/verification', 'Verification'],
+      ['/activity', 'Bookings & quotes'],
+      ['/demand', 'Demand & leads'],
       ['/users', 'Customers'],
-      [monetisationEnabled ? '/payments' : '/analytics', 'Payouts'],
       ['/categories', 'Services'],
-      ['/analytics', 'Reports'],
-      ['/admins', 'Settings'],
+      ['/reviews', 'Reviews'],
     ],
   },
-] as const;
+  {
+    label: 'Community & safety',
+    items: [
+      ['/community', 'Community feed'],
+      ['/community/privileges', 'Community privileges'],
+      ['/moderation/community', 'Community reports'],
+      ['/moderation/providers', 'Provider reports'],
+    ],
+  },
+  {
+    label: 'Growth & communications',
+    items: [
+      ['/campaigns', 'Advertising'],
+      ['/notifications', 'Notifications'],
+      ['/analytics', 'Analytics'],
+      ...(monetisationEnabled
+        ? [
+            ['/payments', 'Payments'],
+            ['/subscriptions', 'Subscriptions'],
+          ]
+        : []),
+    ],
+  },
+  {
+    label: 'Administration',
+    items: [
+      ['/admins', 'Administrators'],
+      ['/audit', 'Audit log'],
+    ],
+  },
+];
 
 function NavIcon({ index }: { index: number }) {
   const paths = [
@@ -408,9 +439,15 @@ export function AdminShell({ title, children }: { title: string; children: React
                       aria-label={label}
                       key={href}
                       href={href}
-                      aria-current={path === href ? 'page' : undefined}
+                      aria-current={
+                        path === href || (href === '/providers' && path.startsWith('/providers/'))
+                          ? 'page'
+                          : undefined
+                      }
                       className={
-                        path === href || (href !== '/' && path.startsWith(href)) ? 'active' : ''
+                        path === href || (href === '/providers' && path.startsWith('/providers/'))
+                          ? 'active'
+                          : ''
                       }
                     >
                       <i>

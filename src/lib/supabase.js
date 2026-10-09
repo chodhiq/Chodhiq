@@ -6,6 +6,12 @@ import { createClient } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import { withAuthTimeout } from './authOperations';
+import {
+  completeAuthCallback,
+  isSafeAppLink,
+  createAuthCodeExchange,
+  EMAIL_CONFIRMATION_URL,
+} from './authCallback';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -65,6 +71,11 @@ export const supabase = isSupabaseConfigured
     })
   : null;
 
+const authCodeExchange = supabase ? createAuthCodeExchange(supabase.auth) : null;
+supabase?.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_OUT') authCodeExchange.reset();
+});
+
 export async function getOrCreateSession() {
   if (!supabase) return null;
   const { data: existing } = await withAuthTimeout(supabase.auth.getSession());
@@ -83,7 +94,7 @@ export async function signInWithEmail(email, password) {
 export async function signUpWithEmail(email, password, fullName) {
   if (!supabase) throw new Error('Supabase is not configured.');
   const emailRedirectTo =
-    Platform.OS === 'web' ? makeRedirectUri({ path: 'auth/callback' }) : AUTH_CALLBACK_URL;
+    Platform.OS === 'web' ? makeRedirectUri({ path: 'auth/callback' }) : EMAIL_CONFIRMATION_URL;
   const { data, error } = await withAuthTimeout(
     supabase.auth.signUp({
       email,
@@ -93,6 +104,28 @@ export async function signUpWithEmail(email, password, fullName) {
   );
   if (error) throw error;
   return data.session;
+}
+
+export async function resendEmailConfirmation(email) {
+  if (!supabase) throw new Error('Supabase is not configured.');
+  const { error } = await withAuthTimeout(
+    supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo:
+          Platform.OS === 'web'
+            ? makeRedirectUri({ path: 'auth/callback' })
+            : EMAIL_CONFIRMATION_URL,
+      },
+    }),
+  );
+  if (error) throw error;
+}
+
+export async function finishEmailConfirmation(params) {
+  if (!supabase) throw new Error('Supabase is not configured.');
+  return withAuthTimeout(completeAuthCallback(authCodeExchange, params));
 }
 
 export async function requestPasswordReset(email) {
@@ -127,19 +160,15 @@ export async function updatePassword(password) {
 export async function signInWithOAuth(provider) {
   if (!supabase) throw new Error('Supabase is not configured.');
   if (provider === 'google' && Platform.OS === 'android') {
-    try {
-      // Load the native module only after the user chooses Google sign-in. A
-      // missing or misconfigured native module must never prevent app startup.
-      const { getNativeGoogleIdToken } = await import('./googleSignIn');
-      const token = await getNativeGoogleIdToken();
-      const { data, error } = await withAuthTimeout(
-        supabase.auth.signInWithIdToken({ provider: 'google', token }),
-      );
-      if (error) throw error;
-      return data.session;
-    } catch (nativeError) {
-      console.warn('Native Google sign-in unavailable; using browser OAuth.', nativeError);
-    }
+    // Do not silently fall back to browser OAuth if native account selection
+    // fails or is cancelled.
+    const { getNativeGoogleIdToken } = await import('./googleSignIn');
+    const token = await getNativeGoogleIdToken();
+    const { data, error } = await withAuthTimeout(
+      supabase.auth.signInWithIdToken({ provider: 'google', token }),
+    );
+    if (error) throw error;
+    return data.session;
   }
   // Keep the native redirect identical to the URL registered in Supabase. Expo can
   // otherwise produce a triple-slash URI that Android opens but Supabase rejects.
@@ -163,7 +192,7 @@ export async function signInWithOAuth(provider) {
     resolveCallback = resolve;
   });
   const subscription = Linking.addEventListener('url', ({ url }) => {
-    if (url?.startsWith(redirectTo)) resolveCallback(url);
+    if (isSafeAppLink(url) && url?.startsWith(redirectTo)) resolveCallback(url);
   });
   let callbackUrl;
   try {
@@ -185,16 +214,24 @@ export async function signInWithOAuth(provider) {
   }
   if (!callbackUrl)
     throw new Error('Google could not return to ChodhiQ. Please close the browser and try again.');
+  if (!isSafeAppLink(callbackUrl))
+    throw new Error('The sign-in link is invalid. Please try again.');
   const code = new URL(callbackUrl).searchParams.get('code');
   const callbackError = new URL(callbackUrl).searchParams.get('error_description');
-  if (callbackError) throw new Error(decodeURIComponent(callbackError));
+  if (callbackError) throw new Error(callbackError);
   if (!code)
     throw new Error(
       `No authorization code was returned. Add this URL to Supabase Auth → URL Configuration → Redirect URLs: ${redirectTo}`,
     );
   const { data: sessionData, error: exchangeError } = await withAuthTimeout(
-    supabase.auth.exchangeCodeForSession(code),
+    authCodeExchange.exchangeCodeForSession(code),
   );
   if (exchangeError) throw exchangeError;
   return sessionData.session;
+}
+
+export async function signOutGoogleAccount() {
+  if (Platform.OS !== 'android') return;
+  const { signOutNativeGoogleAccount } = await import('./googleSignIn');
+  await signOutNativeGoogleAccount();
 }

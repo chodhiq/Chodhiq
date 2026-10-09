@@ -1,6 +1,20 @@
 import assert from 'node:assert/strict';
+import { registerHooks } from 'node:module';
 import { access, readFile } from 'node:fs/promises';
 import test from 'node:test';
+
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    return specifier === 'cloudflare:workers'
+      ? { url: specifier, shortCircuit: true }
+      : nextResolve(specifier, context);
+  },
+  load(url, context, nextLoad) {
+    return url === 'cloudflare:workers'
+      ? { format: 'module', source: 'export const tracing = undefined;', shortCircuit: true }
+      : nextLoad(url, context);
+  },
+});
 
 async function render(path = '/') {
   const workerUrl = new URL('../dist/server/index.js', import.meta.url);
@@ -19,6 +33,7 @@ const routes = [
   '/providers',
   '/verification',
   '/community',
+  '/community/privileges',
   '/campaigns',
   '/subscriptions',
   '/payments',
@@ -68,12 +83,13 @@ test('admin sign-in uses the approved artwork and responsive dashboard breakpoin
   assert.match(responsive, /max-width:\s*520px/);
 });
 
-test('campaign operations expose approval, pause and performance reporting', async () => {
+test('campaign operations expose upload, approval, pause and performance reporting', async () => {
   const source = await readFile(new URL('../app/campaigns/page.tsx', import.meta.url), 'utf8');
   assert.match(source, /ad_campaign_enquiries/);
   assert.match(source, /ad_campaign_performance/);
-  assert.match(source, /transition\(row, "approved"\)/);
-  assert.match(source, /transition\(row, "paused"\)/);
+  assert.match(source, /from\('ad-creatives'\)\.upload/);
+  assert.match(source, /transition\(campaign, 'approved'\)/);
+  assert.match(source, /transition\(campaign, 'paused'\)/);
 });
 
 test('ships all route entrypoints including provider detail', async () => {

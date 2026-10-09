@@ -2,10 +2,10 @@ import Stripe from 'npm:stripe@18.5.0';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const currentPeriodEndIso = (subscription: Stripe.Subscription) => {
-  const periodEnd = subscription.current_period_end;
-  if (!Number.isFinite(periodEnd) || periodEnd <= 0)
+  const periods = subscription.items.data.map((item) => item.current_period_end);
+  if (!periods.length || periods.some((period) => !Number.isFinite(period) || period <= 0))
     throw new Error('Stripe subscription has no valid current period end');
-  return new Date(periodEnd * 1000).toISOString();
+  return new Date(Math.min(...periods) * 1000).toISOString();
 };
 
 Deno.serve(async (req) => {

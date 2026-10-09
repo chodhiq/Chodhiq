@@ -1,0 +1,298 @@
+/* Operational layout shared by the dashboard and moderation workspace. */
+.admin-sidebar .nav-group {
+  margin-bottom: 18px !important;
+}
+.admin-sidebar .nav-group h2 {
+  display: block;
+  margin: 14px 10px 8px;
+  color: var(--nav-muted);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+}
+.admin-sidebar .nav-group a {
+  min-height: 40px !important;
+}
+.quick.operation-shortcuts {
+  margin-top: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.operation-shortcuts a {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  padding-right: 42px !important;
+  background: var(--surface) !important;
+}
+.operation-shortcuts a b {
+  font-size: 14px;
+}
+.operation-shortcuts a small {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--m);
+}
+.operation-shortcuts a > span {
+  position: absolute;
+  right: 18px;
+  top: 20px;
+  color: var(--u);
+}
+.metric-link {
+  display: block;
+  text-decoration: none;
+  color: var(--i);
+}
+.metric-link:focus-visible,
+.quick a:focus-visible {
+  outline: 3px solid var(--u);
+  outline-offset: 3px;
+}
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.section-heading h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.section-heading p {
+  color: var(--m);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.section-heading a,
+.feed-navigation a,
+.post-context a {
+  color: var(--u);
+  font-size: 13px;
+}
+.application-preview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--l);
+  color: var(--i);
+  text-decoration: none;
+}
+.application-preview-row small {
+  display: block;
+  margin-top: 6px;
+  color: var(--m);
+  font-size: 12px;
+}
+.feed-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  padding: 12px 0 20px;
+}
+.feed-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.feed-filters .field {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+.feed-filters input,
+.feed-filters select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--l);
+  padding: 10px;
+  border-radius: 10px;
+}
+.community-feed-admin {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+.community-feed-admin > article {
+  background: var(--surface);
+  border: 1px solid var(--l) !important;
+  border-radius: 14px;
+  margin-bottom: 20px;
+  padding: 22px;
+}
+.community-feed-admin > article > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.community-feed-admin article > a {
+  display: block;
+  width: 100%;
+}
+.community-media {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+  background: var(--surface-2);
+  border-radius: 12px;
+  margin: 14px 0 8px;
+}
+.community-feed-admin article > a[data-media-error]::before {
+  content: 'Photo could not be loaded. Open the original or refresh to retry.';
+  display: block;
+  font-size: 13px;
+  color: var(--m);
+  padding: 20px;
+}
+.post-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+  font-size: 15px;
+}
+.post-context {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 14px 0;
+  overflow-wrap: anywhere;
+}
+.community-feed-admin .moderation-reason {
+  background: var(--surface-2);
+  margin-top: 18px;
+}
+.community-feed-admin footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.community-feed-admin footer button {
+  min-height: 40px;
+}
+.community-live-toolbar {
+  flex-wrap: wrap;
+}
+.comment-controls {
+  margin-top: 18px;
+  border-top: 1px solid var(--l);
+  padding-top: 14px;
+}
+.comment-controls > button {
+  min-height: 40px;
+}
+.comment-list {
+  list-style: none;
+  padding: 0;
+}
+.comment-list li {
+  padding: 15px 0;
+  border-bottom: 1px solid var(--l);
+}
+.comment-list p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.comment-list textarea {
+  width: 100%;
+  min-height: 64px;
+  margin: 12px 0;
+  padding: 10px;
+  border: 1px solid var(--l);
+  border-radius: 8px;
+}
+@media (min-width: 821px) and (max-width: 1100px) {
+  .admin-sidebar .nav-group h2 {
+    display: none;
+  }
+}
+@media (max-width: 820px) {
+  .quick.operation-shortcuts,
+  .feed-filters {
+    grid-template-columns: 1fr;
+  }
+  .section-heading {
+    flex-direction: column;
+  }
+  .community-feed-admin > article {
+    padding: 16px;
+  }
+}
+
+.community-feed-admin > article > .comment-controls {
+  display: block;
+}
+.community-feed-admin article .post-body {
+  font-size: 15px;
+}
+.community-feed-admin article .post-context small {
+  color: var(--m);
+  font-size: 12px;
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .admin-sidebar .nav-group h2 {
+    display: none;
+  }
+}
+
+/* Override legacy light-only responsive rules when dark appearance is selected. */
+:root[data-theme='dark'] {
+  --g: #37ced6;
+  --d: #0b2635;
+  --p: #143639;
+  --c: #0b131b;
+  --i: #f1f5f9;
+  --m: #a8b5c3;
+  --l: #2a3d4a;
+  --y: #37ced6;
+  --u: #7bdee2;
+  --r: #ff7b85;
+  --surface: #13212c;
+  --surface-2: #1a2d38;
+  --on-accent: #061316;
+  --nav: #071b29;
+  --nav-text: #eef6fb;
+  --nav-muted: #9dafbd;
+  --shadow: #0006;
+}
+[data-theme='dark'] .topbar,
+[data-theme='dark'] .quick a,
+[data-theme='dark'] .quick button,
+[data-theme='dark'] .admin-login-page,
+[data-theme='dark'] .admin-login-card {
+  background: var(--surface) !important;
+  color: var(--i) !important;
+  border-color: var(--l) !important;
+  color-scheme: dark;
+}
+[data-theme='dark'] .global-search > input,
+[data-theme='dark'] th,
+[data-theme='dark'] .admin-login-card input {
+  background: var(--surface-2) !important;
+  color: var(--i) !important;
+  border-color: var(--l) !important;
+}
+[data-theme='dark'] .admin-login-card h2,
+[data-theme='dark'] .admin-login-card label {
+  color: var(--i) !important;
+}
+[data-theme='dark'] .admin-login-card > p,
+[data-theme='dark'] .admin-login-card input::placeholder {
+  color: var(--m) !important;
+}
+[data-theme='dark'] .metric small,
+[data-theme='dark'] .admin-login-card > small {
+  color: var(--u) !important;
+}
+[data-theme='dark'] .primary {
+  background: var(--g) !important;
+  color: var(--on-accent) !important;
+  border-color: var(--g) !important;
+}

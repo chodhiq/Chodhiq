@@ -1,12 +1,11 @@
+import HeroBackdrop from './HeroBackdrop';
+import ImageBackground from './RevealImageBackground';
+import { useIsFocused } from '@react-navigation/native';
+import { useMotionPreferences } from '../hooks/useMotionPreferences';
+import { MotionTouchable as TouchableOpacity } from './Motion';
+import { getMelaPalette } from '../theme/mela';
 import React from 'react';
-import {
-  Image,
-  ImageBackground,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Image, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Text from './AppText';
 import {
   Bell,
@@ -42,7 +41,13 @@ export function HomeHeader({
   return (
     <View style={[s.header, { backgroundColor: palette.dark ? palette.bg : '#101817' }]}>
       <View style={s.top}>
-        <Image source={logo} style={s.logo} resizeMode="contain" accessibilityLabel="ChodhiQ" />
+        <Image
+          resizeMethod="resize"
+          source={logo}
+          style={s.logo}
+          resizeMode="contain"
+          accessibilityLabel="ChodhiQ"
+        />
         <View style={s.actions}>
           <IconButton
             onPress={onNotifications}
@@ -62,7 +67,11 @@ export function HomeHeader({
             style={s.avatarButton}
           >
             {profile?.avatarUri ? (
-              <Image source={{ uri: profile.avatarUri }} style={s.profileAvatar} />
+              <Image
+                resizeMethod="resize"
+                source={{ uri: profile.avatarUri }}
+                style={s.profileAvatar}
+              />
             ) : (
               <View style={s.profileAvatarFallback}>
                 {profile?.name && profile.name !== 'Guest' ? (
@@ -84,7 +93,7 @@ export function HomeHeader({
         >
           <MapPin size={18} color="#FFFFFF" fill="#FFFFFF" />
           <Text numberOfLines={1} style={s.headerLocationText}>
-            {city || 'Choose your area'}, UK
+            {city || 'Choose your area'}
           </Text>
           <Icons.ChevronDown size={16} color="#FFFFFF" />
         </TouchableOpacity>
@@ -163,32 +172,34 @@ export function HomeLocationBar({ palette, location, onLocation }) {
 }
 export function HomeHero({ palette, mode, image, images = [], location = '', onPress }) {
   const { width } = useWindowDimensions();
-  const heroHeight = Math.min(248, Math.max(192, (Math.min(width, 840) - 36) * 0.55));
+  const focused = useIsFocused();
+  const { foreground, reducedMotion } = useMotionPreferences();
+  const heroHeight = Math.min(300, Math.max(260, (Math.min(width, 840) - 36) * 0.65));
   const city = String(location || '').trim();
   const [activeImage, setActiveImage] = React.useState(0);
   React.useEffect(() => {
-    if (images.length < 2) return undefined;
+    if (images.length < 2 || !focused || !foreground || reducedMotion) return undefined;
     const timer = setInterval(() => setActiveImage((index) => (index + 1) % images.length), 5000);
     return () => clearInterval(timer);
-  }, [images.length]);
-  const heroImage = images[activeImage] || image;
+  }, [images.length, focused, foreground, reducedMotion]);
   const warm = mode === 'warm';
   const eyebrow = warm ? 'GOOD PLACES   BRIGHTER DAYS' : `DISCOVER ${city || 'NEAR YOU'}`;
   const firstLine = warm ? 'Explore' : 'Find what';
   const secondLine = warm ? 'your neighborhood' : 'you love nearby';
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={s.hero}>
-      <ImageBackground
-        source={heroImage}
-        resizeMode="cover"
+      <HeroBackdrop
+        sources={images.length ? images : [image]}
+        active={activeImage}
         style={[s.heroImage, { height: heroHeight, justifyContent: 'center' }]}
-        imageStyle={s.heroRadius}
       >
         <View
           style={[s.overlay, { backgroundColor: warm ? 'rgba(251,245,234,.72)' : palette.overlay }]}
         />
-        <View style={[s.heroCopy, { padding: 18, maxWidth: '63%' }]}>
-          <Text style={[s.heroEyebrow, { color: '#FFFFFFB8' }]}>{eyebrow}</Text>
+        <View style={[s.heroCopy, { padding: 18, maxWidth: width < 380 ? '100%' : '65%' }]}>
+          <Text style={[s.heroEyebrow, { color: warm ? palette.textSecondary : '#FFFFFFB8' }]}>
+            {eyebrow}
+          </Text>
           <Text
             adjustsFontSizeToFit
             minimumFontScale={0.82}
@@ -212,16 +223,18 @@ export function HomeHero({ palette, mode, image, images = [], location = '', onP
             style={[
               s.heroButton,
               {
-                backgroundColor: palette.primary,
+                backgroundColor: getMelaPalette(false).primary,
                 height: 40,
               },
             ]}
           >
-            <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>Explore now</Text>
-            <ChevronRight size={18} color="#FFFFFF" />
+            <Text style={{ color: getMelaPalette(false).onPrimary, fontWeight: '800' }}>
+              Explore now
+            </Text>
+            <ChevronRight size={18} color={getMelaPalette(false).onPrimary} />
           </View>
         </View>
-        <View style={s.heroTrustPanel}>
+        <View style={[s.heroTrustPanel, width < 380 && { display: 'none' }]}>
           {[
             ['BadgeCheck', 'Local businesses'],
             ['Star', 'Real reviews'],
@@ -239,7 +252,7 @@ export function HomeHero({ palette, mode, image, images = [], location = '', onP
         </View>
         <View style={s.heroCity}>
           <MapPin size={13} color="#22C55E" fill="#22C55E" />
-          <Text style={s.heroCityText}>{city}, UK</Text>
+          <Text style={s.heroCityText}>{city || 'Near you'}</Text>
         </View>
         {images.length > 1 && (
           <View style={s.heroPagination} pointerEvents="none">
@@ -248,7 +261,7 @@ export function HomeHero({ palette, mode, image, images = [], location = '', onP
             ))}
           </View>
         )}
-      </ImageBackground>
+      </HeroBackdrop>
     </TouchableOpacity>
   );
 }
@@ -372,20 +385,24 @@ export function HomeCategory({
           s.categoryCircle,
           {
             backgroundColor: active
-              ? palette.primary
+              ? getMelaPalette(false).primary
               : categoryTileColors[index % categoryTileColors.length].background,
-            borderColor: active ? palette.primary : 'transparent',
+            borderColor: active ? getMelaPalette(false).primary : 'transparent',
           },
         ]}
       >
         <Icon
           size={24}
-          color={active ? '#FFFFFF' : categoryTileColors[index % categoryTileColors.length].icon}
+          color={
+            active
+              ? getMelaPalette(false).onPrimary
+              : categoryTileColors[index % categoryTileColors.length].icon
+          }
         />
       </View>
       <Text
         numberOfLines={2}
-        style={[s.categoryLabel, { color: active ? palette.primary : palette.text }]}
+        style={[s.categoryLabel, { color: active ? getMelaPalette(false).primary : palette.text }]}
       >
         {more ? 'More' : category.name}
       </Text>
@@ -401,7 +418,11 @@ export function HomeBusinessCard({ palette, provider, saved, onSave, onPress, on
     >
       <View style={s.businessMedia}>
         {provider.image ? (
-          <Image source={imageSource(provider.image)} style={s.businessImage} />
+          <Image
+            resizeMethod="resize"
+            source={imageSource(provider.image)}
+            style={s.businessImage}
+          />
         ) : (
           <View
             style={[
@@ -601,7 +622,7 @@ export function HomeCreator({ palette, item, onPress }) {
       onPress={onPress}
       style={[s.creator, { backgroundColor: palette.surface, borderColor: palette.border }]}
     >
-      <Image source={imageSource(item.image)} style={s.creatorImage} />
+      <Image resizeMethod="resize" source={imageSource(item.image)} style={s.creatorImage} />
       <View style={{ flex: 1 }}>
         <Text numberOfLines={1} style={[s.creatorName, { color: palette.text }]}>
           {item.name}
@@ -637,7 +658,7 @@ export function HomeEvent({ palette, item, onPress }) {
           <Text style={[s.creatorCity, { color: palette.text2 }]}>{item.city}, UK</Text>
         </View>
       </View>
-      <Image source={imageSource(item.image)} style={s.eventImage} />
+      <Image resizeMethod="resize" source={imageSource(item.image)} style={s.eventImage} />
     </TouchableOpacity>
   );
 }
@@ -787,7 +808,7 @@ const s = StyleSheet.create({
   },
   currentLocationText: { fontSize: 10, fontWeight: '800' },
   hero: { marginTop: 12, borderRadius: 20, overflow: 'hidden', ...shadows.soft },
-  heroImage: { width: '100%', aspectRatio: 16 / 9, justifyContent: 'center' },
+  heroImage: { width: '100%', justifyContent: 'center' },
   heroRadius: { borderRadius: 20 },
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5,15,28,.42)' },
   heroCopy: { padding: 18, maxWidth: '69%', zIndex: 1 },

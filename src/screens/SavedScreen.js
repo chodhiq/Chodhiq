@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { MotionTouchable as TouchableOpacity } from '../components/Motion';
+import React, { useMemo, useState } from 'react';
+import { View, FlatList, ScrollView, StyleSheet } from 'react-native';
 import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HeartOff } from 'lucide-react-native';
@@ -12,7 +13,10 @@ export default function SavedScreen({ navigation }) {
   const { providers, savedIds, toggleSaved } = useAppState();
   const { palette } = useChodhiQTheme();
   const [tab, setTab] = useState('businesses');
-  const savedProviders = providers.filter((provider) => savedIds.includes(provider.id));
+  const savedProviders = useMemo(() => {
+    const saved = new Set(savedIds);
+    return providers.filter((provider) => saved.has(provider.id));
+  }, [providers, savedIds]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
@@ -20,61 +24,62 @@ export default function SavedScreen({ navigation }) {
         <Text style={[typography.h1, { color: palette.text }]}>Saved</Text>
         <Text style={[typography.caption, { color: palette.text2 }]}>Your favorite providers</Text>
       </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.tabs, { backgroundColor: palette.surfaceAlt }]}
-      >
-        {['businesses', 'events', 'offers', 'posts'].map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={[
-              styles.tab,
-              tab === item && styles.tabActive,
-              tab === item && { backgroundColor: palette.primary },
-            ]}
-            onPress={() => setTab(item)}
-          >
-            <Text
-              style={[styles.tabText, { color: tab === item ? palette.background : palette.text2 }]}
+      <View style={styles.tabsFrame}>
+        <ScrollView
+          style={{ flexGrow: 0, flexShrink: 0 }}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[styles.tabs, { backgroundColor: palette.surfaceAlt }]}
+        >
+          {['businesses', 'events', 'offers', 'posts'].map((item) => (
+            <TouchableOpacity
+              key={item}
+              style={[
+                styles.tab,
+                tab === item && styles.tabActive,
+                tab === item && { backgroundColor: palette.primary },
+              ]}
+              onPress={() => setTab(item)}
             >
-              {item[0].toUpperCase() + item.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-      <ScrollView contentContainerStyle={styles.content}>
-        {tab !== 'businesses' && (
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: tab === item ? palette.background : palette.text2 },
+                ]}
+              >
+                {item[0].toUpperCase() + item.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+      <FlatList
+        data={tab === 'businesses' ? savedProviders : []}
+        keyExtractor={(provider) => String(provider.id)}
+        renderItem={({ item: provider }) => (
+          <ProviderCardRow
+            provider={provider}
+            saved
+            onSave={() => toggleSaved(provider.id)}
+            onPress={() => navigation.navigate('ProviderDetail', { id: provider.id })}
+          />
+        )}
+        initialNumToRender={8}
+        maxToRenderPerBatch={6}
+        windowSize={7}
+        removeClippedSubviews={false}
+        contentContainerStyle={styles.content}
+        ListEmptyComponent={
           <View style={styles.empty}>
             <HeartOff size={32} color={palette.muted} />
             <Text style={[styles.emptyText, { color: palette.text2 }]}>
-              Saved {tab} will appear here as you bookmark them.
+              {tab === 'businesses'
+                ? 'Nothing saved yet. Tap the heart on any provider to save it here.'
+                : `Saved ${tab} will appear here as you bookmark them.`}
             </Text>
           </View>
-        )}
-        {tab === 'businesses' && (
-          <>
-            {savedProviders.length === 0 ? (
-              <View style={styles.empty}>
-                <HeartOff size={32} color={colors.textMuted} />
-                <Text style={styles.emptyText}>
-                  Nothing saved yet. Tap the heart on any provider to save it here.
-                </Text>
-              </View>
-            ) : (
-              savedProviders.map((p) => (
-                <ProviderCardRow
-                  key={p.id}
-                  provider={p}
-                  saved
-                  onSave={() => toggleSaved(p.id)}
-                  onPress={() => navigation.navigate('ProviderDetail', { id: p.id })}
-                />
-              ))
-            )}
-          </>
-        )}
-      </ScrollView>
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -88,12 +93,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
   },
-  tabs: {
+  tabsFrame: {
     width: '100%',
-    maxWidth: 720,
+    maxWidth: 760,
     alignSelf: 'center',
-    marginHorizontal: spacing.lg,
+    paddingHorizontal: spacing.lg,
     marginTop: spacing.md,
+  },
+  tabs: {
     borderRadius: radius.pill,
     padding: 4,
   },

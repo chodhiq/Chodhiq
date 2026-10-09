@@ -1,13 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { MotionModal as Modal } from '../components/Motion';
+import { MotionTouchable as TouchableOpacity } from '../components/Motion';
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Modal,
+  RefreshControl,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import AppTextInput from '../components/AppTextInput';
 import Text from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check, SlidersHorizontal, X } from 'lucide-react-native';
@@ -15,6 +17,7 @@ import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { events } from '../data/discoveryData';
 import { matchesProviderSearch, providerMatchesCategory } from '../data/categoryMatching';
+import { distanceKm, isProviderOpenNow } from '../data/providerDiscovery';
 import {
   ExploreBusinessCard,
   ExploreEmpty,
@@ -22,9 +25,11 @@ import {
   ExploreHeader,
   ExploreSearch,
 } from '../components/ExploreComponents';
+import MarketplaceStatusBanner from '../components/MarketplaceStatusBanner';
 
 export default function ExploreScreen({ navigation, route }) {
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [highestRated, setHighestRated] = useState(false);
   const [openNow, setOpenNow] = useState(false);
@@ -34,21 +39,36 @@ export default function ExploreScreen({ navigation, route }) {
   const [sortBy, setSortBy] = useState('Best match');
   const [price, setPrice] = useState('Any');
   const [rating, setRating] = useState('Any');
-  const [amenities, setAmenities] = useState(['Dine-in']);
+  const [selectedCity, setSelectedCity] = useState('Any city');
+  const [postcodeQuery, setPostcodeQuery] = useState('');
   const [appliedPrice, setAppliedPrice] = useState(null);
   const [appliedRating, setAppliedRating] = useState(null);
+  const [appliedCity, setAppliedCity] = useState(null);
+  const [appliedPostcode, setAppliedPostcode] = useState('');
   const {
     categories,
     providers,
     savedIds,
     toggleSaved,
     location,
+    locationCoordinates,
     unreadCount,
+    offline,
+    lastUpdatedAt,
     marketplaceLoading,
+    refreshMarketplace,
     session,
   } = useAppState();
   const { palette } = useChodhiQTheme();
   const insets = useSafeAreaInsets();
+  const savedIdSet = useMemo(() => new Set(savedIds), [savedIds]);
+  const cities = useMemo(
+    () =>
+      [...new Set(providers.map((provider) => provider.baseCity).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b),
+      ),
+    [providers],
+  );
 
   useEffect(() => {
     if (route.params?.categoryId) setSelectedCategory(route.params.categoryId);
@@ -60,16 +80,38 @@ export default function ExploreScreen({ navigation, route }) {
         .trim()
         .toLowerCase();
     const minimumRating = appliedRating ? Number(appliedRating.replace('+', '')) : 0;
-    const matches = providers.filter((provider) => {
+    const normalizedPostcode = appliedPostcode.replace(/\s+/g, '').toLowerCase();
+    const withLocation = providers.map((provider) => {
+      const km =
+        locationCoordinates &&
+        Number.isFinite(provider.baseLatitude) &&
+        Number.isFinite(provider.baseLongitude)
+          ? distanceKm(
+              locationCoordinates.latitude,
+              locationCoordinates.longitude,
+              provider.baseLatitude,
+              provider.baseLongitude,
+            )
+          : null;
+      return {
+        ...provider,
+        openNow: isProviderOpenNow(provider.openingHours),
+        distanceKm: km,
+      };
+    });
+    const matches = withLocation.filter((provider) => {
       const providerLocations = [provider.baseCity, ...(provider.serviceAreas || [])].map(
         normalize,
       );
+      const postcode = normalize(provider.basePostcode).replace(/\s+/g, '');
       return (
-        matchesProviderSearch(provider, query) &&
+        matchesProviderSearch(provider, deferredQuery) &&
         providerMatchesCategory(provider, selected) &&
         (!appliedPrice || provider.priceRange === appliedPrice) &&
         Number(provider.rating || 0) >= minimumRating &&
-        (!openNow || provider.openNow !== false) &&
+        (!appliedCity || normalize(provider.baseCity) === normalize(appliedCity)) &&
+        (!normalizedPostcode || postcode.includes(normalizedPostcode)) &&
+        (!openNow || provider.openNow === true) &&
         (!nearbyOnly ||
           providerLocations.some(
             (providerLocation) =>
@@ -83,8 +125,11 @@ export default function ExploreScreen({ navigation, route }) {
       if (sortBy === 'Highest rated' || highestRated)
         return b.rating - a.rating || b.reviewCount - a.reviewCount;
       if (sortBy === 'Most reviewed') return b.reviewCount - a.reviewCount;
-      if (sortBy === 'Nearest first')
-        return parseFloat(a.distance || '999') - parseFloat(b.distance || '999');
+      if (sortBy === 'Nearest first') {
+        const distanceA = a.distanceKm ?? Number.POSITIVE_INFINITY;
+        const distanceB = b.distanceKm ?? Number.POSITIVE_INFINITY;
+        return distanceA - distanceB;
+      }
       return 0;
     });
   }, [
@@ -93,23 +138,26 @@ export default function ExploreScreen({ navigation, route }) {
     categories,
     highestRated,
     location,
+    locationCoordinates,
     nearbyOnly,
     openNow,
     providers,
-    query,
+    deferredQuery,
     selectedCategory,
     sortBy,
+    appliedCity,
+    appliedPostcode,
   ]);
   const eventResults = useMemo(
     () =>
       events.filter(
         (item) =>
-          !query.trim() ||
+          !deferredQuery.trim() ||
           `${item.title} ${item.organiser} ${item.city}`
             .toLowerCase()
-            .includes(query.trim().toLowerCase()),
+            .includes(deferredQuery.trim().toLowerCase()),
       ),
-    [query],
+    [deferredQuery],
   );
   const resultCount = activeTab === 'Businesses' ? businessResults.length : eventResults.length;
   const clearFilters = () => {
@@ -121,142 +169,187 @@ export default function ExploreScreen({ navigation, route }) {
     setSortBy('Best match');
     setPrice('Any');
     setRating('Any');
-    setAmenities([]);
+    setSelectedCity('Any city');
+    setPostcodeQuery('');
     setAppliedPrice(null);
     setAppliedRating(null);
+    setAppliedCity(null);
+    setAppliedPostcode('');
   };
   const resetFilters = () => {
+    setSelectedCategory(null);
     setSortBy('Best match');
     setPrice('Any');
     setRating('Any');
-    setAmenities([]);
+    setSelectedCity('Any city');
+    setPostcodeQuery('');
     setHighestRated(false);
+    setOpenNow(false);
+    setNearbyOnly(false);
     setAppliedPrice(null);
     setAppliedRating(null);
+    setAppliedCity(null);
+    setAppliedPostcode('');
   };
+
+  const renderResult = useCallback(
+    ({ item }) =>
+      activeTab === 'Businesses' ? (
+        <ExploreBusinessCard
+          palette={palette}
+          provider={item}
+          saved={savedIdSet.has(item.id)}
+          onSave={() => (session ? toggleSaved(item.id) : navigation.navigate('Welcome'))}
+          onPress={() => navigation.navigate('ProviderDetail', { id: item.id })}
+        />
+      ) : offline && activeTab === 'Businesses' && providers.length === 0 ? (
+        <View style={styles.loading}>
+          <Text style={{ color: palette.text }}>Directory unavailable</Text>
+          <Text style={{ color: palette.text2 }}>
+            Connect to the internet and retry to load businesses.
+          </Text>
+        </View>
+      ) : (
+        <ExploreEventCard
+          palette={palette}
+          item={item}
+          onPress={() => navigation.navigate('Events')}
+        />
+      ),
+    [activeTab, palette, savedIdSet, session, toggleSaved, navigation],
+  );
 
   return (
     <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]} edges={['top']}>
-      <ScrollView
-        removeClippedSubviews
+      <FlatList
+        data={
+          marketplaceLoading && activeTab === 'Businesses'
+            ? []
+            : activeTab === 'Businesses'
+              ? businessResults
+              : eventResults
+        }
+        keyExtractor={(item) => String(item.id)}
+        renderItem={renderResult}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        refreshControl={
+          <RefreshControl
+            refreshing={marketplaceLoading}
+            tintColor={palette.primary}
+            colors={[palette.primary]}
+            progressBackgroundColor={palette.surface}
+            onRefresh={refreshMarketplace}
+          />
+        }
         showsVerticalScrollIndicator={false}
+        initialNumToRender={6}
+        maxToRenderPerBatch={6}
+        windowSize={7}
+        removeClippedSubviews={false}
         contentContainerStyle={[
           styles.content,
           { paddingBottom: 90 + Math.max(insets.bottom, 16) },
         ]}
-      >
-        <ExploreHeader onBack={() => navigation.navigate('Home')} />
-        <ExploreSearch
-          palette={palette}
-          value={query}
-          onChange={setQuery}
-          onFilters={() => setFiltersVisible(true)}
-        />
+        ListHeaderComponent={
+          <>
+            <ExploreHeader onBack={() => navigation.navigate('Home')} />
+            <MarketplaceStatusBanner
+              offline={offline}
+              loading={marketplaceLoading}
+              lastUpdatedAt={lastUpdatedAt}
+              onRetry={refreshMarketplace}
+              palette={palette}
+            />
+            <ExploreSearch
+              palette={palette}
+              value={query}
+              onChange={setQuery}
+              onFilters={() => setFiltersVisible(true)}
+            />
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryChips}
-        >
-          <TouchableOpacity
-            onPress={() => setSelectedCategory(null)}
-            style={[
-              styles.categoryChip,
-              {
-                backgroundColor: selectedCategory ? palette.surface : palette.primary,
-                borderColor: selectedCategory ? palette.border : palette.primary,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.categoryChipText,
-                { color: selectedCategory ? palette.text : palette.primaryActionText },
-              ]}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryChips}
             >
-              All
-            </Text>
-          </TouchableOpacity>
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category.id}
-              onPress={() =>
-                setSelectedCategory((current) => (current === category.id ? null : category.id))
-              }
-              style={[
-                styles.categoryChip,
-                {
-                  backgroundColor:
-                    selectedCategory === category.id ? palette.primary : palette.surface,
-                  borderColor: selectedCategory === category.id ? palette.primary : palette.border,
-                },
-              ]}
-            >
-              <Text
-                numberOfLines={1}
+              <TouchableOpacity
+                onPress={() => setSelectedCategory(null)}
                 style={[
-                  styles.categoryChipText,
+                  styles.categoryChip,
                   {
-                    color:
-                      selectedCategory === category.id ? palette.primaryActionText : palette.text,
+                    backgroundColor: selectedCategory ? palette.surface : palette.primary,
+                    borderColor: selectedCategory ? palette.border : palette.primary,
                   },
                 ]}
               >
-                {category.name}
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    { color: selectedCategory ? palette.text : palette.primaryActionText },
+                  ]}
+                >
+                  All
+                </Text>
+              </TouchableOpacity>
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  onPress={() =>
+                    setSelectedCategory((current) => (current === category.id ? null : category.id))
+                  }
+                  style={[
+                    styles.categoryChip,
+                    {
+                      backgroundColor:
+                        selectedCategory === category.id ? palette.primary : palette.surface,
+                      borderColor:
+                        selectedCategory === category.id ? palette.primary : palette.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.categoryChipText,
+                      {
+                        color:
+                          selectedCategory === category.id
+                            ? palette.primaryActionText
+                            : palette.text,
+                      },
+                    ]}
+                  >
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <View style={styles.resultsHeader}>
+              <Text style={[styles.resultsText, { color: palette.text }]}>
+                {resultCount} results
               </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        <View style={styles.resultsHeader}>
-          <Text style={[styles.resultsText, { color: palette.text }]}>{resultCount} results</Text>
-          <TouchableOpacity
-            onPress={() => setHighestRated((value) => !value)}
-            style={styles.mapView}
-          >
-            <Text style={[styles.mapText, { color: palette.text2 }]}>Sort ↑</Text>
-          </TouchableOpacity>
-        </View>
-
-        {marketplaceLoading && activeTab === 'Businesses' ? (
-          <View style={styles.loading}>
-            <ActivityIndicator color={palette.primary} />
-            <Text style={{ color: palette.text2 }}>Finding providers near you…</Text>
-          </View>
-        ) : null}
-        {!marketplaceLoading && activeTab === 'Businesses' && (
-          <FlatList
-            data={businessResults}
-            keyExtractor={(provider) => String(provider.id)}
-            renderItem={({ item: provider }) => (
-              <ExploreBusinessCard
-                palette={palette}
-                provider={provider}
-                saved={savedIds.includes(provider.id)}
-                onSave={() => (session ? toggleSaved(provider.id) : navigation.navigate('Welcome'))}
-                onPress={() => navigation.navigate('ProviderDetail', { id: provider.id })}
-              />
-            )}
-            scrollEnabled={false}
-            initialNumToRender={8}
-            maxToRenderPerBatch={8}
-            windowSize={5}
-            removeClippedSubviews
-          />
-        )}
-        {activeTab === 'Events' &&
-          eventResults.map((item) => (
-            <ExploreEventCard
-              key={item.id}
-              palette={palette}
-              item={item}
-              onPress={() => navigation.navigate('Events')}
-            />
-          ))}
-        {!marketplaceLoading && resultCount === 0 && (
-          <ExploreEmpty palette={palette} onClear={clearFilters} />
-        )}
-      </ScrollView>
+              <TouchableOpacity
+                onPress={() => setHighestRated((value) => !value)}
+                style={styles.mapView}
+              >
+                <Text style={[styles.mapText, { color: palette.text2 }]}>Sort ↑</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        }
+        ListEmptyComponent={
+          marketplaceLoading && activeTab === 'Businesses' ? (
+            <View style={styles.loading}>
+              <ActivityIndicator color={palette.primary} />
+              <Text style={{ color: palette.text2 }}>Finding providers near you?</Text>
+            </View>
+          ) : (
+            <ExploreEmpty palette={palette} onClear={clearFilters} />
+          )
+        }
+      />
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityLabel="Toggle highest rated results"
@@ -276,14 +369,19 @@ export default function ExploreScreen({ navigation, route }) {
         setPrice={setPrice}
         rating={rating}
         setRating={setRating}
-        amenities={amenities}
-        setAmenities={setAmenities}
+        cities={cities}
+        selectedCity={selectedCity}
+        setSelectedCity={setSelectedCity}
+        postcodeQuery={postcodeQuery}
+        setPostcodeQuery={setPostcodeQuery}
         onReset={resetFilters}
         onClose={() => setFiltersVisible(false)}
         onApply={() => {
           setHighestRated(sortBy === 'Highest rated');
-          setAppliedPrice(price === 'Any' ? null : price);
+          setAppliedPrice(price === 'Any' ? null : price.length);
           setAppliedRating(rating === 'Any' ? null : rating);
+          setAppliedCity(selectedCity === 'Any city' ? null : selectedCity);
+          setAppliedPostcode(postcodeQuery.trim());
           setFiltersVisible(false);
         }}
       />
@@ -302,16 +400,15 @@ function FiltersModal(props) {
     setPrice,
     rating,
     setRating,
-    amenities,
-    setAmenities,
+    cities,
+    selectedCity,
+    setSelectedCity,
+    postcodeQuery,
+    setPostcodeQuery,
     onReset,
     onClose,
     onApply,
   } = props;
-  const toggleAmenity = (item) =>
-    setAmenities((current) =>
-      current.includes(item) ? current.filter((value) => value !== item) : [...current, item],
-    );
   const choices = (items, selected, onSelect, compact = false) => (
     <View style={styles.optionGrid}>
       {items.map((item) => {
@@ -364,44 +461,28 @@ function FiltersModal(props) {
               setSortBy,
             )}
             <Text style={[styles.filterHeading, { color: palette.text }]}>Price range</Text>
-            {choices(['Any', '$', '$$', '$$$', '$$$$'], price, setPrice, true)}
+            {choices(['Any', '£', '££', '£££', '££££'], price, setPrice, true)}
             <Text style={[styles.filterHeading, { color: palette.text }]}>Rating</Text>
             {choices(['Any', '4.0+', '4.5+', '4.8+'], rating, setRating, true)}
-            <Text style={[styles.filterHeading, { color: palette.text }]}>Amenities</Text>
-            <View style={styles.optionGrid}>
-              {[
-                'Dine-in',
-                'Takeaway',
-                'Delivery',
-                'Outdoor seating',
-                'Parking',
-                'Wheelchair accessible',
-              ].map((item) => {
-                const active = amenities.includes(item);
-                return (
-                  <TouchableOpacity
-                    key={item}
-                    onPress={() => toggleAmenity(item)}
-                    style={[
-                      styles.option,
-                      {
-                        borderColor: active ? palette.primary : palette.border,
-                        backgroundColor: active ? palette.primarySoft : palette.surface,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        { color: active ? palette.primary : palette.text },
-                      ]}
-                    >
-                      {item}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <Text style={[styles.filterHeading, { color: palette.text }]}>City</Text>
+            {choices(['Any city', ...cities], selectedCity, setSelectedCity)}
+            <Text style={[styles.filterHeading, { color: palette.text }]}>Postcode</Text>
+            <AppTextInput
+              accessibilityLabel="Filter listings by postcode"
+              autoCapitalize="characters"
+              value={postcodeQuery}
+              onChangeText={setPostcodeQuery}
+              placeholder="e.g. LE4 5AT"
+              placeholderTextColor={palette.muted}
+              style={[
+                styles.postcodeInput,
+                {
+                  backgroundColor: palette.surface,
+                  borderColor: palette.border,
+                  color: palette.text,
+                },
+              ]}
+            />
           </ScrollView>
           <TouchableOpacity
             onPress={onApply}
@@ -535,6 +616,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  postcodeInput: {
+    minHeight: 46,
+    borderWidth: 1,
+    borderRadius: 13,
+    paddingHorizontal: 13,
   },
   applyText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });

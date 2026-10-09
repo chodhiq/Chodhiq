@@ -1,10 +1,12 @@
+import { MotionScrollView as ScrollView } from '../components/Motion';
+import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import React, { useCallback, useMemo, useRef } from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Linking, Platform, StyleSheet, Switch, View } from 'react-native';
 import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
-import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import * as Clipboard from 'expo-clipboard';
 import {
   BadgeCheck,
   Building2,
@@ -32,6 +34,11 @@ export default function ProfileScreen({ navigation }) {
     bookings,
     session,
     access,
+    preferences,
+    preferencesError,
+    preferencesSyncing,
+    retryPreferencesSync,
+    setPreferences,
   } = useAppState();
   const { palette, mode: themeMode, setMode: setThemeMode } = useChodhiQTheme();
   const logoutSheetRef = useRef(null);
@@ -54,7 +61,6 @@ export default function ProfileScreen({ navigation }) {
   );
 
   const chooseAvatar = async () => {
-    Haptics.selectionAsync().catch(() => {});
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -68,10 +74,17 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const confirmLogout = async () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     logoutSheetRef.current?.dismiss();
     await signOut();
     navigation.navigate('Welcome');
+  };
+  const copyUserId = async () => {
+    try {
+      await Clipboard.setStringAsync(session.user.id);
+      Alert.alert('ID copied', 'Your ChodhiQ user ID is ready to share with support.');
+    } catch (error) {
+      Alert.alert('Could not copy ID', error.message || 'Please try again.');
+    }
   };
 
   if (!session)
@@ -157,10 +170,14 @@ export default function ProfileScreen({ navigation }) {
             </View>
           </TouchableOpacity>
           <View style={styles.identity}>
-            <Text style={[typography.h2, { color: palette.text }]}>{profile.name}</Text>
+            <Text style={[typography.h2, { color: palette.text }]}>
+              {profile.name === 'Guest' ? 'ChodhiQ member' : profile.name}
+            </Text>
             <Text style={[typography.caption, { color: palette.text2 }]}>{profile.email}</Text>
             <Text style={[styles.member, { color: palette.primary }]}>
-              Community member since {profile.memberSince || '2026'}
+              {profile.memberSince
+                ? `Community member since ${profile.memberSince}`
+                : 'Community member'}
             </Text>
           </View>
           <PressableScale
@@ -169,6 +186,29 @@ export default function ProfileScreen({ navigation }) {
           >
             <ShieldCheck size={20} color={palette.dark ? palette.saffron : palette.primary} />
           </PressableScale>
+        </FadeInView>
+
+        <FadeInView
+          delay={35}
+          style={[
+            styles.menuCard,
+            { backgroundColor: palette.surface, borderColor: palette.border },
+          ]}
+        >
+          <Text style={{ color: palette.text2, fontSize: 11, fontWeight: '800' }}>
+            YOUR CHODHIQ USER ID
+          </Text>
+          <Text selectable style={{ color: palette.text, fontSize: 12, marginTop: 7 }}>
+            {session.user.id}
+          </Text>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Copy your ChodhiQ user ID"
+            onPress={copyUserId}
+            style={{ alignSelf: 'flex-start', paddingTop: 10 }}
+          >
+            <Text style={{ color: palette.primary, fontWeight: '800' }}>Copy ID</Text>
+          </TouchableOpacity>
         </FadeInView>
 
         <FadeInView
@@ -183,6 +223,57 @@ export default function ProfileScreen({ navigation }) {
         </FadeInView>
 
         <FadeInView delay={170}>
+          <View
+            style={[
+              styles.menuCard,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
+          >
+            <View style={styles.menuRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: palette.text, fontWeight: '700' }}>
+                  Notification vibration
+                </Text>
+                <Text style={{ color: palette.text2, fontSize: 12 }}>
+                  {preferencesSyncing
+                    ? 'Syncing notification settings...'
+                    : preferencesError || 'Vibrate when a new phone notification arrives'}
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel="Notification vibration"
+                value={preferences.vibration}
+                onValueChange={(vibration) =>
+                  setPreferences((current) => ({ ...current, vibration }))
+                }
+                trackColor={{ false: palette.border, true: palette.primaryTint }}
+                thumbColor={palette.primary}
+              />
+            </View>
+          </View>
+          {!!preferencesError && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              disabled={preferencesSyncing}
+              onPress={retryPreferencesSync}
+              style={{ padding: 14 }}
+            >
+              <Text style={{ color: palette.primary, fontWeight: '700' }}>
+                {preferencesSyncing ? 'Retrying...' : 'Retry notification sync'}
+              </Text>
+            </TouchableOpacity>
+          )}
+          {!!preferencesError && Platform.OS !== 'web' && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => Linking.openSettings().catch(() => {})}
+              style={{ padding: 14 }}
+            >
+              <Text style={{ color: palette.primary, fontWeight: '700' }}>
+                Open phone notification settings
+              </Text>
+            </TouchableOpacity>
+          )}
           <Text style={[styles.sectionLabel, { color: palette.text2 }]}>ACCOUNT</Text>
           <MenuCard items={accountItems} palette={palette} navigation={navigation} />
         </FadeInView>
@@ -210,6 +301,11 @@ export default function ProfileScreen({ navigation }) {
               <Text style={[styles.providerBody, { color: palette.text2 }]}>
                 Claim an existing listing or create a new profile so local customers can discover,
                 trust and contact you.
+              </Text>
+              <Text style={[styles.providerBody, { color: palette.text2 }]}>
+                Put your services in front of local customers, build confidence with a reviewed
+                business identity, and make it easier for people to ask about your availability.
+                Your profile brings your services, location and contact options together.
               </Text>
               <View style={styles.providerBenefits}>
                 <Benefit Icon={BadgeCheck} text="Apply for verified status" palette={palette} />
@@ -362,7 +458,7 @@ const styles = StyleSheet.create({
   guestThemeLabel: { fontSize: 13, fontWeight: '900', marginBottom: 10 },
   guestThemeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   themeToggle: {
-    height: 52,
+    minHeight: 52,
     borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
@@ -427,7 +523,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  identity: { flex: 1 },
+  identity: { flex: 1, minWidth: 0 },
   member: { fontSize: 10, fontWeight: '800', marginTop: 5 },
   modeButton: {
     width: 42,

@@ -1,6 +1,10 @@
+import { AppDialogProvider } from './src/components/AppDialog';
 import 'react-native-gesture-handler';
+import useReducedMotion from './src/hooks/useMotionPreferences';
+import { Poppins_400Regular } from '@expo-google-fonts/poppins/400Regular';
+import { Poppins_600SemiBold } from '@expo-google-fonts/poppins/600SemiBold';
 import React from 'react';
-import { Button } from 'react-native';
+import { ActivityIndicator, Button, View, Image } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
@@ -44,14 +48,40 @@ Sentry.init({
 configureNotificationHandler();
 
 function AppContent() {
+  useReducedMotion();
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
     Inter_800ExtraBold,
+    Poppins_400Regular,
+    Poppins_600SemiBold,
   });
-  if (!fontsLoaded && !fontError) return null;
+  const [fontWaitExpired, setFontWaitExpired] = React.useState(false);
+  React.useEffect(() => {
+    const timer = setTimeout(() => setFontWaitExpired(true), 2500);
+    return () => clearTimeout(timer);
+  }, []);
+  if (!fontsLoaded && !fontError && !fontWaitExpired)
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: '#F8FAF7',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 24,
+        }}
+      >
+        <Image
+          source={require('./assets/chodhiq-full-logo-transparent.png')}
+          style={{ width: 180, height: 64 }}
+          resizeMode="contain"
+        />
+        <ActivityIndicator size="large" color="#16805D" />
+      </View>
+    );
   return (
     <Sentry.ErrorBoundary
       fallback={({ error, resetError }) => <ErrorFallback error={error} resetError={resetError} />}
@@ -109,7 +139,9 @@ function ThemedApp() {
   return (
     <AppStateProvider>
       <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={palette.background} />
-      <RootNavigator />
+      <AppDialogProvider>
+        <RootNavigator />
+      </AppDialogProvider>
     </AppStateProvider>
   );
 }

@@ -1,6 +1,20 @@
 import assert from 'node:assert/strict';
+import { registerHooks } from 'node:module';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    return specifier === 'cloudflare:workers'
+      ? { url: specifier, shortCircuit: true }
+      : nextResolve(specifier, context);
+  },
+  load(url, context, nextLoad) {
+    return url === 'cloudflare:workers'
+      ? { format: 'module', source: 'export const tracing = undefined;', shortCircuit: true }
+      : nextLoad(url, context);
+  },
+});
 
 async function render() {
   const workerUrl = new URL('../dist/server/index.js', import.meta.url);
@@ -26,6 +40,26 @@ test('server-renders the ChodhiQ business shell', async () => {
   assert.match(html, /Use dark appearance/);
   assert.match(html, />Light</);
   assert.match(html, /Securing your workspace/);
+});
+
+test('unapproved public legal routes remain unavailable', async () => {
+  const { default: worker } = await import('../dist/server/index.js');
+  const environment = { ASSETS: { fetch: async () => new Response('Not found', { status: 404 }) } };
+  const context = { waitUntil() {}, passThroughOnException() {} };
+  for (const path of [
+    '/terms',
+    '/privacy',
+    '/delete-account',
+    '/moderation-policy',
+    '/retention-policy',
+  ]) {
+    const response = await worker.fetch(
+      new Request(`https://example.com${path}`, { headers: { accept: 'text/html' } }),
+      environment,
+      context,
+    );
+    assert.equal(response.status, 404, `${path} must stay unpublished`);
+  }
 });
 
 test('business sign-in shares the dashboard tablet and mobile breakpoints', async () => {

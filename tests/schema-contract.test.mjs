@@ -29,13 +29,85 @@ test('account export references tables defined by the Supabase schema', async ()
   ).join('\n');
   const match = repository.match(/const tables = \[([\s\S]*?)\];/);
   assert.ok(match, 'Account export table list is missing');
-  const tables = [...match[1].matchAll(/'([a-z_]+)'/g)].map((item) => item[1]);
+  const tables = [...match[1].matchAll(/\['([a-z_]+)',\s*'[a-z_]+',\s*'[a-z_]+'\]/g)].map(
+    (item) => item[1],
+  );
   for (const table of tables) {
     assert.match(
       schema,
       new RegExp(`create\\s+table(?:\\s+if\\s+not\\s+exists)?\\s+(?:public\\.)?${table}\\b`, 'i'),
       `Missing schema table ${table}`,
     );
+  }
+});
+
+test('PostGIS platform-owned metadata is documented outside customer-table RLS checks', async () => {
+  const audit = await read('db/SECURITY_POSTURE_AUDIT.sql');
+  assert.match(audit, /spatial_ref_sys/);
+  assert.match(audit, /expected platform warning, not customer-data exposure/i);
+  assert.doesNotMatch(audit, /API roles can modify PostGIS spatial_ref_sys metadata/i);
+});
+
+test('quote requests are rate-limited before lead notification triggers', async () => {
+  const migration = await read('supabase/migrations/20261007130000_quote_request_rate_limits.sql');
+  assert.match(migration, /security definer\s+set search_path = pg_catalog, public/i);
+  assert.match(migration, /auth\.uid\(\)/i);
+  assert.match(migration, /new\.user_id is distinct from caller/i);
+  assert.match(migration, /customer-quote-requests/i);
+  assert.match(migration, /floor\(extract\(epoch from clock_timestamp\(\)\) \/ 3600\)/i);
+  assert.match(migration, /if rate_count > 5 then/i);
+  assert.match(migration, /before insert on public\.quote_requests/i);
+  assert.match(migration, /message_length[\s\S]*?between 1 and 2000/i);
+  assert.match(migration, /preferred_contact[\s\S]*?whatsapp','call','email/i);
+});
+
+test('customer saved items and profile changes sync through owner-scoped records', async () => {
+  const account = await read('src/data/accountRepository.js');
+  const sync = await read('src/data/syncRepository.js');
+  const rls = await read(
+    'supabase/migrations/20260805193127_harden_rls_and_add_foreign_key_indexes.sql',
+  );
+  const grants = await read(
+    'supabase/migrations/20261009003000_grant_customer_profile_saved_item_access.sql',
+  );
+  assert.match(account, /from\('saved_items'\)\.upsert/);
+  assert.match(account, /from\('profiles'\)\s*\.upsert/);
+  assert.match(account, /hasImportedLocalSavedItems/);
+  assert.match(account, /markLocalSavedItemsImported/);
+  assert.match(sync, /item\.operation === 'saved_item'/);
+  assert.match(sync, /item\.operation === 'profile_update'/);
+  assert.match(rls, /Users manage their own saved items[\s\S]*?auth\.uid\(\)\) = user_id/);
+  assert.match(rls, /Users update their own profile[\s\S]*?auth\.uid\(\)\) = id/);
+  assert.match(grants, /grant select, insert, update on table public\.profiles to authenticated/i);
+  assert.match(
+    grants,
+    /grant select, insert, update, delete on table public\.saved_items to authenticated/i,
+  );
+});
+
+test('verification decision notifications use the ChodhiQ brand', async () => {
+  const migration = await read(
+    'supabase/migrations/20261009002000_rename_sanjha_verification_notification.sql',
+  );
+  const notificationFunction = migration.slice(migration.indexOf('create or replace function'));
+  assert.match(notificationFunction, /verified on ChodhiQ/i);
+  assert.doesNotMatch(notificationFunction, /Sanjha/i);
+});
+
+test('dashboard workers secure image optimization responses and avoid public caching', async () => {
+  for (const workerPath of [
+    'admin-dashboard/worker/index.ts',
+    'business-dashboard/worker/index.ts',
+  ]) {
+    const worker = await read(workerPath);
+    assert.match(worker, /isImageOptimizationPath\(url\.pathname\)/);
+    const imageRoute = worker.slice(
+      worker.indexOf('if (isImageOptimizationPath'),
+      worker.indexOf('\n    }', worker.indexOf('if (isImageOptimizationPath')),
+    );
+    assert.match(imageRoute, /X-Content-Type-Options/);
+    assert.match(imageRoute, /X-Frame-Options/);
+    assert.match(imageRoute, /Cache-Control', 'private, no-store/);
   }
 });
 

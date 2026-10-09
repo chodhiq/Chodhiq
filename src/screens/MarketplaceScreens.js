@@ -1,9 +1,16 @@
+import { uploadCommunityImage, removeCommunityImage } from '../data/communityImages';
+import ScrollView from '../components/KeyboardAwareScrollView';
+import { classifySyncError } from '../data/syncPolicy';
+import * as ImagePicker from 'expo-image-picker';
+import { showPermissionRecovery } from '../lib/permissionRecovery';
+import { AppAlert as Alert } from '../components/AppDialog';
+import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import React, { useState } from 'react';
 import AppTextInput from '../components/AppTextInput';
-import { Alert, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import Text from '../components/AppText';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Icons from 'lucide-react-native';
 import ScreenHeader from '../components/ScreenHeader';
 import { colors, radius, shadows, spacing, typography } from '../theme/theme';
@@ -34,16 +41,25 @@ const iconMap = {
 };
 
 export function CategoriesScreen({ navigation }) {
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const cardWidth = Math.max(
+    0,
+    (Math.min(width - insets.left - insets.right, 760) - spacing.lg * 2 - 12) / 2,
+  );
   const { categories } = useAppState();
   const { palette } = useChodhiQTheme();
   return (
-    <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]}>
+    <SafeAreaView
+      style={[styles.page, { backgroundColor: palette.background }]}
+      edges={['left', 'right', 'bottom']}
+    >
       <ScreenHeader
         navigation={navigation}
         title="Categories"
         subtitle="Browse trusted South Indian businesses"
       />
-      <ScrollView contentContainerStyle={styles.categoryGrid}>
+      <ScrollView style={styles.categoryList} contentContainerStyle={styles.categoryGrid}>
         {categories.map((item) => {
           const Icon = Icons[iconMap[item.icon]] || Icons.Store;
           return (
@@ -51,6 +67,7 @@ export function CategoriesScreen({ navigation }) {
               key={item.id}
               style={[
                 styles.categoryCard,
+                { width: cardWidth },
                 { backgroundColor: palette.surface, borderColor: palette.border },
               ]}
               onPress={() =>
@@ -130,7 +147,10 @@ export function SubscriptionPlansScreen({ navigation }) {
     }
   };
   return (
-    <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]}>
+    <SafeAreaView
+      style={[styles.page, { backgroundColor: palette.background }]}
+      edges={['left', 'right', 'bottom']}
+    >
       <ScreenHeader
         navigation={navigation}
         title="Subscription plans"
@@ -211,11 +231,13 @@ export function SubscriptionPlansScreen({ navigation }) {
 export function CreatePostScreen({ navigation }) {
   const { session, providers, access } = useAppState();
   const { palette } = useChodhiQTheme();
-  const [type, setType] = useState('promotion'),
+  const [type, setType] = useState('discussion'),
     [title, setTitle] = useState(''),
     [body, setBody] = useState(''),
     [providerId, setProviderId] = useState(null),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [poster, setPoster] = useState(null),
+    [picking, setPicking] = useState(false);
   const ownedIds = new Set(access.ownedProviders.map((provider) => String(provider.id)));
   const ownedProviders = providers.filter((provider) => ownedIds.has(String(provider.id)));
   const postTypes = [
@@ -228,9 +250,40 @@ export function CreatePostScreen({ navigation }) {
       Icon: Icons.CalendarDays,
     },
   ];
+  const pickPoster = async (camera = false) => {
+    if (picking || busy) return;
+    setPicking(true);
+    try {
+      if (camera) {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          showPermissionRecovery(
+            'Camera access needed',
+            'Allow camera access in your device settings to take a poster photo.',
+          );
+          return;
+        }
+      }
+      const options = { mediaTypes: ['images'], quality: 0.8, allowsEditing: false };
+      const result = camera
+        ? await ImagePicker.launchCameraAsync(options)
+        : await ImagePicker.launchImageLibraryAsync(options);
+      if (!result.canceled && result.assets?.[0]) {
+        const asset = result.assets[0];
+        setPoster(asset);
+      }
+    } catch (error) {
+      Alert.alert('Could not open images', error.message || 'Please try again.');
+    } finally {
+      setPicking(false);
+    }
+  };
   const publish = async () => {
+    if (busy || picking) return;
     if (!session) return navigation.navigate('Welcome');
-    if (!providerId || !ownedIds.has(String(providerId)))
+    if (type === 'promotion' && !poster)
+      return Alert.alert('Add a poster', 'Choose a gallery image or take a photo for your offer.');
+    if (type === 'promotion' && (!providerId || !ownedIds.has(String(providerId))))
       return Alert.alert('Choose your business', 'Select a business profile that you own.');
     let safeTitle;
     let safeBody;
@@ -245,16 +298,32 @@ export function CreatePostScreen({ navigation }) {
       payload = {
         author_id: session.user.id,
         provider_id: providerId,
+        image_url: null,
         post_type: type,
         body: text,
       };
+    let uploadedPosterPath = null;
     try {
       if (!supabase) throw new Error('Offline');
+      if (poster) {
+        const image = await uploadCommunityImage(session.user.id, poster);
+        uploadedPosterPath = image.path;
+        payload.image_url = image.imageUrl;
+      }
       const { error } = await supabase.from('community_posts').insert(payload);
       if (error) throw error;
       Alert.alert('Published', 'Your post is now visible to the community.');
       navigation.goBack();
     } catch (error) {
+      if (uploadedPosterPath) await removeCommunityImage(uploadedPosterPath).catch(() => {});
+      if (poster || classifySyncError(error) === 'permanent') {
+        Alert.alert(
+          'Could not publish',
+          error.message ||
+            'Check your connection and try again. Your image and text are still here.',
+        );
+        return;
+      }
       try {
         const localPost = await createLocalPost(session.user.id, {
           providerId,
@@ -275,11 +344,14 @@ export function CreatePostScreen({ navigation }) {
     }
   };
   return (
-    <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]}>
+    <SafeAreaView
+      style={[styles.page, { backgroundColor: palette.background }]}
+      edges={['left', 'right', 'bottom']}
+    >
       <ScreenHeader
         navigation={navigation}
         title="Create post"
-        subtitle="Share offers, updates or events with your customers."
+        subtitle="Share an update, event or business offer with the community."
       />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.sectionHeading}>
@@ -408,13 +480,15 @@ export function CreatePostScreen({ navigation }) {
         <View style={styles.uploadHeading}>
           <View style={styles.fieldHeading}>
             <Text style={[styles.sectionTitle, { color: palette.text }]}>Poster images</Text>
-            <Text style={[styles.counter, { color: palette.muted }]}>0/5</Text>
+            <Text style={[styles.counter, { color: palette.muted }]}>{poster ? '1' : '0'}/1</Text>
           </View>
           <Text style={[styles.sectionHint, { color: palette.text2 }]}>
             Add eye-catching images to your post.
           </Text>
         </View>
-        <View
+        <TouchableOpacity
+          onPress={() => pickPoster()}
+          disabled={picking || busy}
           style={[
             styles.uploadMock,
             { backgroundColor: palette.surface, borderColor: palette.primary },
@@ -425,11 +499,29 @@ export function CreatePostScreen({ navigation }) {
           </View>
           <Text style={[styles.uploadTitle, { color: palette.text }]}>Add poster images</Text>
           <Text style={[styles.uploadNote, { color: palette.text2 }]}>
-            Images are managed through the Business Dashboard
+            {picking
+              ? 'Opening images...'
+              : poster
+                ? 'Tap to replace your poster'
+                : 'Choose one poster image, up to 5 MB'}
           </Text>
-        </View>
+        </TouchableOpacity>
+        {poster && (
+          <View style={{ gap: 10 }}>
+            <Image
+              source={{ uri: poster.uri }}
+              style={{ width: '100%', height: 200, borderRadius: 16 }}
+              resizeMode="contain"
+            />
+            <TouchableOpacity onPress={() => setPoster(null)} disabled={busy}>
+              <Text style={{ color: palette.primary, textAlign: 'center' }}>Remove image</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <View style={styles.imageActions}>
-          <View
+          <TouchableOpacity
+            onPress={() => pickPoster()}
+            disabled={picking || busy}
             style={[
               styles.imageAction,
               { backgroundColor: palette.surface, borderColor: palette.border },
@@ -439,8 +531,10 @@ export function CreatePostScreen({ navigation }) {
             <Text style={[styles.imageActionText, { color: palette.text }]}>
               Choose from gallery
             </Text>
-          </View>
-          <View
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => pickPoster(true)}
+            disabled={picking || busy}
             style={[
               styles.imageAction,
               { backgroundColor: palette.surface, borderColor: palette.border },
@@ -448,10 +542,10 @@ export function CreatePostScreen({ navigation }) {
           >
             <Icons.Camera size={19} color={palette.primary} />
             <Text style={[styles.imageActionText, { color: palette.text }]}>Take photo</Text>
-          </View>
+          </TouchableOpacity>
         </View>
         <TouchableOpacity
-          disabled={busy}
+          disabled={busy || picking}
           style={[styles.publish, styles.publishLarge, { backgroundColor: palette.primary }]}
           onPress={publish}
         >
@@ -472,6 +566,7 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
     gap: 16,
   },
+  categoryList: { width: '100%', maxWidth: 760, alignSelf: 'center' },
   categoryGrid: {
     padding: spacing.lg,
     flexDirection: 'row',
@@ -480,7 +575,6 @@ const styles = StyleSheet.create({
     paddingBottom: 90,
   },
   categoryCard: {
-    width: '47.8%',
     backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: spacing.md,

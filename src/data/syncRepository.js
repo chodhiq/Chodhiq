@@ -7,6 +7,7 @@ import {
 } from './localDatabase';
 import { recordError } from '../lib/telemetry';
 import { isReadyForSync, prepareQueuedPayload, remotePayload } from './syncPolicy';
+import { remoteProfilePayload } from './accountSync';
 
 export async function flushPendingOperations(now = Date.now()) {
   if (!supabase) return { synced: 0, pending: 0, failed: 0 };
@@ -23,9 +24,35 @@ export async function flushPendingOperations(now = Date.now()) {
     let result;
     const payload = remotePayload(item.payload);
     if (item.operation === 'community_post')
-      result = await supabase.from('community_posts').insert(payload);
+      result = await supabase.rpc('publish_queued_community_post', {
+        operation_id: String(item.id),
+        payload,
+      });
     else if (item.operation === 'quote_request')
       result = await supabase.from('quote_requests').insert(payload);
+    else if (item.operation === 'saved_item')
+      result = payload.saved
+        ? await supabase.from('saved_items').upsert(
+            { user_id: payload.user_id, provider_id: payload.provider_id },
+            {
+              onConflict: 'user_id,provider_id',
+              ignoreDuplicates: true,
+            },
+          )
+        : await supabase
+            .from('saved_items')
+            .delete()
+            .eq('user_id', payload.user_id)
+            .eq('provider_id', payload.provider_id);
+    else if (item.operation === 'profile_update')
+      result = await supabase.from('profiles').upsert(
+        remoteProfilePayload(payload.id, {
+          name: payload.full_name,
+          phone: payload.phone,
+          location: payload.city,
+        }),
+        { onConflict: 'id' },
+      );
     else if (item.operation === 'provider_report')
       result = await supabase.from('provider_reports').insert(payload);
     else {

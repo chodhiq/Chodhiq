@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from './supabase';
 import {
   providerColumns,
+  type Booking,
   type Lead,
   type Notification,
   type Provider,
@@ -23,42 +24,70 @@ export function useBusinessDashboard() {
   const [services, setServices] = useState<Service[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookingsError, setBookingsError] = useState('');
   const [events, setEvents] = useState<{ event_type: string; created_at: string }[]>([]);
   const [plan, setPlan] = useState('free');
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [toast, setToast] = useState('');
+  const requestSequence = useRef(0);
+  const currentUser = useRef(session?.user.id);
+  useEffect(() => {
+    currentUser.current = session?.user.id;
+  }, [session?.user.id]);
+  const loadedUser = useRef<string | null>(null);
 
   const notify = useCallback((message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(''), 2600);
   }, []);
 
-  const loadDashboard = useCallback(async () => {
-    if (!session) return;
-    setLoading(true);
-    try {
+  const loadDashboard = useCallback(
+    async (quiet = false) => {
+      if (!session) return;
+      const request = ++requestSequence.current;
       const uid = session.user.id;
-      const { data: nextProvider, error } = await supabase
-        .from('providers')
-        .select(providerColumns)
-        .eq('owner_id', uid)
-        .limit(1)
-        .maybeSingle();
-      if (error) notify(error.message);
-      setProvider(nextProvider);
+      const isCurrent = () => request === requestSequence.current && currentUser.current === uid;
+      if (!quiet) setLoading(true);
+      try {
+        const { data: nextProvider, error } = await supabase
+          .from('providers')
+          .select(providerColumns)
+          .eq('owner_id', uid)
+          .limit(1)
+          .maybeSingle();
+        if (!isCurrent()) return;
+        if (error) notify(error.message);
+        setProvider(nextProvider);
 
-      const notificationResult = await supabase
-        .from('notifications')
-        .select('id,title,body,read_at,created_at')
-        .eq('user_id', uid)
-        .order('created_at', { ascending: false })
-        .limit(30);
-      if (notificationResult.error) notify(notificationResult.error.message);
-      else setNotifications(notificationResult.data || []);
+        const notificationResult = await supabase
+          .from('notifications')
+          .select('id,title,body,read_at,created_at')
+          .eq('user_id', uid)
+          .order('created_at', { ascending: false })
+          .limit(30);
+        if (!isCurrent()) return;
+        if (notificationResult.error) notify(notificationResult.error.message);
+        else setNotifications(notificationResult.data || []);
 
-      if (!nextProvider) return;
-      const [serviceResult, reviewResult, analyticsResult, entitlementResult, leadResult] =
-        await Promise.all([
+        if (!nextProvider) {
+          setServices([]);
+          setReviews([]);
+          setLeads([]);
+          setEvents([]);
+          setPlan('free');
+          setBookings([]);
+          setBookingsError('');
+          return;
+        }
+        const [
+          serviceResult,
+          reviewResult,
+          analyticsResult,
+          entitlementResult,
+          leadResult,
+          bookingResult,
+        ] = await Promise.all([
           supabase
             .from('services')
             .select('*')
@@ -86,21 +115,49 @@ export function useBusinessDashboard() {
             )
             .eq('provider_id', nextProvider.id)
             .order('created_at', { ascending: false }),
+          supabase
+            .from('bookings')
+            .select('id,requested_date,requested_time,status,notes,provider_message,created_at')
+            .eq('provider_id', nextProvider.id)
+            .order('created_at', { ascending: false }),
         ]);
-      setServices(serviceResult.data || []);
-      setReviews((reviewResult.data || []) as unknown as Review[]);
-      setEvents(analyticsResult.data || []);
-      setPlan(entitlementResult.data?.plan_code || 'free');
-      setLeads((leadResult.data || []) as Lead[]);
-    } finally {
-      setLoading(false);
-    }
-  }, [session, notify]);
+        if (!isCurrent()) return;
+        setServices(serviceResult.data || []);
+        setReviews((reviewResult.data || []) as unknown as Review[]);
+        setEvents(analyticsResult.data || []);
+        setPlan(entitlementResult.data?.plan_code || 'free');
+        setLeads((leadResult.data || []) as Lead[]);
+        if (bookingResult.error) {
+          setBookings([]);
+          setBookingsError('Could not load booking requests. Refresh to try again.');
+          notify(`Could not load bookings: ${bookingResult.error.message}`);
+        } else {
+          setBookings((bookingResult.data || []) as Booking[]);
+          setBookingsError('');
+        }
+      } finally {
+        if (isCurrent()) setLoading(false);
+      }
+    },
+    [session, notify],
+  );
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (event === 'PASSWORD_RECOVERY') setRecovering(true);
+      if (currentUser.current !== nextSession?.user.id) {
+        ++requestSequence.current;
+        loadedUser.current = null;
+        setProvider(null);
+        setServices([]);
+        setReviews([]);
+        setLeads([]);
+        setBookings([]);
+        setEvents([]);
+        setNotifications([]);
+        setPlan('free');
+      }
       setSession(nextSession);
       setAuthLoading(false);
     });
@@ -135,7 +192,11 @@ export function useBusinessDashboard() {
   }, []);
 
   useEffect(() => {
-    if (session) queueMicrotask(() => void loadDashboard());
+    if (session) {
+      const quiet = loadedUser.current === session.user.id;
+      loadedUser.current = session.user.id;
+      queueMicrotask(() => void loadDashboard(quiet));
+    }
   }, [session, loadDashboard]);
 
   return {
@@ -149,6 +210,8 @@ export function useBusinessDashboard() {
     services,
     reviews,
     leads,
+    bookings,
+    bookingsError,
     events,
     plan,
     notifications,

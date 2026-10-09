@@ -38,3 +38,18 @@ test('mapProfile applies trusted fallbacks and local avatar precedence', () => {
   assert.equal(result.avatarUri, 'local.png');
   assert.equal(result.memberSince, '2025');
 });
+
+test('community notifications preserve only their post destination', () => {
+  const notification = mapNotification({
+    id: 'n3',
+    entity_type: 'community_post',
+    entity_id: 'post-id',
+    user_id: 'private-user',
+  });
+  assert.equal(notification.communityPostId, 'post-id');
+  assert.equal(notification.user_id, undefined);
+  assert.equal(
+    mapNotification({ entity_type: 'booking', entity_id: 'booking-id' }).communityPostId,
+    undefined,
+  );
+});

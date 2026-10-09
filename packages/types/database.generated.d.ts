@@ -478,23 +478,36 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          parent_comment_id: string | null
           post_id: string
+          status: string
         }
         Insert: {
           author_id: string
           body: string
           created_at?: string
           id?: string
+          parent_comment_id?: string | null
           post_id: string
+          status?: string
         }
         Update: {
           author_id?: string
           body?: string
           created_at?: string
           id?: string
+          parent_comment_id?: string | null
           post_id?: string
+          status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "community_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "community_comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "community_comments_post_id_fkey"
             columns: ["post_id"]
@@ -576,32 +589,132 @@ export type Database = {
         }
         Relationships: []
       }
+      community_member_permissions: {
+        Row: {
+          can_comment: boolean
+          can_post: boolean
+          space_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_comment?: boolean
+          can_post?: boolean
+          space_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_comment?: boolean
+          can_post?: boolean
+          space_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_member_permissions_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "community_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_memberships: {
+        Row: {
+          joined_at: string
+          role: string
+          space_id: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string
+          role?: string
+          space_id: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string
+          role?: string
+          space_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_memberships_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "community_spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_post_likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_post_reports: {
         Row: {
+          comment_id: string | null
           created_at: string
           id: string
           post_id: string
           reason: string
           reporter_id: string
           status: string
+          updated_at: string
         }
         Insert: {
+          comment_id?: string | null
           created_at?: string
           id?: string
           post_id: string
           reason: string
           reporter_id: string
           status?: string
+          updated_at?: string
         }
         Update: {
+          comment_id?: string | null
           created_at?: string
           id?: string
           post_id?: string
           reason?: string
           reporter_id?: string
           status?: string
+          updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "community_post_reports_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "community_comments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "community_post_reports_post_id_fkey"
             columns: ["post_id"]
@@ -611,41 +724,81 @@ export type Database = {
           },
         ]
       }
+      community_post_sync_receipts: {
+        Row: {
+          created_at: string
+          operation_id: string
+          payload: Json
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          operation_id: string
+          payload: Json
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          operation_id?: string
+          payload?: Json
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       community_posts: {
         Row: {
           author_id: string
           body: string
+          community_id: string
           created_at: string
           id: string
           image_url: string | null
+          location_city: string | null
           offer_expires_at: string | null
           post_type: string
           provider_id: string | null
+          region_key: string | null
           status: string
         }
         Insert: {
           author_id: string
           body: string
+          community_id: string
           created_at?: string
           id?: string
           image_url?: string | null
+          location_city?: string | null
           offer_expires_at?: string | null
           post_type?: string
           provider_id?: string | null
+          region_key?: string | null
           status?: string
         }
         Update: {
           author_id?: string
           body?: string
+          community_id?: string
           created_at?: string
           id?: string
           image_url?: string | null
+          location_city?: string | null
           offer_expires_at?: string | null
           post_type?: string
           provider_id?: string | null
+          region_key?: string | null
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "community_posts_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "community_spaces"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "community_posts_provider_id_fkey"
             columns: ["provider_id"]
@@ -654,6 +807,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      community_rate_limit_buckets: {
+        Row: {
+          action: string
+          request_count: number
+          user_id: string
+          window_started_at: string
+        }
+        Insert: {
+          action: string
+          request_count: number
+          user_id: string
+          window_started_at: string
+        }
+        Update: {
+          action?: string
+          request_count?: number
+          user_id?: string
+          window_started_at?: string
+        }
+        Relationships: []
       }
       community_resources: {
         Row: {
@@ -715,6 +889,95 @@ export type Database = {
           updated_at?: string
           website_url?: string | null
           whatsapp_url?: string | null
+        }
+        Relationships: []
+      }
+      community_saved_posts: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_saved_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_spaces: {
+        Row: {
+          comments_enabled: boolean
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          name: string
+          posting_policy: string
+          rules: string
+          slug: string
+          status: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          comments_enabled?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          name: string
+          posting_policy?: string
+          rules?: string
+          slug: string
+          status?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          comments_enabled?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          name?: string
+          posting_policy?: string
+          rules?: string
+          slug?: string
+          status?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: []
+      }
+      community_user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
         }
         Relationships: []
       }
@@ -903,6 +1166,7 @@ export type Database = {
           created_at: string | null
           entity_id: string | null
           entity_type: string | null
+          event_key: string | null
           id: string
           read_at: string | null
           title: string
@@ -914,6 +1178,7 @@ export type Database = {
           created_at?: string | null
           entity_id?: string | null
           entity_type?: string | null
+          event_key?: string | null
           id?: string
           read_at?: string | null
           title: string
@@ -925,6 +1190,7 @@ export type Database = {
           created_at?: string | null
           entity_id?: string | null
           entity_type?: string | null
+          event_key?: string | null
           id?: string
           read_at?: string | null
           title?: string
@@ -987,7 +1253,9 @@ export type Database = {
           id: string
           phone: string | null
           preferred_categories: string[] | null
+          push_channel_id: string
           push_token_updated_at: string | null
+          push_vibration_enabled: boolean
         }
         Insert: {
           avatar_url?: string | null
@@ -998,7 +1266,9 @@ export type Database = {
           id: string
           phone?: string | null
           preferred_categories?: string[] | null
+          push_channel_id?: string
           push_token_updated_at?: string | null
+          push_vibration_enabled?: boolean
         }
         Update: {
           avatar_url?: string | null
@@ -1009,7 +1279,9 @@ export type Database = {
           id?: string
           phone?: string | null
           preferred_categories?: string[] | null
+          push_channel_id?: string
           push_token_updated_at?: string | null
+          push_vibration_enabled?: boolean
         }
         Relationships: []
       }
@@ -1250,6 +1522,27 @@ export type Database = {
           },
         ]
       }
+      provider_removal_archive: {
+        Row: {
+          provider: Json
+          provider_id: string
+          reason: string
+          removed_at: string
+        }
+        Insert: {
+          provider: Json
+          provider_id: string
+          reason: string
+          removed_at?: string
+        }
+        Update: {
+          provider?: Json
+          provider_id?: string
+          reason?: string
+          removed_at?: string
+        }
+        Relationships: []
+      }
       provider_reports: {
         Row: {
           created_at: string | null
@@ -1419,29 +1712,41 @@ export type Database = {
       push_delivery_attempts: {
         Row: {
           created_at: string
+          delivery_state: string
           error_code: string | null
+          expo_ticket_id: string | null
           id: number
           notification_id: string
           outcome: string
           provider_status: string | null
+          receipt_checked_at: string | null
+          recipient_token_hash: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string
+          delivery_state?: string
           error_code?: string | null
+          expo_ticket_id?: string | null
           id?: never
           notification_id: string
           outcome: string
           provider_status?: string | null
+          receipt_checked_at?: string | null
+          recipient_token_hash?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string
+          delivery_state?: string
           error_code?: string | null
+          expo_ticket_id?: string | null
           id?: never
           notification_id?: string
           outcome?: string
           provider_status?: string | null
+          receipt_checked_at?: string | null
+          recipient_token_hash?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -2199,6 +2504,26 @@ export type Database = {
         }
         Returns: string
       }
+      admin_resolve_report: {
+        Args: {
+          expected_status: string
+          expected_updated_at: string
+          next_status: string
+          report_id: string
+          report_kind: string
+          resolution_note: string
+        }
+        Returns: Json
+      }
+      admin_save_community_space: {
+        Args: {
+          changes: Json
+          decision_note: string
+          expected_updated_at: string
+          target_space: string
+        }
+        Returns: string
+      }
       admin_search_members: {
         Args: { result_limit?: number; search_term: string }
         Returns: {
@@ -2209,6 +2534,19 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_set_community_member: {
+        Args: {
+          allow_comments: boolean
+          allow_posts: boolean
+          decision_note: string
+          expected_permission_update: string
+          expected_role: string
+          new_role: string
+          target_space: string
+          target_user: string
+        }
+        Returns: undefined
+      }
       admin_set_user_moderation: {
         Args: {
           moderation_reason: string
@@ -2216,6 +2554,15 @@ export type Database = {
           target_email: string
         }
         Returns: string
+      }
+      admin_transition_community_comment: {
+        Args: {
+          comment_id: string
+          expected_status: string
+          next_status: string
+          reason: string
+        }
+        Returns: Json
       }
       admin_transition_community_post: {
         Args: {
@@ -2234,6 +2581,63 @@ export type Database = {
           request_id: string
         }[]
       }
+      community_can_contribute: {
+        Args: { contribution: string; target_space: string }
+        Returns: boolean
+      }
+      community_has_membership: {
+        Args: { target_space: string }
+        Returns: boolean
+      }
+      community_moderate_comment: {
+        Args: {
+          expected_status: string
+          next_status: string
+          reason: string
+          target_comment: string
+        }
+        Returns: Json
+      }
+      community_moderate_post: {
+        Args: {
+          expected_status: string
+          next_status: string
+          reason: string
+          target_post: string
+        }
+        Returns: Json
+      }
+      community_post_engagement: {
+        Args: never
+        Returns: {
+          comment_count: number
+          is_liked: boolean
+          like_count: number
+          post_id: string
+        }[]
+      }
+      community_post_engagement_for_posts: {
+        Args: { requested_posts: string[] }
+        Returns: {
+          comment_count: number
+          is_liked: boolean
+          like_count: number
+          post_id: string
+        }[]
+      }
+      community_users_blocked: {
+        Args: { user_a: string; user_b: string }
+        Returns: boolean
+      }
+      consume_community_rate_limit: {
+        Args: {
+          max_requests: number
+          target_action: string
+          target_user: string
+          window_seconds: number
+        }
+        Returns: undefined
+      }
       consume_edge_rate_limit: {
         Args: {
           maximum_requests: number
@@ -2246,6 +2650,7 @@ export type Database = {
         }[]
       }
       disablelongtransactions: { Args: never; Returns: string }
+      dispatch_push_receipt_check: { Args: never; Returns: undefined }
       dropgeometrycolumn:
         | {
             Args: {
@@ -2376,6 +2781,15 @@ export type Database = {
         Returns: boolean
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
+      get_community_member_profile: {
+        Args: { target_author: string }
+        Returns: {
+          author_id: string
+          avatar_url: string
+          display_name: string
+          joined_year: number
+        }[]
+      }
       gettransactionid: { Args: never; Returns: unknown }
       is_admin: { Args: never; Returns: boolean }
       list_active_ad_campaigns: {
@@ -2444,6 +2858,18 @@ export type Database = {
         Args: { target_user: string }
         Returns: undefined
       }
+      public_provider_coordinates: {
+        Args: never
+        Returns: {
+          id: string
+          latitude: number
+          longitude: number
+        }[]
+      }
+      publish_queued_community_post: {
+        Args: { operation_id: string; payload: Json }
+        Returns: string
+      }
       record_ad_campaign_event: {
         Args: {
           event_kind: string
@@ -2498,6 +2924,18 @@ export type Database = {
           review_count: number
           service_areas: string[]
         }[]
+      }
+      send_community_activity_notification: {
+        Args: {
+          activity_key: string
+          actor: string
+          kind: string
+          message_body: string
+          message_title: string
+          post_id: string
+          recipient: string
+        }
+        Returns: undefined
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }

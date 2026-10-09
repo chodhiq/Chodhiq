@@ -8,6 +8,7 @@ const { mapBooking } = await import(
 );
 const base = {
   id: 'booking-1',
+  user_id: 'user-1',
   provider_id: 'provider-1',
   service_id: 'service-1',
   requested_date: '2026-09-01',
@@ -25,6 +26,7 @@ test('booking mapper accepts object-shaped Supabase relations', () => {
     services: { name: 'Consultation' },
   });
   assert.equal(result.providerName, 'ChodhiQ Foods');
+  assert.equal(result.userId, 'user-1');
   assert.equal(result.serviceName, 'Consultation');
   assert.equal(result.requestedTime, '10:30');
 });

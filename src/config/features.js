@@ -6,7 +6,7 @@ const enabled = (value, fallback = false) =>
 export const features = Object.freeze({
   payments: enabled(process.env.EXPO_PUBLIC_ENABLE_PAYMENTS, false),
   customAds: enabled(process.env.EXPO_PUBLIC_ENABLE_CUSTOM_ADS, true),
-  googleAds: enabled(process.env.EXPO_PUBLIC_ENABLE_GOOGLE_ADS, true),
+  googleAds: enabled(process.env.EXPO_PUBLIC_ENABLE_GOOGLE_ADS, false),
 });
 
 export const googleAdsConfig = Object.freeze({

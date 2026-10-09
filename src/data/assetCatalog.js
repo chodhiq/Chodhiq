@@ -21,12 +21,8 @@ export const categoryAssets = {
   'car-services': require('../../assets/categories-hq/car_service.webp'),
   property: require('../../assets/categories-hq/real_estate.webp'),
   delivery: require('../../assets/categories-hq/food_delivery.webp'),
-  events: require('../../assets/categories-hq/photography.webp'),
   'home-services': require('../../assets/categories-hq/car_service.webp'),
   professional: require('../../assets/categories-hq/real_estate.webp'),
-  education: require('../../assets/categories-hq/healthcare.webp'),
-  creators: require('../../assets/categories-hq/photography.webp'),
-  freelancers: require('../../assets/categories-hq/real_estate.webp'),
 };
 
 export const categoryNameAssets = {
@@ -58,18 +54,7 @@ export const banners = {
   dosa: require('../../assets/categories-hq/restaurant.webp'),
   map: require('../../assets/hero/uk_home_hero.webp'),
 };
-export const people = {
-  creator: require('../../assets/categories-hq/photography.webp'),
-  professional: require('../../assets/categories-hq/beauty_salon.webp'),
-  team: require('../../assets/categories-hq/real_estate.webp'),
-  storefront: require('../../assets/categories-hq/grocery.webp'),
-};
-export const eventAssets = [
-  require('../../assets/hero/uk_home_hero.webp'),
-  require('../../assets/categories-hq/photography.webp'),
-  require('../../assets/categories-hq/real_estate.webp'),
-];
-export const locationAssets = { map: require('../../assets/hero/uk_home_hero.webp') };
+
 export const generatedAssets = {
   onboarding: require('../../assets/generated/onboarding-london.webp'),
   restaurantInterior: require('../../assets/generated/restaurant-interior.webp'),

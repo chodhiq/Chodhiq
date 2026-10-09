@@ -1,8 +1,110 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
+import { validPublicLegalUrl } from '../../src/config/legal.js';
 
 const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
+
+function resolveBuildConfig(profile, overrides = {}) {
+  const module = { exports: {} };
+  runInNewContext(read('app.config.js'), {
+    module,
+    require: (name) =>
+      name === './scripts/android-push-config.cjs'
+        ? {
+            androidPushConfigPath: () =>
+              overrides.TEST_NO_PUSH_CONFIG ? null : 'synthetic/google-services.json',
+          }
+        : JSON.parse(read('app.base.json')),
+    URL,
+    process: {
+      env: {
+        EAS_BUILD: 'true',
+        EAS_BUILD_PROFILE: profile,
+        EXPO_PUBLIC_SUPABASE_URL: 'https://gfjhvsajwjrrlylgrkhf.supabase.co',
+        EXPO_PUBLIC_SUPABASE_ANON_KEY: 'public-key-fixture',
+        EXPO_PUBLIC_EAS_PROJECT_ID: 'project-fixture',
+        EXPO_PUBLIC_RELEASE_COMMIT: 'commit-fixture',
+        ...overrides,
+      },
+    },
+  });
+  return module.exports;
+}
+
+test('direct-install beta can build without pretending legal drafts are published', () => {
+  const config = resolveBuildConfig('beta-apk');
+  assert.equal(config.android.package, 'com.chodhiq.app');
+  for (const profile of ['beta', 'production', 'production-apk']) {
+    assert.throws(() => resolveBuildConfig(profile), /EXPO_PUBLIC_TERMS_URL/);
+  }
+});
+
+test('internal beta still rejects missing backend, the wrong backend, and demo mode', () => {
+  assert.throws(
+    () => resolveBuildConfig('beta-apk', { EXPO_PUBLIC_SUPABASE_ANON_KEY: '' }),
+    /EXPO_PUBLIC_SUPABASE_ANON_KEY/,
+  );
+  assert.throws(
+    () => resolveBuildConfig('beta-apk', { EXPO_PUBLIC_SUPABASE_URL: 'https://wrong.supabase.co' }),
+    /ChodhiQ Production Supabase/,
+  );
+  assert.throws(
+    () => resolveBuildConfig('beta-apk', { EXPO_PUBLIC_DEMO_MODE: 'true' }),
+    /cannot enable EXPO_PUBLIC_DEMO_MODE/,
+  );
+});
+
+test('internal beta refuses to ship without configured Android push', () => {
+  assert.throws(
+    () => resolveBuildConfig('beta-apk', { TEST_NO_PUSH_CONFIG: true }),
+    /push setup is incomplete/,
+  );
+});
+
+test('Android source-map upload skips cleanly when Sentry credentials are incomplete', () => {
+  const gradle = read('android/app/build.gradle');
+  assert.match(gradle, /sentryAuthToken && sentryOrg && sentryProject/);
+  assert.match(gradle, /tasks\.configureEach[\s\S]*?_SentryUpload_[\s\S]*?onlyIf/);
+  assert.match(gradle, /_SentryCollectModules_/);
+  assert.match(
+    gradle,
+    /sentryNativeUploadEnabled = sentryUploadEnabled[\s\S]*SENTRY_DISABLE_NATIVE_DEBUG_UPLOAD/,
+  );
+  assert.match(gradle, /Sentry source-map upload skipped/);
+});
+
+test('production app config omits Sentry when source-map upload credentials are incomplete', () => {
+  const config = resolveBuildConfig('production', {
+    EXPO_PUBLIC_TERMS_URL: 'https://chodhiq.app/terms',
+    EXPO_PUBLIC_PRIVACY_URL: 'https://chodhiq.app/privacy',
+    EXPO_PUBLIC_DELETE_ACCOUNT_URL: 'https://chodhiq.app/delete-account',
+    EXPO_PUBLIC_SENTRY_DSN: 'https://public@example.ingest.sentry.io/123',
+  });
+  assert.equal(
+    config.plugins.some((plugin) =>
+      Array.isArray(plugin)
+        ? plugin[0] === '@sentry/react-native'
+        : plugin === '@sentry/react-native',
+    ),
+    false,
+  );
+  assert.equal(JSON.parse(read('eas.json')).build.preview.environment, 'preview');
+});
+
+test('legal links only accept public credential-free HTTPS destinations', () => {
+  assert.equal(validPublicLegalUrl('https://chodhiq.app/privacy'), true);
+  for (const value of [
+    '',
+    'http://chodhiq.app/privacy',
+    'https://user:pass@chodhiq.app/privacy',
+    'https://example.com/privacy',
+    'https://policy.test/privacy',
+  ]) {
+    assert.equal(validPublicLegalUrl(value), false, value);
+  }
+});
 
 test('demo mode is opt-in and dashboards are isolated from the customer app', () => {
   const runtime = read('src/config/runtime.js');
@@ -32,13 +134,13 @@ test('community post input is bounded and normalized before persistence', () => 
   assert.match(marketplace, /maxLength=\{2000\}/);
 });
 
-test('dashboard mutations use RLS-backed tables and the audited verification RPC', () => {
-  const repository = read('src/data/dashboardRepository.js');
-  assert.match(repository, /from\('provider_analytics_events'\)/);
-  assert.match(repository, /from\('quote_requests'\)/);
-  assert.match(repository, /rpc\('admin_decide_verification'/);
-  assert.match(repository, /from\('community_post_reports'\)[^]*\.update\(\{ status \}\)/);
-  assert.doesNotMatch(repository, /service.role|SERVICE_ROLE|admin_audit_log.*insert/i);
+test('active admin verification and report mutations use audited RPCs', () => {
+  const verification = read('admin-dashboard/app/verification/page.tsx');
+  const reports = read('admin-dashboard/app/components/report-queue.tsx');
+  assert.match(verification, /rpc\("admin_decide_verification"/);
+  assert.match(verification, /server_audited: true/);
+  assert.match(reports, /admin_resolve_report/);
+  assert.doesNotMatch(verification, /service.role|SERVICE_ROLE|admin_audit_log.*insert/i);
 });
 
 test('CI verifies tests, production export, and high-severity dependency audit', () => {
@@ -49,10 +151,9 @@ test('CI verifies tests, production export, and high-severity dependency audit',
 });
 
 test('admin operations use dedicated RPCs and produce audit records', () => {
-  const repository = read('src/data/dashboardRepository.js');
   const migration = read('supabase/migrations/20260819120000_admin_audit_and_user_controls.sql');
-  assert.match(repository, /admin_broadcast_notification/);
-  assert.match(repository, /admin_set_user_moderation/);
+  assert.match(migration, /admin_broadcast_notification/);
+  assert.match(migration, /admin_set_user_moderation/);
   assert.match(migration, /insert into public\.admin_audit_log/);
   assert.match(migration, /Administrators cannot suspend their own account/);
 });

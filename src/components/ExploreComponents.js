@@ -1,12 +1,12 @@
+import { MotionTouchable as TouchableOpacity } from './Motion';
 import React from 'react';
 import AppTextInput from './AppTextInput';
-import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 
 import Text from './AppText';
 import {
   ArrowLeft,
   BadgeCheck,
-  Bell,
   Bookmark,
   ChevronRight,
   MapPin,
@@ -49,10 +49,10 @@ export function ExploreSearch({ palette, value, onChange, onFilters }) {
     <View style={[s.search, { backgroundColor: palette.elevated, borderColor: palette.border }]}>
       <Search size={19} color={palette.text2} />
       <AppTextInput
-        accessibilityLabel="Search businesses, services and creators"
+        accessibilityLabel="Search businesses and services"
         value={value}
         onChangeText={onChange}
-        placeholder="Search businesses, services, creators..."
+        placeholder="Search businesses and services..."
         placeholderTextColor={palette.muted}
         style={[s.input, { color: palette.text }]}
       />
@@ -112,6 +112,7 @@ export function ExploreBusinessCard({ palette, provider, saved, onSave, onPress 
     >
       <View style={s.imageWrap}>
         <Image
+          resizeMethod="resize"
           source={imageSource(
             provider.image,
             categoryFallback(provider.category, provider.categoryId),
@@ -174,34 +175,14 @@ export function ExploreBusinessCard({ palette, provider, saved, onSave, onPress 
     </TouchableOpacity>
   );
 }
-export function ExploreCreatorCard({ palette, item, onPress }) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={[s.card, { backgroundColor: palette.surface, borderColor: palette.border }]}
-    >
-      <Image source={imageSource(item.image)} style={s.image} />
-      <View style={s.cardCopy}>
-        <Text numberOfLines={1} style={[s.name, { color: palette.text }]}>
-          {item.name}
-        </Text>
-        <Text style={[s.category, { color: palette.text2 }]}>{item.profession}</Text>
-        <View style={s.metaRow}>
-          <MapPin size={12} color={palette.text2} />
-          <Text style={[s.meta, { color: palette.text2 }]}>{item.city}, UK</Text>
-        </View>
-      </View>
-      <ChevronRight size={19} color={palette.text2} />
-    </TouchableOpacity>
-  );
-}
+
 export function ExploreEventCard({ palette, item, onPress }) {
   return (
     <TouchableOpacity
       onPress={onPress}
       style={[s.card, { backgroundColor: palette.surface, borderColor: palette.border }]}
     >
-      <Image source={imageSource(item.image)} style={s.image} />
+      <Image resizeMethod="resize" source={imageSource(item.image)} style={s.image} />
       <View style={s.cardCopy}>
         <Text numberOfLines={1} style={[s.name, { color: palette.text }]}>
           {item.title}
@@ -256,8 +237,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,.10)',
   },
   title: { color: '#FFFFFF', fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
-  subtitle: { fontSize: 14, lineHeight: 20, maxWidth: 270, marginTop: 6 },
-  actions: { flexDirection: 'row', gap: 9 },
+
   circleButton: {
     width: 44,
     height: 44,
@@ -267,15 +247,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     ...shadows.soft,
   },
-  dot: {
-    position: 'absolute',
-    right: 7,
-    top: 6,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: '#E83D49',
-  },
+
   search: {
     height: 52,
     flexDirection: 'row',
@@ -338,19 +310,11 @@ const s = StyleSheet.create({
     shadowRadius: 12,
     elevation: 7,
   },
-  imageWrap: { width: 72, height: 72, borderRadius: 12, overflow: 'hidden' },
+  imageWrap: { flexShrink: 0, width: 72, height: 72, borderRadius: 12, overflow: 'hidden' },
   image: { width: '100%', height: '100%', borderRadius: 12 },
-  open: {
-    position: 'absolute',
-    left: 6,
-    top: 6,
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  openText: { fontSize: 9, fontWeight: '800', color: '#FFFFFF' },
+
   cardCopy: { flex: 1, paddingLeft: 12, paddingRight: 30, minWidth: 0 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  nameRow: { flexWrap: 'wrap', flexDirection: 'row', alignItems: 'center', gap: 4 },
   dataCheckedBadge: {
     flexDirection: 'row',
     alignItems: 'center',

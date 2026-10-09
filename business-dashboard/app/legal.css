@@ -1,0 +1,57 @@
+.legal-shell {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+.legal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 12px 0 28px;
+}
+.legal-nav a,
+.legal-document a {
+  color: #214f41;
+  text-decoration: underline;
+}
+.legal-document {
+  background: #fff;
+  border: 1px solid #e8e6df;
+  border-radius: 16px;
+  padding: clamp(20px, 4vw, 48px);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.legal-document h1,
+.legal-document h2,
+.legal-document h3 {
+  margin: 1.6em 0 0.5em;
+  line-height: 1.25;
+}
+.legal-document h1:first-child {
+  margin-top: 0;
+}
+.legal-document p,
+.legal-document ul {
+  margin: 0 0 1em;
+}
+.legal-document ul {
+  padding-left: 1.5em;
+}
+.legal-document pre {
+  max-width: 100%;
+  overflow-x: auto;
+  background: #f7f5f0;
+  padding: 12px;
+  font-size: 12px;
+  white-space: pre;
+}
+.legal-action {
+  display: inline-block;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: #214f41;
+  color: #fff !important;
+  font-weight: 700;
+  text-decoration: none !important;
+}

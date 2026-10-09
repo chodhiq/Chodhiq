@@ -1,6 +1,7 @@
 // @ts-check
 import { serviceTaxonomy } from './serviceTaxonomy.js';
 
+/** @param {unknown} value */
 const normalize = (value) =>
   String(value || '')
     .trim()
@@ -10,6 +11,7 @@ const normalize = (value) =>
     .replace(/\s+/g, ' ')
     .trim();
 
+/** @type {Record<string, string[]>} */
 const CATEGORY_TERMS = {
   grocery: ['grocery', 'grocer', 'supermarket', 'food shop'],
   restaurants: ['restaurant', 'catering', 'caterer', 'food delivery', 'takeaway'],
@@ -39,9 +41,10 @@ const CATEGORY_TERMS = {
   ),
 };
 
+/** @param {any} provider */
 export function providerSearchText(provider) {
   const categoryTerms = CATEGORY_TERMS[provider.categoryId] || [];
-  const services = (provider.services || []).flatMap((service) =>
+  const services = /** @type {any[]} */ (provider.services || []).flatMap((service) =>
     typeof service === 'string' ? [service] : [service?.name, service?.description],
   );
   return normalize(
@@ -51,6 +54,7 @@ export function providerSearchText(provider) {
       provider.categoryId,
       provider.subcategory,
       provider.baseCity,
+      provider.basePostcode,
       provider.address,
       provider.description,
       ...(provider.serviceAreas || []),
@@ -62,6 +66,7 @@ export function providerSearchText(provider) {
   );
 }
 
+/** @param {any} provider @param {any} category */
 export function providerMatchesCategory(provider, category) {
   if (!category) return true;
   const providerText = providerSearchText(provider);
@@ -78,9 +83,12 @@ export function providerMatchesCategory(provider, category) {
   return terms.some((term) => providerText.includes(normalize(term)));
 }
 
+/** @param {any} provider @param {string} query */
 export function matchesProviderSearch(provider, query) {
   const needle = normalize(query);
   if (!needle) return true;
+  const postcode = normalize(provider.basePostcode).replace(/\s+/g, '');
+  if (postcode.includes(needle.replace(/\s+/g, ''))) return true;
   const searchable = providerSearchText(provider);
   if (searchable.includes(needle)) return true;
   const words = searchable.split(' ').map(singular);
@@ -97,6 +105,7 @@ export function matchesProviderSearch(provider, query) {
     );
 }
 
+/** @param {string} word */
 function singular(word) {
   if (word.length > 4 && word.endsWith('ies')) return `${word.slice(0, -3)}y`;
   if (word.length > 3 && word.endsWith('s') && !word.endsWith('ss')) return word.slice(0, -1);

@@ -12,6 +12,7 @@ export interface BookingInput {
 }
 export interface BookingRecord {
   id: UUID;
+  userId: UUID;
   providerId: UUID;
   serviceId: UUID | null;
   providerName: string;

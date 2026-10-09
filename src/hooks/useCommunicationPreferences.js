@@ -1,13 +1,21 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getNotificationsModule } from '../lib/notificationRuntime';
+import { pushRegistrationErrorMessage } from '../lib/pushRegistrationErrors';
 import { clearPushToken, registerPushToken } from '../lib/pushNotifications';
 
 export const PREFERENCES_KEY = '@chodhiq/communication-preferences';
-const defaults = { push: true, email: true, marketing: false };
+const defaults = { push: true, vibration: true, email: true, marketing: false };
 
 export function useCommunicationPreferences(userId) {
   const [preferences, setPreferencesState] = useState(defaults);
   const [ready, setReady] = useState(false);
+  const [preferencesError, setPreferencesError] = useState('');
+  const [preferencesSyncing, setPreferencesSyncing] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const retryPreferencesSync = useCallback(() => setRetry((value) => value + 1), []);
+  const syncQueue = useRef(Promise.resolve());
 
   useEffect(() => {
     AsyncStorage.getItem(PREFERENCES_KEY)
@@ -35,10 +43,53 @@ export function useCommunicationPreferences(userId) {
 
   useEffect(() => {
     if (!ready || !userId) return undefined;
-    const sync = preferences.push ? registerPushToken : clearPushToken;
-    sync(userId).catch((error) => console.warn('Push preference sync failed.', error.message));
-    return undefined;
-  }, [preferences.push, ready, userId]);
+    let active = true;
+    const sync = () => {
+      // Serialize rapid toggles so an older request cannot overwrite the latest choice.
+      syncQueue.current = syncQueue.current
+        .catch(() => {})
+        .then(async () => {
+          if (!active) return;
+          setPreferencesSyncing(true);
+          const token = await (preferences.push
+            ? registerPushToken(userId, preferences.vibration)
+            : clearPushToken(userId));
+          if (active) {
+            setPreferencesError(
+              preferences.push && !token && Platform.OS !== 'web'
+                ? 'Saved on this device. Push notifications are not registered; check notification permissions in Settings.'
+                : '',
+            );
+            setPreferencesSyncing(false);
+          }
+        })
+        .catch((error) => {
+          if (active) setPreferencesError(pushRegistrationErrorMessage(error));
+        })
+        .finally(() => {
+          if (active) setPreferencesSyncing(false);
+        });
+    };
+    sync();
+    const native = preferences.push && Platform.OS !== 'web' ? getNotificationsModule() : null;
+    const tokenListener = native?.addPushTokenListener(() => sync());
+    const listener = AppState.addEventListener('change', (state) => {
+      if (state === 'active') sync();
+    });
+    return () => {
+      active = false;
+      listener.remove();
+      tokenListener?.remove();
+    };
+  }, [preferences.push, preferences.vibration, ready, userId, retry]);
 
-  return { preferences, setPreferences, clearPreferences, preferencesReady: ready };
+  return {
+    preferences,
+    setPreferences,
+    clearPreferences,
+    preferencesReady: ready,
+    preferencesError,
+    preferencesSyncing,
+    retryPreferencesSync,
+  };
 }

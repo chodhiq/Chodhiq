@@ -1,12 +1,7 @@
+import ImageBackground from './RevealImageBackground';
+import { MotionTouchable as TouchableOpacity } from './Motion';
 import React from 'react';
-import {
-  Image,
-  ImageBackground,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import Text from './AppText';
 import {
   ArrowLeft,
@@ -70,6 +65,7 @@ export function ProviderIdentity({ provider, palette }) {
   return (
     <View style={[s.identity, { backgroundColor: palette.surface, borderColor: palette.border }]}>
       <Image
+        resizeMethod="resize"
         source={imageSource(
           provider.logo || provider.image,
           categoryFallback(provider.category, provider.categoryId),
@@ -112,7 +108,7 @@ export function ProviderIdentity({ provider, palette }) {
         <View style={s.metaRow}>
           <MapPin size={13} color={palette.text2} />
           <Text numberOfLines={1} style={[s.meta, { color: palette.text2 }]}>
-            {provider.baseCity}, UK
+            {[provider.baseCity, provider.basePostcode].filter(Boolean).join(' · ')}
           </Text>
         </View>
       </View>
@@ -238,7 +234,12 @@ export function PhotoGallery({ palette, photos }) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
       {approved.map((url, index) => (
-        <Image key={`${url}-${index}`} source={{ uri: url }} style={s.photo} />
+        <Image
+          resizeMethod="resize"
+          key={`${url}-${index}`}
+          source={{ uri: url }}
+          style={s.photo}
+        />
       ))}
     </ScrollView>
   );
@@ -283,7 +284,7 @@ export function ReviewSummary({ palette, rating, count }) {
     </View>
   );
 }
-export function ReviewCard({ palette, review }) {
+export function ReviewCard({ palette, review, onEdit }) {
   return (
     <View style={[s.reviewCard, { backgroundColor: palette.surface, borderColor: palette.border }]}>
       <View style={s.nameRow}>
@@ -310,6 +311,18 @@ export function ReviewCard({ palette, review }) {
         </View>
       </View>
       <Text style={[s.reviewBody, { color: palette.text2 }]}>{review.text || review.body}</Text>
+      {onEdit && (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Edit your review"
+          onPress={onEdit}
+          style={{ alignSelf: 'flex-start', marginTop: 9 }}
+        >
+          <Text style={{ color: palette.primary, fontSize: 12, fontWeight: '800' }}>
+            Edit review
+          </Text>
+        </TouchableOpacity>
+      )}
       {review.reply && (
         <View
           style={{
@@ -365,7 +378,7 @@ const s = StyleSheet.create({
     ...shadows.soft,
   },
   logo: { width: 82, height: 82, borderRadius: 20 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  nameRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
   dataCheckedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -380,7 +393,7 @@ const s = StyleSheet.create({
   dataCheckedText: { color: '#08724F', fontSize: 9, fontWeight: '800' },
   name: { fontSize: 23, lineHeight: 27, fontWeight: '800', flexShrink: 1 },
   category: { fontSize: 13, marginTop: 3 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginTop: 8 },
   metaStrong: { fontSize: 12, fontWeight: '800' },
   meta: { fontSize: 11 },
   status: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8 },
@@ -388,14 +401,17 @@ const s = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 10, marginTop: 17 },
   action: {
     flex: 1,
-    height: 76,
+    minHeight: 76,
+    minWidth: 0,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
     borderWidth: 1,
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 7,
   },
-  actionLabel: { fontSize: 10, fontWeight: '700' },
+  actionLabel: { fontSize: 10, fontWeight: '700', textAlign: 'center' },
   mapPreview: {
     height: 96,
     borderRadius: 16,

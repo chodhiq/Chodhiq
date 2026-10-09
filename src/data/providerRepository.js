@@ -1,19 +1,12 @@
 import { cacheMarketplace, loadLocalMarketplace } from './localDatabase';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
-import { providers as bundledProviders } from './mockData';
 import { mapReview } from './reviewRepository';
-import { DEMO_MODE } from '../config/runtime';
-
-const bundledByName = new Map(
-  (DEMO_MODE ? bundledProviders : []).map((provider) => [provider.name, provider]),
-);
 
 function mapCategory(row) {
   return { id: row.slug, databaseId: row.id, name: row.name, icon: row.icon, color: row.color };
 }
 
 function mapProvider(row) {
-  const fallback = bundledByName.get(row.business_name) || {};
   return {
     id: row.id,
     publishedAt: row.created_at || null,
@@ -54,16 +47,20 @@ function mapProvider(row) {
   };
 }
 
-export async function loadMarketplace() {
+export async function loadMarketplace({ onCached } = {}) {
   const cached = await loadLocalMarketplace();
+  onCached?.(cached);
   if (!isSupabaseConfigured) return cached;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
   try {
     const [categoryResult, providerResult, reviewResult, replyResult, serviceResult, hoursResult] =
       await Promise.all([
         supabase
           .from('categories')
           .select('id,name,slug,icon,color,sort_order')
-          .order('sort_order'),
+          .order('sort_order')
+          .abortSignal(controller.signal),
         supabase
           .from('providers')
           .select(
@@ -75,20 +72,23 @@ export async function loadMarketplace() {
               'categories(name,slug)',
             ].join(','),
           )
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .abortSignal(controller.signal),
         supabase
           .from('reviews')
           .select('id,provider_id,user_id,rating,comment,created_at')
           .order('created_at', { ascending: false }),
-        supabase.from('review_replies').select('review_id,body'),
+        supabase.from('review_replies').select('review_id,body').abortSignal(controller.signal),
         supabase
           .from('services')
           .select('id,provider_id,name,description,starting_price,is_featured')
-          .order('created_at'),
+          .order('created_at')
+          .abortSignal(controller.signal),
         supabase
           .from('provider_hours')
           .select('provider_id,day_of_week,open_time,close_time,is_closed')
-          .order('day_of_week'),
+          .order('day_of_week')
+          .abortSignal(controller.signal),
       ]);
     if (categoryResult.error) throw categoryResult.error;
     if (providerResult.error) throw providerResult.error;
@@ -110,7 +110,9 @@ export async function loadMarketplace() {
         ...(hoursByProvider.get(hours.provider_id) || []),
         hours,
       ]);
-    const coordinateResult = await supabase.rpc('public_provider_coordinates');
+    const coordinateResult = await supabase
+      .rpc('public_provider_coordinates')
+      .abortSignal(controller.signal);
     const coordinateRows = coordinateResult.error ? [] : coordinateResult.data || [];
     const coordinates = new Map(coordinateRows.map((row) => [row.id, row]));
     const providers = providerResult.data
@@ -128,7 +130,12 @@ export async function loadMarketplace() {
         const rankB = b.sponsoredRank === 5 ? 2 : b.sponsoredRank === 10 ? 1 : 0;
         return rankB - rankA || (b.rating || 0) - (a.rating || 0) || b.reviewCount - a.reviewCount;
       });
-    await cacheMarketplace(categories, providers);
+    let lastUpdatedAt = new Date().toISOString();
+    try {
+      lastUpdatedAt = await cacheMarketplace(categories, providers);
+    } catch (error) {
+      console.warn('Marketplace loaded but could not refresh its offline cache.', error.message);
+    }
     return {
       categories,
       providers,
@@ -139,9 +146,12 @@ export async function loadMarketplace() {
         }),
       ),
       offline: false,
+      lastUpdatedAt,
     };
   } catch (error) {
     console.warn('Marketplace sync failed; using the local cache.', error.message);
     return cached;
+  } finally {
+    clearTimeout(timeout);
   }
 }

@@ -31,3 +31,7 @@ RLS is the authoritative access-control layer. PostgreSQL functions own transact
 ## Migration policy
 
 Refactor incrementally. Preserve public component and hook contracts, move one feature at a time, and run the affected product verification plus shared contract tests after every move.
+
+## Booking time handling
+
+Customer appointment dates and times are UK-local wall-clock values, independent of the customer's device timezone. The app validates them in `Europe/London`; the `validate_booking_request_datetime` trigger is the database authority for rejecting missing or past appointment times. Keep the booking `user_id` tied to the authenticated customer and retain the database ownership policies. Cover trigger behavior with the pgTAP tests in `supabase/tests/` before deploying booking-time changes.

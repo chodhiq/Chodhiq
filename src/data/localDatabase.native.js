@@ -84,19 +84,22 @@ export function getLocalDatabase() {
 
 export async function loadLocalMarketplace() {
   const db = await getLocalDatabase();
-  const [categoryRows, providerRows] = await Promise.all([
+  const [categoryRows, providerRows, cacheTimestamp] = await Promise.all([
     db.getAllAsync('SELECT payload FROM categories ORDER BY sort_order'),
     db.getAllAsync('SELECT payload FROM providers ORDER BY sort_order'),
+    db.getFirstAsync("SELECT value FROM app_meta WHERE key = 'catalog_cache_updated_at'"),
   ]);
   return {
     categories: categoryRows.map((row) => parse(row.payload, null)).filter(Boolean),
     providers: providerRows.map((row) => parse(row.payload, null)).filter(Boolean),
+    lastUpdatedAt: cacheTimestamp?.value || null,
     offline: true,
   };
 }
 
 export async function cacheMarketplace(categories, providers) {
   const db = await getLocalDatabase();
+  const updatedAt = new Date().toISOString();
   await db.withTransactionAsync(async () => {
     await db.runAsync('DELETE FROM categories');
     await db.runAsync('DELETE FROM providers');
@@ -118,7 +121,12 @@ export async function cacheMarketplace(categories, providers) {
         index,
       );
     }
+    await db.runAsync(
+      "INSERT OR REPLACE INTO app_meta (key, value) VALUES ('catalog_cache_updated_at', ?)",
+      updatedAt,
+    );
   });
+  return updatedAt;
 }
 
 export async function loadLocalAccount(userId) {
@@ -162,6 +170,11 @@ export async function saveLocalProfile(userId, profile) {
   return profile;
 }
 
+export async function deleteLocalProfile(userId) {
+  const db = await getLocalDatabase();
+  await db.runAsync('DELETE FROM profiles WHERE user_id = ?', userId);
+}
+
 export async function setLocalSaved(userId, providerId, saved) {
   const db = await getLocalDatabase();
   if (saved)
@@ -177,6 +190,24 @@ export async function setLocalSaved(userId, providerId, saved) {
       userId,
       String(providerId),
     );
+}
+
+export async function hasImportedLocalSavedItems(userId) {
+  const db = await getLocalDatabase();
+  const row = await db.getFirstAsync(
+    'SELECT value FROM app_meta WHERE key = ?',
+    `saved_items_imported:${userId}`,
+  );
+  return row?.value === 'true';
+}
+
+export async function markLocalSavedItemsImported(userId) {
+  const db = await getLocalDatabase();
+  await db.runAsync(
+    'INSERT OR REPLACE INTO app_meta (key, value) VALUES (?, ?)',
+    `saved_items_imported:${userId}`,
+    'true',
+  );
 }
 
 export async function createLocalQuote(userId, input) {
@@ -220,13 +251,15 @@ export async function saveLocalReview(userId, review) {
   return row;
 }
 
-export async function markLocalNotificationsRead(userId) {
+export async function markLocalNotificationsRead(userId, notificationIds) {
+  if (!notificationIds?.length) return;
   const db = await getLocalDatabase();
   await db.runAsync(
-    'UPDATE notifications SET read_at = ? WHERE user_id IN (?, ?) AND read_at IS NULL',
+    `UPDATE notifications SET read_at = ? WHERE user_id IN (?, ?) AND read_at IS NULL AND id IN (${notificationIds.map(() => '?').join(',')})`,
     new Date().toISOString(),
     userId,
     'local',
+    ...notificationIds,
   );
 }
 
@@ -292,6 +325,30 @@ export async function removeLocalPost(id) {
   const db = await getLocalDatabase();
   await db.runAsync('DELETE FROM community_posts WHERE id = ?', id);
 }
+export async function updateLocalPost(id, body) {
+  const db = await getLocalDatabase();
+  const existing = await db.getFirstAsync('SELECT id FROM community_posts WHERE id = ?', id);
+  if (!existing) return null;
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('UPDATE community_posts SET body = ? WHERE id = ?', body, id);
+    const operations = await db.getAllAsync(
+      "SELECT id, payload FROM pending_operations WHERE operation = 'community_post'",
+    );
+    for (const operation of operations) {
+      const payload = parse(operation.payload, {});
+      if (payload.localId !== id) continue;
+      await db.runAsync(
+        'UPDATE pending_operations SET payload = ? WHERE id = ?',
+        json({
+          ...payload,
+          remote: { ...payload.remote, body },
+        }),
+        operation.id,
+      );
+    }
+  });
+  return { id, body };
+}
 
 export async function cacheCommunityPosts(posts) {
   const db = await getLocalDatabase();
@@ -355,5 +412,6 @@ export async function clearLocalUserData(userId) {
     await db.runAsync('DELETE FROM provider_reports WHERE user_id = ?', userId);
     await db.runAsync('DELETE FROM community_posts WHERE author_id = ?', userId);
     await db.runAsync('DELETE FROM pending_operations WHERE payload LIKE ?', userPattern);
+    await db.runAsync('DELETE FROM app_meta WHERE key = ?', `saved_items_imported:${userId}`);
   });
 }

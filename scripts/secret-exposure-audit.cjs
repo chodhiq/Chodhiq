@@ -99,6 +99,13 @@ function scan(file, contents) {
   for (const match of contents.matchAll(suspiciousAssignment)) {
     const value = match[2] || match[3] || match[4] || '';
     if (/resetpassword/i.test(match[1])) continue;
+    // Supabase's generated field-name mapping is not a credential assignment.
+    if (
+      relative.startsWith('artifacts/admin-release-dryrun-') &&
+      match[1].toLowerCase() === 'access_token' &&
+      value === 'access_token'
+    )
+      continue;
     if (
       value.length < 8 ||
       allowedExamples.test(value) ||

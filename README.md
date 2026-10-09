@@ -50,6 +50,8 @@ Apply `supabase/migrations` in order. Do not substitute historical SQL files und
 
 The push notification webhook requires a server-only `PUSH_WEBHOOK_SECRET`. Authenticated staging cleanup may use `E2E_SUPABASE_SERVICE_ROLE_KEY` only in the test runner's secret environment.
 
+For local Android push testing, keep the Firebase Android client file as the ignored workspace-root `google-services.json` and run `npx expo prebuild --platform android` before Gradle. The app config also accepts the EAS file variables `GOOGLE_SERVICES_JSON` or `GOOGLE_SERVICES_FILE`; never add Firebase service-account credentials to the app.
+
 ## Initial-launch scope
 
 Implemented workflows include authentication, search, provider applications and claims, verification, favorites, reviews, quote requests, bookings, provider replies, reports, notifications, provider operations, and administrator moderation and governance.

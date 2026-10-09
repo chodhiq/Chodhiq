@@ -260,7 +260,9 @@ export function useAdminActions() {
 }
 
 export function useAdmin(): AdminContextValue {
-  return { ...useAdminAuth(), ...useAdminActions() };
+  const auth = useAdminAuth();
+  const actions = useAdminActions();
+  return useMemo(() => ({ ...auth, ...actions }), [auth, actions]);
 }
 
 export const cleanSearch = cleanSearchValue;

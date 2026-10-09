@@ -1,9 +1,9 @@
+import OpenStreetMap from './OpenStreetMap';
 import React, { useEffect, useMemo, useRef } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Text from './AppText';
 import MapView, { Marker } from 'react-native-maps';
 import {
-  MapPin,
   Utensils,
   Store,
   Scissors,
@@ -39,7 +39,10 @@ export default function ChodhiQMap({
       providers
         .filter(
           (provider) =>
-            Number.isFinite(provider.baseLatitude) && Number.isFinite(provider.baseLongitude),
+            Number.isFinite(provider.baseLatitude) &&
+            Number.isFinite(provider.baseLongitude) &&
+            Math.abs(provider.baseLatitude) <= 90 &&
+            Math.abs(provider.baseLongitude) <= 180,
         )
         .map((provider) => ({
           provider,
@@ -70,30 +73,17 @@ export default function ChodhiQMap({
     if (!mapsEnabled || !mapRef.current || !location) return;
     mapRef.current.animateToRegion(location, 450);
   }, [location?.latitude, location?.longitude, mapsEnabled]);
-  const validProviders = coordinates.map((item) => item.provider);
-  if (!mapsEnabled) {
+  if (!mapsEnabled)
     return (
-      <View style={[styles.fallback, { backgroundColor: palette.surfaceAlt }]}>
-        <Text style={[styles.fallbackLabel, { color: palette.text2 }]}>
-          Map preview is unavailable. Enable the map provider to browse real business locations.
-        </Text>
-        {validProviders.slice(0, 60).map((provider) => {
-          const active = selected?.id === provider.id;
-          const Icon =
-            CATEGORY_ICONS[String(provider.categoryId || '').toLowerCase()] || LayoutGrid;
-          return (
-            <Text
-              key={provider.id}
-              style={[styles.fallbackBusiness, { color: active ? palette.primary : palette.text2 }]}
-              onPress={() => onSelect(provider)}
-            >
-              {Icon === LayoutGrid ? '•' : '•'} {provider.name}
-            </Text>
-          );
-        })}
-      </View>
+      <OpenStreetMap
+        providers={providers}
+        location={location}
+        onSelect={onSelect}
+        onRegionChange={onRegionChange}
+        palette={palette}
+        mapType={mapType}
+      />
     );
-  }
   return (
     <MapView
       ref={mapRef}
@@ -105,19 +95,26 @@ export default function ChodhiQMap({
       showsUserLocation
       showsMyLocationButton={false}
       toolbarEnabled={false}
+      onMapReady={() => {
+        if (coordinates.length)
+          mapRef.current?.fitToCoordinates(coordinates, {
+            edgePadding: { top: 150, right: 48, bottom: 190, left: 48 },
+            animated: false,
+          });
+      }}
       onRegionChangeComplete={onRegionChange}
       mapPadding={{ top: 150, right: 12, bottom: 190, left: 12 }}
     >
       {groupedCoordinates.map((cluster) => {
-        const provider = cluster.find((item) => item.id === selected?.id) || cluster[0];
-        const latitude = cluster.reduce((sum, item) => sum + item.baseLatitude, 0) / cluster.length;
-        const longitude =
-          cluster.reduce((sum, item) => sum + item.baseLongitude, 0) / cluster.length;
+        const provider = (cluster.find((item) => item.provider.id === selected?.id) || cluster[0])
+          .provider;
+        const latitude = cluster.reduce((sum, item) => sum + item.latitude, 0) / cluster.length;
+        const longitude = cluster.reduce((sum, item) => sum + item.longitude, 0) / cluster.length;
         const active = selected?.id === provider.id;
         const Icon = CATEGORY_ICONS[String(provider.categoryId || '').toLowerCase()] || LayoutGrid;
         return (
           <Marker
-            key={cluster.map((item) => item.id).join('-')}
+            key={cluster.map((item) => item.provider.id).join('-')}
             coordinate={{ latitude, longitude }}
             title={provider.name}
             description={`${provider.category} · ${provider.baseCity}`}
@@ -143,7 +140,11 @@ export default function ChodhiQMap({
               {cluster.length > 1 ? (
                 <Text style={styles.clusterText}>{cluster.length}</Text>
               ) : (
-                <Icon size={17} color="#FFFFFF" strokeWidth={2.4} />
+                <Icon
+                  size={17}
+                  color={active ? palette.onPrimary : palette.primary}
+                  strokeWidth={2.4}
+                />
               )}
             </View>
           </Marker>

@@ -4,6 +4,7 @@
 /**
  * @typedef {object} BookingRow
  * @property {string} id
+ * @property {string} user_id
  * @property {string} provider_id
  * @property {string | null} service_id
  * @property {string} requested_date
@@ -25,6 +26,7 @@ export const mapBooking = (row) => {
   const service = firstRelation(row.services);
   return {
     id: row.id,
+    userId: row.user_id,
     providerId: row.provider_id,
     serviceId: row.service_id,
     providerName: provider?.business_name || 'Provider',

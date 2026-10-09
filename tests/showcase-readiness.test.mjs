@@ -37,7 +37,7 @@ test('production demo assets are not referenced and ad delivery requires consent
     read('app.config.js'),
   ]);
   assert.doesNotMatch(catalog, /assets\/demo/);
-  assert.match(discovery, /export const creators = \[\]/);
+  assert.doesNotMatch(discovery, /export const creators/);
   assert.match(banner, /!loaded \|\| !allowed/);
   assert.match(consent, /AdsConsent\.gatherConsent/);
   assert.match(consent, /canRequestAds/);
@@ -133,7 +133,8 @@ test('repositories validate customer writes before Supabase mutations', async ()
   ]);
   assert.match(reviews, /rating < 1 \|\| rating > 5/);
   assert.match(reviews, /comment\.length > 500/);
-  assert.match(bookings, /Choose a future date and time/);
+  assert.match(bookings, /validateBookingDateTime\(input\.requestedDate, input\.requestedTime\)/);
+  assert.match(await read('src/data/bookingValidation.js'), /Choose a future date and time/);
   assert.match(bookings, /notes\.length > 1000/);
   assert.match(accounts, /response_message/);
 });
@@ -159,7 +160,7 @@ test('production startup cannot seed bundled prototype listings', async () => {
   assert.match(marketplaceState, /DEMO_MODE \? mockProviders : \[\]/);
   assert.match(nativeStore, /DEMO_MODE \? seedProviders : \[\]/);
   assert.match(webStore, /DEMO_MODE \? providers : \[\]/);
-  assert.match(repository, /DEMO_MODE \? bundledProviders : \[\]/);
+  assert.doesNotMatch(repository, /bundledProviders|bundledByName/);
   assert.match(config, /Production builds cannot enable EXPO_PUBLIC_DEMO_MODE/);
 });
 
@@ -191,7 +192,10 @@ test('push opt-out is persisted and clears the registered token', async () => {
   const preferences = await read('src/hooks/useCommunicationPreferences.js');
   assert.match(preferences, /PREFERENCES_KEY/);
   assert.match(preferences, /AsyncStorage\.setItem\(PREFERENCES_KEY/);
-  assert.match(preferences, /preferences\.push \? registerPushToken : clearPushToken/);
+  assert.match(
+    preferences,
+    /preferences\.push\s*\? registerPushToken\(userId, preferences\.vibration\)\s*:\s*clearPushToken\(userId\)/,
+  );
   assert.match(preferences, /if \(!ready \|\| !userId\)/);
 });
 
@@ -199,7 +203,7 @@ test('push delivery authenticates webhooks and reloads canonical content', async
   const source = await read('supabase/functions/push-notification/index.ts');
   assert.match(source, /PUSH_WEBHOOK_SECRET/);
   assert.match(source, /x-webhook-secret/);
-  assert.match(source, /from\("notifications"\)/);
+  assert.match(source, /from\(['"]notifications['"]\)/);
   assert.match(source, /title: notification\.title/);
 });
 

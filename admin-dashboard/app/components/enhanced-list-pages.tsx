@@ -63,7 +63,7 @@ export function UsersOperationsPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("user") || "");
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -74,7 +74,8 @@ export function UsersOperationsPage() {
     setLoading(true); setError("");
     let request = supabase.from("profiles").select("id,full_name,city,created_at", { count: "exact" }).order("created_at", { ascending: false }).range(...range(page));
     const search = cleanSearch(query);
-    if (search) request = request.or(`full_name.ilike.%${search}%,city.ilike.%${search}%`);
+    if (/^[0-9a-f-]{36}$/i.test(search)) request = request.eq("id", search);
+    else if (search) request = request.or(`full_name.ilike.%${search}%,city.ilike.%${search}%`);
     const result = await request;
     if (activeRequest !== requestId.current) return;
     if (result.error) setError("User records are unavailable. Refresh and retry.");

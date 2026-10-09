@@ -62,3 +62,9 @@ test('search includes services, subcategory, and description', () => {
     true,
   );
 });
+
+test('search finds listings by postcode, with or without its space', () => {
+  const listing = provider('Services', { basePostcode: 'LE4 5AT' });
+  assert.equal(matchesProviderSearch(listing, 'LE4 5AT'), true);
+  assert.equal(matchesProviderSearch(listing, 'LE45AT'), true);
+});

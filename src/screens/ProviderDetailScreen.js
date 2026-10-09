@@ -1,14 +1,11 @@
+import ScrollView from '../components/KeyboardAwareScrollView';
+import { AppAlert as Alert } from '../components/AppDialog';
+import { MotionModal as Modal } from '../components/Motion';
+import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppTextInput from '../components/AppTextInput';
-import {
-  Alert,
-  Linking,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Linking, Platform, StyleSheet, View } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import Text from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,7 +14,7 @@ import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetTextInput,
-  BottomSheetView,
+  BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import {
   Briefcase,
@@ -30,7 +27,6 @@ import {
   Tag,
   X,
 } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import {
@@ -47,13 +43,30 @@ import {
   ReviewCard,
   ReviewSummary,
 } from '../components/ProviderDetailComponents';
+import { getUkLocalDateTime } from '../data/bookingValidation';
 
 const priceLabel = (value) => (value ? '£'.repeat(value) : null);
 const futureDate = (days) => {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
+  const currentDate = getUkLocalDateTime().date;
+  const [year, month, day] = currentDate.split('-').map(Number);
+  const date = new Date(year, month - 1, day + days);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
+const parseLocalDate = (value) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+  if (!match) return new Date();
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+};
+const parseLocalDateTime = (dateValue, timeValue) => {
+  const value = parseLocalDate(dateValue);
+  const match = /^(\d{2}):(\d{2})$/.exec(timeValue || '');
+  if (match) value.setHours(Number(match[1]), Number(match[2]), 0, 0);
+  return value;
+};
+const formatLocalDate = (value) =>
+  `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+const formatLocalTime = (value) =>
+  `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
 const reviewStyles = StyleSheet.create({
   form: { borderWidth: 1, borderRadius: 17, padding: 15, marginBottom: 14 },
   title: { fontSize: 17, fontWeight: '800', marginBottom: 4 },
@@ -81,6 +94,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
     recordProviderView,
     reviews,
     addReview,
+    editReview,
     session,
   } = useAppState();
   const { palette } = useChodhiQTheme();
@@ -93,6 +107,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
   const [reportDetails, setReportDetails] = useState('');
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
+  const [editingReviewId, setEditingReviewId] = useState(null);
   const [reviewBusy, setReviewBusy] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingDate, setBookingDate] = useState('');
@@ -100,6 +115,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
   const [bookingNotes, setBookingNotes] = useState('');
   const [selectedService, setSelectedService] = useState(null);
   const [bookingBusy, setBookingBusy] = useState(false);
+  const [bookingPicker, setBookingPicker] = useState(null);
   const quoteSheetRef = useRef(null);
   const quoteSnapPoints = useMemo(() => ['48%'], []);
   const renderBackdrop = useCallback(
@@ -146,6 +162,13 @@ export default function ProviderDetailScreen({ route, navigation }) {
     }
   };
   const sendQuote = async () => {
+    if (!session) {
+      Alert.alert('Sign in required', 'Please sign in before requesting a quote.', [
+        { text: 'Cancel' },
+        { text: 'Sign in', onPress: () => navigation.navigate('Welcome') },
+      ]);
+      return;
+    }
     if (!provider.whatsapp && !provider.phone)
       return Alert.alert(
         'Contact unavailable',
@@ -155,16 +178,20 @@ export default function ProviderDetailScreen({ route, navigation }) {
       quoteMessage || `Hi ${provider.name}, I found you on ChodhiQ and I'd like a quote.`;
     try {
       await addQuoteRequest({ providerId: provider.id, providerName: provider.name, message });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } catch (error) {
+      Alert.alert('Could not save quote request', error.message || 'Please try again.');
+      return;
+    }
+    try {
       await Linking.openURL(
         `https://wa.me/${(provider.whatsapp || provider.phone).replace(/\D/g, '')}?text=${encodeURIComponent(message)}`,
       );
       quoteSheetRef.current?.dismiss();
-    } catch (error) {
-      Alert.alert('Sign in required', error.message, [
-        { text: 'Cancel' },
-        { text: 'Sign in', onPress: () => navigation.navigate('Welcome') },
-      ]);
+    } catch {
+      Alert.alert(
+        'Quote request saved',
+        `Your request is recorded, but WhatsApp could not be opened. You can contact ${provider.name} directly.`,
+      );
     }
   };
   const submitReport = async () => {
@@ -180,11 +207,21 @@ export default function ProviderDetailScreen({ route, navigation }) {
   const submitReview = async () => {
     setReviewBusy(true);
     try {
-      await addReview({ providerId: provider.id, rating: reviewRating, comment: reviewComment });
+      if (editingReviewId) {
+        await editReview(editingReviewId, { rating: reviewRating, comment: reviewComment });
+      } else {
+        await addReview({ providerId: provider.id, rating: reviewRating, comment: reviewComment });
+      }
       setReviewRating(0);
       setReviewComment('');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      Alert.alert('Review published', 'Your rating is now included in this provider’s score.');
+      setEditingReviewId(null);
+
+      Alert.alert(
+        editingReviewId ? 'Review updated' : 'Review published',
+        editingReviewId
+          ? 'Your changes are now included in this provider’s reviews.'
+          : 'Your rating is now included in this provider’s score.',
+      );
     } catch (error) {
       Alert.alert('Could not publish review', error.message);
     } finally {
@@ -206,13 +243,24 @@ export default function ProviderDetailScreen({ route, navigation }) {
       setBookingTime('');
       setBookingNotes('');
       setSelectedService(null);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+
       Alert.alert('Booking requested', `${provider.name} will confirm or suggest another time.`);
     } catch (error) {
       Alert.alert('Could not request booking', error.message);
     } finally {
       setBookingBusy(false);
     }
+  };
+  const onBookingPickerChange = (event, selected) => {
+    if (event.type === 'dismissed') {
+      setBookingPicker(null);
+      return;
+    }
+    if (selected) {
+      if (bookingPicker === 'date') setBookingDate(formatLocalDate(selected));
+      else setBookingTime(formatLocalTime(selected));
+    }
+    if (Platform.OS !== 'ios' || event.type === 'set') setBookingPicker(null);
   };
   const actions = [
     {
@@ -282,7 +330,21 @@ export default function ProviderDetailScreen({ route, navigation }) {
         count={providerReviews.length || provider.reviewCount}
       />
       {providerReviews.slice(0, 1).map((review, index) => (
-        <ReviewCard key={review.id || index} palette={palette} review={review} />
+        <ReviewCard
+          key={review.id || index}
+          palette={palette}
+          review={review}
+          onEdit={
+            review.userId === session?.user?.id
+              ? () => {
+                  setEditingReviewId(review.id);
+                  setReviewRating(review.rating);
+                  setReviewComment(review.text || '');
+                  setTab('Reviews');
+                }
+              : undefined
+          }
+        />
       ))}
     </>
   );
@@ -290,7 +352,9 @@ export default function ProviderDetailScreen({ route, navigation }) {
     <View
       style={[reviewStyles.form, { backgroundColor: palette.surface, borderColor: palette.border }]}
     >
-      <Text style={[reviewStyles.title, { color: palette.text }]}>Leave a review</Text>
+      <Text style={[reviewStyles.title, { color: palette.text }]}>
+        {editingReviewId ? 'Edit your review' : 'Leave a review'}
+      </Text>
       <Text style={{ color: palette.text2 }}>
         Share a short, honest account of your experience.
       </Text>
@@ -333,9 +397,22 @@ export default function ProviderDetailScreen({ route, navigation }) {
         ]}
       >
         <Text style={{ color: palette.dark ? '#081B2C' : '#FFFFFF', fontWeight: '800' }}>
-          {reviewBusy ? 'Publishing…' : 'Publish review'}
+          {reviewBusy ? 'Saving…' : editingReviewId ? 'Save changes' : 'Publish review'}
         </Text>
       </TouchableOpacity>
+      {editingReviewId && (
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={() => {
+            setEditingReviewId(null);
+            setReviewRating(0);
+            setReviewComment('');
+          }}
+          style={{ paddingTop: 11 }}
+        >
+          <Text style={{ color: palette.text2, textAlign: 'center' }}>Cancel edit</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
   const content =
@@ -368,7 +445,20 @@ export default function ProviderDetailScreen({ route, navigation }) {
         />
         {providerReviews.length ? (
           providerReviews.map((review, index) => (
-            <ReviewCard key={review.id || index} palette={palette} review={review} />
+            <ReviewCard
+              key={review.id || index}
+              palette={palette}
+              review={review}
+              onEdit={
+                review.userId === session?.user?.id
+                  ? () => {
+                      setEditingReviewId(review.id);
+                      setReviewRating(review.rating);
+                      setReviewComment(review.text || '');
+                    }
+                  : undefined
+              }
+            />
           ))
         ) : (
           <EmptyBlock palette={palette} text="No reviews yet. Be the first to review." />
@@ -466,6 +556,9 @@ export default function ProviderDetailScreen({ route, navigation }) {
         </View>
       </ScrollView>
       <BottomSheetModal
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
         ref={quoteSheetRef}
         index={0}
         snapPoints={quoteSnapPoints}
@@ -474,7 +567,10 @@ export default function ProviderDetailScreen({ route, navigation }) {
         handleIndicatorStyle={{ backgroundColor: palette.muted }}
         backdropComponent={renderBackdrop}
       >
-        <BottomSheetView style={styles.sheet}>
+        <BottomSheetScrollView
+          contentContainerStyle={styles.sheet}
+          keyboardShouldPersistTaps="handled"
+        >
           <Text style={[styles.sheetTitle, { color: palette.text }]}>Request a Quote</Text>
           <Text style={{ color: palette.text2 }}>
             Sent directly to {provider.name} via WhatsApp
@@ -502,7 +598,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
               Send via WhatsApp
             </Text>
           </TouchableOpacity>
-        </BottomSheetView>
+        </BottomSheetScrollView>
       </BottomSheetModal>
       <Modal
         visible={reportOpen}
@@ -558,8 +654,16 @@ export default function ProviderDetailScreen({ route, navigation }) {
         animationType="slide"
         onRequestClose={() => setBookingOpen(false)}
       >
-        <View style={styles.overlay}>
-          <View style={[styles.report, { backgroundColor: palette.surface }]}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={[styles.overlay, { justifyContent: 'center' }]}
+        >
+          <ScrollView
+            style={{ maxHeight: '92%', width: '100%' }}
+            contentContainerStyle={[styles.report, { backgroundColor: palette.surface }]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+          >
             <View style={styles.reportHead}>
               <Text style={[styles.sheetTitle, { color: palette.text }]}>Request a booking</Text>
               <TouchableOpacity
@@ -572,6 +676,9 @@ export default function ProviderDetailScreen({ route, navigation }) {
             </View>
             <Text style={{ color: palette.text2 }}>
               Choose a preferred time. The business must confirm it.
+            </Text>
+            <Text style={{ color: palette.text2, fontSize: 12, marginTop: 4 }}>
+              Dates and times use UK local time.
             </Text>
             {provider.services?.length > 0 && (
               <ScrollView
@@ -648,23 +755,76 @@ export default function ProviderDetailScreen({ route, navigation }) {
               ))}
             </View>
             <View style={styles.dateRow}>
-              <AppTextInput
-                accessibilityLabel="Booking date in year month day format"
-                value={bookingDate}
-                onChangeText={setBookingDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={palette.muted}
-                style={[styles.dateInput, { color: palette.text, borderColor: palette.border }]}
-              />
-              <AppTextInput
-                accessibilityLabel="Booking time in 24 hour format"
-                value={bookingTime}
-                onChangeText={setBookingTime}
-                placeholder="HH:MM"
-                placeholderTextColor={palette.muted}
-                style={[styles.dateInput, { color: palette.text, borderColor: palette.border }]}
-              />
+              {Platform.OS === 'web' ? (
+                <>
+                  <AppTextInput
+                    accessibilityLabel="Booking date in year month day format"
+                    value={bookingDate}
+                    onChangeText={setBookingDate}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={palette.muted}
+                    style={[styles.dateInput, { color: palette.text, borderColor: palette.border }]}
+                  />
+                  <AppTextInput
+                    accessibilityLabel="Booking time in 24 hour format"
+                    value={bookingTime}
+                    onChangeText={setBookingTime}
+                    placeholder="HH:MM"
+                    placeholderTextColor={palette.muted}
+                    style={[styles.dateInput, { color: palette.text, borderColor: palette.border }]}
+                  />
+                </>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Choose booking date"
+                    onPress={() => setBookingPicker('date')}
+                    style={[
+                      styles.dateInput,
+                      { borderColor: palette.border, justifyContent: 'center' },
+                    ]}
+                  >
+                    <Text style={{ color: bookingDate ? palette.text : palette.muted }}>
+                      {bookingDate || 'Choose date'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Choose booking time"
+                    onPress={() => setBookingPicker('time')}
+                    style={[
+                      styles.dateInput,
+                      { borderColor: palette.border, justifyContent: 'center' },
+                    ]}
+                  >
+                    <Text style={{ color: bookingTime ? palette.text : palette.muted }}>
+                      {bookingTime || 'Choose time'}
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
+            {bookingPicker && Platform.OS !== 'web' && (
+              <DateTimePicker
+                mode={bookingPicker}
+                value={
+                  bookingPicker === 'date'
+                    ? parseLocalDate(bookingDate || futureDate(1))
+                    : parseLocalDateTime(bookingDate || futureDate(1), bookingTime)
+                }
+                minimumDate={
+                  bookingPicker === 'date' ? parseLocalDate(getUkLocalDateTime().date) : undefined
+                }
+                minimumTime={
+                  bookingPicker === 'time' && bookingDate === getUkLocalDateTime().date
+                    ? parseLocalDateTime(bookingDate, getUkLocalDateTime().time)
+                    : undefined
+                }
+                display={Platform.OS === 'ios' ? 'compact' : 'default'}
+                onChange={onBookingPickerChange}
+              />
+            )}
             <AppTextInput
               accessibilityLabel="Booking notes"
               maxLength={1000}
@@ -691,8 +851,8 @@ export default function ProviderDetailScreen({ route, navigation }) {
                 {bookingBusy ? 'Sending…' : 'Request booking'}
               </Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

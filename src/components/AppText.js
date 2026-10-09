@@ -17,5 +17,10 @@ export default function AppText({ style, ...props }) {
   const flatStyle = StyleSheet.flatten(style) || {};
   const fontFamily =
     flatStyle.fontFamily || familyByWeight[flatStyle.fontWeight ?? 400] || fonts.regular;
-  return <NativeText {...props} style={[style, { fontFamily, fontWeight: 'normal' }]} />;
+  return (
+    <NativeText
+      {...props}
+      style={[{ includeFontPadding: false }, style, { fontFamily, fontWeight: 'normal' }]}
+    />
+  );
 }

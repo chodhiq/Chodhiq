@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import Constants from 'expo-constants';
+import { features } from '../config/features';
 
 const isExpoGo = Constants.appOwnership === 'expo';
 
 function getAdsConsent() {
-  if (isExpoGo) return null;
+  if (isExpoGo || !features.googleAds) return null;
   return require('react-native-google-mobile-ads').AdsConsent;
 }
 

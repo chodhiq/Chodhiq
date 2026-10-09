@@ -1,15 +1,12 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 
-const SESSION_KEY = '@chodhiq/ad-session-id';
-
-async function adSessionId() {
-  const current = await AsyncStorage.getItem(SESSION_KEY);
-  if (current) return current;
-  const created = globalThis.crypto?.randomUUID?.() || '00000000-0000-4000-8000-000000000000';
-  await AsyncStorage.setItem(SESSION_KEY, created);
-  return created;
-}
+// Counts a campaign once per app session without storing a long-lived ad identifier.
+const adSessionId =
+  globalThis.crypto?.randomUUID?.() ||
+  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+    const digit = Math.floor(Math.random() * 16);
+    return (character === 'x' ? digit : (digit & 3) | 8).toString(16);
+  });
 
 export async function loadActiveCampaigns(city) {
   if (!isSupabaseConfigured) return [];
@@ -34,11 +31,10 @@ export async function loadActiveCampaigns(city) {
 
 export async function recordCampaignEvent(campaignId, eventType, placement = 'customer-home') {
   if (!isSupabaseConfigured || !campaignId) return;
-  const sessionId = await adSessionId();
   const { error } = await supabase.rpc('record_ad_campaign_event', {
     target_campaign: campaignId,
     event_kind: eventType,
-    session_id: sessionId,
+    session_id: adSessionId,
     placement_name: placement,
   });
   if (error) throw error;

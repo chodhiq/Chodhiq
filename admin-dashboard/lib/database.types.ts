@@ -1,9 +1,14 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export type ModerationStatus = "active" | "suspended";
-export type VerificationStatus = "pending" | "changes_requested" | "approved" | "rejected" | "revoked";
-export type ReportStatus = "open" | "reviewing" | "resolved" | "dismissed";
-export type CommunityPostStatus = "draft" | "published" | "removed";
+export type ModerationStatus = 'active' | 'suspended';
+export type VerificationStatus =
+  | 'pending'
+  | 'changes_requested'
+  | 'approved'
+  | 'rejected'
+  | 'revoked';
+export type ReportStatus = 'open' | 'reviewing' | 'resolved' | 'dismissed';
+export type CommunityPostStatus = 'draft' | 'published' | 'removed';
 
 export interface ProviderListRow {
   id: string;
@@ -39,6 +44,7 @@ export interface ReportRow {
   id: string;
   provider_id?: string;
   post_id?: string;
+  comment_id?: string | null;
   reporter_id: string | null;
   reason: string;
   details?: string | null;
@@ -47,6 +53,7 @@ export interface ReportRow {
   updated_at?: string;
   providers?: { business_name: string } | null;
   community_posts?: { body: string; status: CommunityPostStatus } | null;
+  community_comments?: { body: string; status: CommunityPostStatus } | null;
 }
 
 export interface VerificationRequestRow {

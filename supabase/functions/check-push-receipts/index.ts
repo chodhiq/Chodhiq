@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { matchesAnySecret } from '../secure-compare.ts';
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 async function tokenHash(token: string) {
@@ -9,10 +10,10 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
   const secret = request.headers.get('x-webhook-secret');
   if (
-    !secret ||
-    ![Deno.env.get('PUSH_WEBHOOK_SECRET'), Deno.env.get('COMMUNITY_PUSH_WEBHOOK_SECRET')]
-      .filter(Boolean)
-      .includes(secret)
+    !(await matchesAnySecret(secret, [
+      Deno.env.get('PUSH_WEBHOOK_SECRET'),
+      Deno.env.get('COMMUNITY_PUSH_WEBHOOK_SECRET'),
+    ]))
   )
     return json({ error: 'Unauthorized' }, 401);
   const url = Deno.env.get('SUPABASE_URL'),

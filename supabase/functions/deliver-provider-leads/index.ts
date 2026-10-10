@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { checkRateLimit, RATE_LIMITS } from '../rate-limit-helper.ts';
+import { timingSafeEqual } from '../secure-compare.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -9,7 +10,7 @@ const json = (body: unknown, status = 200) =>
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
   const secret = Deno.env.get('LEAD_DELIVERY_SECRET');
-  if (!secret || request.headers.get('x-delivery-secret') !== secret)
+  if (!secret || !(await timingSafeEqual(request.headers.get('x-delivery-secret') ?? '', secret)))
     return json({ error: 'Unauthorized' }, 401);
   const url = Deno.env.get('SUPABASE_URL'),
     key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');

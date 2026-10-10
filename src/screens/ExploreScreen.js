@@ -26,6 +26,7 @@ import {
   isProviderOpenNow,
   matchesPostcodePrefix,
   normalizePostcode,
+  cityOptions,
 } from '../data/providerDiscovery';
 import {
   ExploreBusinessCard,
@@ -73,13 +74,7 @@ export default function ExploreScreen({ navigation, route }) {
   const { palette } = useChodhiQTheme();
   const insets = useSafeAreaInsets();
   const savedIdSet = useMemo(() => new Set(savedIds), [savedIds]);
-  const cities = useMemo(
-    () =>
-      [...new Set(providers.map((provider) => provider.baseCity).filter(Boolean))].sort((a, b) =>
-        a.localeCompare(b),
-      ),
-    [providers],
-  );
+  const cities = useMemo(() => cityOptions(providers), [providers]);
   const serviceOptions = useMemo(() => {
     const selected = categories.find((category) => category.id === selectedCategory);
     return [

@@ -23,6 +23,37 @@ export function matchesPostcodePrefix(postcode, query) {
   return match?.[1] === normalizedQuery;
 }
 
+/** @param {{baseCity?: string | null}[]} providers */
+export function cityOptions(providers = []) {
+  /** @type {Map<string, Map<string, number>>} */
+  const groups = new Map();
+  for (const provider of providers) {
+    const label = String(provider.baseCity || '').trim();
+    const key = label.toLowerCase();
+    if (!key) continue;
+    let variants = groups.get(key);
+    if (!variants) {
+      variants = new Map();
+      groups.set(key, variants);
+    }
+    variants.set(label, (variants.get(label) || 0) + 1);
+  }
+
+  /** @type {(match: string, boundary: string, letter: string) => string} */
+  const titleCaseReplacement = (_match, boundary, letter) => boundary + letter.toUpperCase();
+  /** @param {string} value */
+  const titleCase = (value) => value.replace(/(^|[\s'-])([a-z])/g, titleCaseReplacement);
+  return [...groups.entries()]
+    .map(([key, variants]) => {
+      const sortedVariants = [...variants.entries()].sort(
+        (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+      );
+      const tied = sortedVariants.length > 1 && sortedVariants[0][1] === sortedVariants[1][1];
+      return tied ? titleCase(key) : sortedVariants[0][0];
+    })
+    .sort((a, b) => a.localeCompare(b));
+}
+
 /**
  * @param {number} latitude
  * @param {number} longitude

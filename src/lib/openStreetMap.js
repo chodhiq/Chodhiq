@@ -25,7 +25,7 @@ export function openStreetMapHtml(providers, location, mapType = 'standard') {
   return `<!doctype html><html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
 html,body,#map{height:100%;margin:0;background:#edf2eb}
 #status{z-index:1000;position:absolute;top:46%;left:10%;right:10%;text-align:center;font:15px system-ui;color:#285a45}
@@ -36,7 +36,7 @@ html,body,#map{height:100%;margin:0;background:#edf2eb}
 <body>
 <div id="status">Loading map…</div>
 <div id="map"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
   function send(value){if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(JSON.stringify(value));else window.parent.postMessage(value,'*');}
   if(typeof L==='undefined'){document.getElementById('status').textContent='Map could not load. Check your connection and retry.';send({type:'error'});}else{

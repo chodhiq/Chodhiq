@@ -69,6 +69,21 @@ Deno.serve(async (request) => {
       limit.headers,
     );
 
+  // Second limit on the network address alone, so rotating installation IDs does not
+  // bypass throttling. Mobile carriers share addresses, so keep this generous.
+  if (network !== 'unknown') {
+    const ipLimit = await checkRateLimit(admin, await digest(`ip:${network}`), 'ingest-mvp-event-ip', {
+      maxRequests: 600,
+      windowSeconds: 3600,
+    });
+    if (!ipLimit.allowed)
+      return json(
+        { error: ipLimit.error ? 'Rate limiter unavailable' : 'Too many events' },
+        ipLimit.error ? 503 : 429,
+        ipLimit.headers,
+      );
+  }
+
   let userId: string | null = null;
   const authorization = request.headers.get('Authorization') ?? '';
   if (authorization.startsWith('Bearer ')) {

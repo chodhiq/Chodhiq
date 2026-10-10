@@ -40,9 +40,15 @@ Deno.serve(async (req) => {
   }
   let processingError: unknown = null;
   try {
-    if (event.type === 'checkout.session.completed') {
+    if (
+      event.type === 'checkout.session.completed' ||
+      event.type === 'checkout.session.async_payment_succeeded'
+    ) {
       const session = event.data.object as Stripe.Checkout.Session;
-      const providerId = session.metadata?.provider_id,
+      // Delayed payment methods complete checkout before the money arrives. Wait for it.
+      const paymentConfirmed =
+        session.payment_status === 'paid' || session.payment_status === 'no_payment_required';
+      const providerId = paymentConfirmed ? session.metadata?.provider_id : undefined,
         planCode = session.metadata?.plan_code,
         requestId = session.metadata?.request_id;
       if (providerId && planCode && requestId) {

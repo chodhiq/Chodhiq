@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.112.2.112.2';
 import { checkRateLimit, RATE_LIMITS } from '../rate-limit-helper.ts';
 
 const cors = {
@@ -16,6 +16,15 @@ const json = (body: unknown, status = 200, extraHeaders: Record<string, string> 
       'Cache-Control': 'no-store',
     },
   });
+
+// Every bucket that stores files under a "<user id>/" folder.
+const USER_FILE_BUCKETS = [
+  'verification-documents',
+  'provider-media',
+  'community-images',
+  'quote-attachments',
+  'business-application-proofs',
+] as const;
 
 // Supabase's generated schema generics differ between CDN and npm builds; the
 // storage surface used here is runtime-stable and intentionally isolated.
@@ -70,11 +79,7 @@ Deno.serve(async (request) => {
       limit.headers,
     );
   try {
-    await Promise.all([
-      removeUserFiles(admin, 'verification-documents', user.id),
-      removeUserFiles(admin, 'provider-media', user.id),
-      removeUserFiles(admin, 'community-images', user.id),
-    ]);
+    await Promise.all(USER_FILE_BUCKETS.map((bucket) => removeUserFiles(admin, bucket, user.id)));
     const { error: preparationError } = await admin.rpc('prepare_account_deletion', {
       target_user: user.id,
     });

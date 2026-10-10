@@ -1,5 +1,5 @@
 import Stripe from 'npm:stripe@18.5.0';
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.112.2';
 
 const currentPeriodEndIso = (subscription: Stripe.Subscription) => {
   const periods = subscription.items.data.map((item) => item.current_period_end);

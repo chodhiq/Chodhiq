@@ -21,7 +21,12 @@ import {
   providerMatchesCategory,
   providerMatchesService,
 } from '../data/categoryMatching';
-import { distanceKm, isProviderOpenNow } from '../data/providerDiscovery';
+import {
+  distanceKm,
+  isProviderOpenNow,
+  matchesPostcodePrefix,
+  normalizePostcode,
+} from '../data/providerDiscovery';
 import {
   ExploreBusinessCard,
   ExploreEmpty,
@@ -100,7 +105,7 @@ export default function ExploreScreen({ navigation, route }) {
         .trim()
         .toLowerCase();
     const minimumRating = appliedRating ? Number(appliedRating.replace('+', '')) : 0;
-    const normalizedPostcode = appliedPostcode.replace(/\s+/g, '').toLowerCase();
+    const normalizedPostcode = normalizePostcode(appliedPostcode);
     const withLocation = providers.map((provider) => {
       const km =
         locationCoordinates &&
@@ -123,7 +128,6 @@ export default function ExploreScreen({ navigation, route }) {
       const providerLocations = [provider.baseCity, ...(provider.serviceAreas || [])].map(
         normalize,
       );
-      const postcode = normalize(provider.basePostcode).replace(/\s+/g, '');
       return (
         matchesProviderSearch(provider, deferredQuery) &&
         providerMatchesCategory(provider, selected) &&
@@ -131,7 +135,7 @@ export default function ExploreScreen({ navigation, route }) {
         (!appliedPrice || provider.priceRange === appliedPrice) &&
         Number(provider.rating || 0) >= minimumRating &&
         (!appliedCity || normalize(provider.baseCity) === normalize(appliedCity)) &&
-        (!normalizedPostcode || postcode.includes(normalizedPostcode)) &&
+        (!normalizedPostcode || matchesPostcodePrefix(provider.basePostcode, appliedPostcode)) &&
         (!openNow || provider.openNow === true) &&
         (!nearbyOnly ||
           providerLocations.some(

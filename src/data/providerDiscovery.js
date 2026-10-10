@@ -1,5 +1,28 @@
 // @ts-check
 
+/** @param {unknown} value */
+export function normalizePostcode(value) {
+  return String(value || '')
+    .replace(/\s+/g, '')
+    .toLowerCase();
+}
+
+/** @param {unknown} postcode @param {unknown} query */
+export function matchesPostcodePrefix(postcode, query) {
+  const normalizedPostcode = normalizePostcode(postcode);
+  const normalizedQuery = normalizePostcode(query);
+  if (!normalizedQuery) return true;
+  if (!normalizedPostcode.startsWith(normalizedQuery)) return false;
+
+  // A complete outward code such as LE1 is a boundary. This keeps LE10 and LE11
+  // out, while a spaced query such as "LE1 1" can continue into the inward code.
+  const rawQuery = String(query || '').trim();
+  if (/\s/.test(rawQuery)) return true;
+  if (!/^[a-z]{1,2}\d\d?[a-z]?$/.test(normalizedQuery)) return true;
+  const match = /^([a-z]{1,2}\d\d?[a-z]?)[0-9][a-z]{2}$/.exec(normalizedPostcode);
+  return match?.[1] === normalizedQuery;
+}
+
 /**
  * @param {number} latitude
  * @param {number} longitude

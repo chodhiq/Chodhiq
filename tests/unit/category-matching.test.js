@@ -74,6 +74,21 @@ test('search finds listings by postcode, with or without its space', () => {
   assert.equal(matchesProviderSearch(listing, 'LE45AT'), true);
 });
 
+test('postcode search does not confuse neighboring outward codes', () => {
+  assert.equal(
+    matchesProviderSearch(provider('Services', { basePostcode: 'LE1 1AA' }), 'LE1'),
+    true,
+  );
+  assert.equal(
+    matchesProviderSearch(provider('Services', { basePostcode: 'LE10 1AB' }), 'LE1'),
+    false,
+  );
+  assert.equal(
+    matchesProviderSearch(provider('Services', { basePostcode: 'LE11 2CD' }), 'LE1'),
+    false,
+  );
+});
+
 test('provider service filters match the selected real service only', () => {
   const listing = provider('Home Services', {
     services: [{ name: 'Boiler repair' }, { name: 'Bathroom fitting' }],

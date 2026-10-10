@@ -1,5 +1,6 @@
 // @ts-check
 import { serviceTaxonomy } from './serviceTaxonomy.js';
+import { matchesPostcodePrefix } from './providerDiscovery.js';
 
 /** @param {unknown} value */
 const normalize = (value) =>
@@ -115,9 +116,10 @@ export function providerCardLabels(provider) {
 export function matchesProviderSearch(provider, query) {
   const needle = normalize(query);
   if (!needle) return true;
-  const postcode = normalize(provider.basePostcode).replace(/\s+/g, '');
-  if (postcode.includes(needle.replace(/\s+/g, ''))) return true;
-  const searchable = providerSearchText(provider);
+  if (matchesPostcodePrefix(provider.basePostcode, query)) return true;
+  const postcodeText = normalize(provider.basePostcode);
+  const providerText = providerSearchText(provider);
+  const searchable = postcodeText ? providerText.split(postcodeText).join(' ') : providerText;
   if (searchable.includes(needle)) return true;
   const words = searchable.split(' ').map(singular);
   return needle

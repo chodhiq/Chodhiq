@@ -7,6 +7,7 @@ import { Store } from 'lucide-react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ExpoLocation from 'expo-location';
 import { showPermissionRecovery } from '../lib/permissionRecovery';
+import { getDeviceLocation } from '../lib/deviceLocation';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { banners } from '../data/assetCatalog';
@@ -89,33 +90,24 @@ export default function HomeScreen({ navigation }) {
   const useCurrentLocation = useCallback(async () => {
     try {
       setLocating(true);
-      const permission = await ExpoLocation.requestForegroundPermissionsAsync();
-      if (!permission.granted) {
-        showPermissionRecovery(
-          'Location permission needed',
-          'Allow location access to find businesses near you.',
-        );
-        return;
+      const detected = await getDeviceLocation(ExpoLocation);
+      setCurrentLocation(detected.city || location, detected);
+      Alert.alert(
+        'Location updated',
+        detected.city
+          ? `Nearby businesses will use your current location in ${detected.city}.`
+          : 'Nearby businesses will use your current device location.',
+      );
+    } catch (error) {
+      if (error.code === 'LOCATION_PERMISSION_DENIED') {
+        showPermissionRecovery('Location permission needed', error.message);
+      } else {
+        Alert.alert('Could not get your location', error.message);
       }
-      const position = await ExpoLocation.getCurrentPositionAsync({
-        accuracy: ExpoLocation.Accuracy.Balanced,
-      });
-      const [place] = await ExpoLocation.reverseGeocodeAsync(position.coords);
-      const city = place?.city || place?.subregion || place?.region;
-      if (!city) {
-        Alert.alert('Location unavailable', 'Choose your area manually and try again.');
-        return;
-      }
-      setCurrentLocation(city, {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
-    } catch {
-      Alert.alert('Location unavailable', 'Choose your area manually and try again.');
     } finally {
       setLocating(false);
     }
-  }, [setCurrentLocation]);
+  }, [location, setCurrentLocation]);
   const { enrichedProviders, popular, browseBusinesses, nearby, openNow, recentlyAdded } =
     useMemo(() => {
       const enriched = providers.map((provider) => {

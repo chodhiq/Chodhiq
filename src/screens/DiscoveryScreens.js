@@ -38,6 +38,7 @@ import { features } from '../config/features';
 import { matchesProviderSearch, providerMatchesCategory } from '../data/categoryMatching';
 import * as ExpoLocation from 'expo-location';
 import { showPermissionRecovery } from '../lib/permissionRecovery';
+import { getDeviceLocation } from '../lib/deviceLocation';
 
 export function OffersScreen({ navigation }) {
   const { palette } = useChodhiQTheme();
@@ -182,32 +183,30 @@ export function MapScreen({ navigation, route }) {
       .slice(0, 12);
   }, [mapInitialLocation?.latitude, mapInitialLocation?.longitude, providersWithMeta]);
   const useCurrentLocation = async () => {
+    if (locating) return;
     try {
       setLocating(true);
-      const permission = await ExpoLocation.requestForegroundPermissionsAsync();
-      if (!permission.granted)
-        return showPermissionRecovery(
-          'Location permission needed',
-          'Allow location access to show nearby businesses.',
-        );
-      const position = await ExpoLocation.getCurrentPositionAsync({
-        accuracy: ExpoLocation.Accuracy.Balanced,
-      });
-      const places = await ExpoLocation.reverseGeocodeAsync(position.coords);
-      const place = places[0] || {};
-      setCurrentLocation(place.city || place.subregion || location, {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
+      const detected = await getDeviceLocation(ExpoLocation);
+      setCurrentLocation(detected.city || location, detected);
       setViewport({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
+        latitude: detected.latitude,
+        longitude: detected.longitude,
         latitudeDelta: 0.12,
         longitudeDelta: 0.12,
       });
       setActiveCity(null);
-    } catch {
-      Alert.alert('Location unavailable', 'Choose an area manually or try again.');
+      Alert.alert(
+        'Location updated',
+        detected.city
+          ? `The map is centered on your current location in ${detected.city}.`
+          : 'The map is centered on your current device location.',
+      );
+    } catch (error) {
+      if (error.code === 'LOCATION_PERMISSION_DENIED') {
+        showPermissionRecovery('Location permission needed', error.message);
+      } else {
+        Alert.alert('Could not get your location', error.message);
+      }
     } finally {
       setLocating(false);
     }
@@ -438,6 +437,7 @@ export function MapScreen({ navigation, route }) {
             <Layers size={20} color={palette.text} />
           </TouchableOpacity>
           <TouchableOpacity
+            disabled={locating}
             accessibilityRole="button"
             accessibilityLabel="Go to current location"
             onPress={useCurrentLocation}
@@ -477,6 +477,25 @@ export function MapScreen({ navigation, route }) {
                 />
               ))}
             </ScrollView>
+          </View>
+        ) : providers.length > 0 && mapProviders.length === 0 ? (
+          <View
+            style={[
+              styles.mapEmptyCard,
+              { backgroundColor: palette.surface, bottom: Math.max(8, insets.bottom) },
+            ]}
+          >
+            <Text style={[styles.mapEmptyTitle, { color: palette.text }]}>
+              Map locations unavailable
+            </Text>
+            <Text style={[styles.mapEmptyText, { color: palette.text2 }]}>
+              Businesses are available in Search, but their map locations could not be loaded.
+            </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
+              <Text style={[styles.mapResetText, { color: palette.primary }]}>
+                Browse businesses in Search
+              </Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <View

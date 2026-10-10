@@ -16,7 +16,11 @@ import { Check, SlidersHorizontal, X } from 'lucide-react-native';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { events } from '../data/discoveryData';
-import { matchesProviderSearch, providerMatchesCategory } from '../data/categoryMatching';
+import {
+  matchesProviderSearch,
+  providerMatchesCategory,
+  providerMatchesService,
+} from '../data/categoryMatching';
 import { distanceKm, isProviderOpenNow } from '../data/providerDiscovery';
 import {
   ExploreBusinessCard,
@@ -45,6 +49,8 @@ export default function ExploreScreen({ navigation, route }) {
   const [appliedRating, setAppliedRating] = useState(null);
   const [appliedCity, setAppliedCity] = useState(null);
   const [appliedPostcode, setAppliedPostcode] = useState('');
+  const [service, setService] = useState('Any service');
+  const [appliedService, setAppliedService] = useState(null);
   const {
     categories,
     providers,
@@ -69,6 +75,20 @@ export default function ExploreScreen({ navigation, route }) {
       ),
     [providers],
   );
+  const serviceOptions = useMemo(() => {
+    const selected = categories.find((category) => category.id === selectedCategory);
+    return [
+      ...new Set(
+        providers
+          .filter((provider) => providerMatchesCategory(provider, selected))
+          .flatMap((provider) =>
+            (provider.services || [])
+              .map((item) => (typeof item === 'string' ? item : item?.name))
+              .filter(Boolean),
+          ),
+      ),
+    ].sort((a, b) => a.localeCompare(b));
+  }, [categories, providers, selectedCategory]);
 
   useEffect(() => {
     if (route.params?.categoryId) setSelectedCategory(route.params.categoryId);
@@ -107,6 +127,7 @@ export default function ExploreScreen({ navigation, route }) {
       return (
         matchesProviderSearch(provider, deferredQuery) &&
         providerMatchesCategory(provider, selected) &&
+        providerMatchesService(provider, appliedService) &&
         (!appliedPrice || provider.priceRange === appliedPrice) &&
         Number(provider.rating || 0) >= minimumRating &&
         (!appliedCity || normalize(provider.baseCity) === normalize(appliedCity)) &&
@@ -147,6 +168,7 @@ export default function ExploreScreen({ navigation, route }) {
     sortBy,
     appliedCity,
     appliedPostcode,
+    appliedService,
   ]);
   const eventResults = useMemo(
     () =>
@@ -175,6 +197,8 @@ export default function ExploreScreen({ navigation, route }) {
     setAppliedRating(null);
     setAppliedCity(null);
     setAppliedPostcode('');
+    setService('Any service');
+    setAppliedService(null);
   };
   const resetFilters = () => {
     setSelectedCategory(null);
@@ -190,6 +214,8 @@ export default function ExploreScreen({ navigation, route }) {
     setAppliedRating(null);
     setAppliedCity(null);
     setAppliedPostcode('');
+    setService('Any service');
+    setAppliedService(null);
   };
 
   const renderResult = useCallback(
@@ -274,7 +300,11 @@ export default function ExploreScreen({ navigation, route }) {
               contentContainerStyle={styles.categoryChips}
             >
               <TouchableOpacity
-                onPress={() => setSelectedCategory(null)}
+                onPress={() => {
+                  setSelectedCategory(null);
+                  setService('Any service');
+                  setAppliedService(null);
+                }}
                 style={[
                   styles.categoryChip,
                   {
@@ -295,9 +325,12 @@ export default function ExploreScreen({ navigation, route }) {
               {categories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
-                  onPress={() =>
-                    setSelectedCategory((current) => (current === category.id ? null : category.id))
-                  }
+                  onPress={() => {
+                    const next = selectedCategory === category.id ? null : category.id;
+                    setSelectedCategory(next);
+                    setService('Any service');
+                    setAppliedService(null);
+                  }}
                   style={[
                     styles.categoryChip,
                     {
@@ -370,6 +403,13 @@ export default function ExploreScreen({ navigation, route }) {
         rating={rating}
         setRating={setRating}
         cities={cities}
+        serviceOptions={serviceOptions}
+        service={service}
+        setService={setService}
+        openNow={openNow}
+        setOpenNow={setOpenNow}
+        nearbyOnly={nearbyOnly}
+        setNearbyOnly={setNearbyOnly}
         selectedCity={selectedCity}
         setSelectedCity={setSelectedCity}
         postcodeQuery={postcodeQuery}
@@ -382,6 +422,7 @@ export default function ExploreScreen({ navigation, route }) {
           setAppliedRating(rating === 'Any' ? null : rating);
           setAppliedCity(selectedCity === 'Any city' ? null : selectedCity);
           setAppliedPostcode(postcodeQuery.trim());
+          setAppliedService(service === 'Any service' ? null : service);
           setFiltersVisible(false);
         }}
       />
@@ -401,6 +442,13 @@ function FiltersModal(props) {
     rating,
     setRating,
     cities,
+    serviceOptions,
+    service,
+    setService,
+    openNow,
+    setOpenNow,
+    nearbyOnly,
+    setNearbyOnly,
     selectedCity,
     setSelectedCity,
     postcodeQuery,
@@ -464,6 +512,15 @@ function FiltersModal(props) {
             {choices(['Any', '£', '££', '£££', '££££'], price, setPrice, true)}
             <Text style={[styles.filterHeading, { color: palette.text }]}>Rating</Text>
             {choices(['Any', '4.0+', '4.5+', '4.8+'], rating, setRating, true)}
+            <Text style={[styles.filterHeading, { color: palette.text }]}>Service</Text>
+            {choices(['Any service', ...serviceOptions], service, setService)}
+            <Text style={[styles.filterHeading, { color: palette.text }]}>Availability & area</Text>
+            {choices(['Any time', 'Open now'], openNow ? 'Open now' : 'Any time', (value) =>
+              setOpenNow(value === 'Open now'),
+            )}
+            {choices(['Any area', 'In my area'], nearbyOnly ? 'In my area' : 'Any area', (value) =>
+              setNearbyOnly(value === 'In my area'),
+            )}
             <Text style={[styles.filterHeading, { color: palette.text }]}>City</Text>
             {choices(['Any city', ...cities], selectedCity, setSelectedCity)}
             <Text style={[styles.filterHeading, { color: palette.text }]}>Postcode</Text>

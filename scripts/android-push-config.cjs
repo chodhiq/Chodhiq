@@ -21,6 +21,25 @@ function validateAndroidPushConfig(config, expectedPackage = 'com.chodhiq.app') 
     throw new Error('Android Firebase configuration does not match the ChodhiQ package.');
   return true;
 }
+function validateAndroidGoogleOAuthConfig(webClientId, signingCertificateSha1) {
+  if (!webClientId || !/^\d+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(webClientId)) {
+    throw new Error(
+      'Android Google sign-in requires EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID from the Google Cloud OAuth project.',
+    );
+  }
+  const expectedSha1 = String(signingCertificateSha1 || '')
+    .replace(/:/g, '')
+    .toLowerCase();
+  if (!/^[a-f0-9]{40}$/.test(expectedSha1)) {
+    throw new Error(
+      'Android Google sign-in requires EXPO_PUBLIC_GOOGLE_ANDROID_SHA1 for this EAS signing certificate.',
+    );
+  }
+  // Google validates the Android package/SHA-1 OAuth client at sign-in time.
+  // Keep build validation independent of google-services.json, which is used
+  // only by Firebase Cloud Messaging in this app.
+  return true;
+}
 function androidPushConfigPath(
   environment = process.env,
   projectRoot = path.resolve(__dirname, '..'),
@@ -33,4 +52,8 @@ function androidPushConfigPath(
   validateAndroidPushConfig(JSON.parse(fs.readFileSync(file, 'utf8')));
   return file;
 }
-module.exports = { validateAndroidPushConfig, androidPushConfigPath };
+module.exports = {
+  validateAndroidPushConfig,
+  validateAndroidGoogleOAuthConfig,
+  androidPushConfigPath,
+};

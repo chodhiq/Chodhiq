@@ -1,4 +1,7 @@
-const { androidPushConfigPath } = require('./scripts/android-push-config.cjs');
+const {
+  androidPushConfigPath,
+  validateAndroidGoogleOAuthConfig,
+} = require('./scripts/android-push-config.cjs');
 const base = require('./app.base.json').expo;
 const googleServicesFile = androidPushConfigPath();
 const brandName = process.env.EXPO_PUBLIC_BRAND_NAME || base.name;
@@ -101,6 +104,17 @@ if (
 ) {
   throw new Error(
     'Android beta/release push setup is incomplete. Configure the GOOGLE_SERVICES_JSON file variable in EAS and FCM v1 credentials before building.',
+  );
+}
+
+if (
+  (productionBuild || internalBetaBuild) &&
+  process.env.EAS_BUILD_PLATFORM !== 'ios' &&
+  googleServicesFile
+) {
+  validateAndroidGoogleOAuthConfig(
+    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_SHA1,
   );
 }
 

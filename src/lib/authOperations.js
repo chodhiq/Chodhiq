@@ -26,6 +26,8 @@ export function authErrorMessage(
     return 'The email address or password is incorrect.';
   if (/email not confirmed|email_not_confirmed/.test(comparable))
     return 'Confirm your email address before signing in.';
+  if (/developer.?error|status.?10|code.?10/.test(comparable))
+    return 'Google sign-in is not configured for this app build. The app owner must register this Android package and signing certificate in the Google Cloud OAuth client.';
   if (/too many requests|rate.?limit|over_email_send_rate_limit/.test(comparable))
     return 'Too many attempts. Please wait a few minutes and try again.';
   if (/expired|invalid.*(reset|link|token)|otp_expired/.test(comparable))

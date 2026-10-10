@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { matchesProviderSearch, providerMatchesCategory } from '../../src/data/categoryMatching.js';
+import {
+  matchesProviderSearch,
+  providerCardLabels,
+  providerMatchesCategory,
+  providerMatchesService,
+} from '../../src/data/categoryMatching.js';
 
 const category = (id, name) => ({ id, name });
 const provider = (categoryName, extra = {}) => ({
@@ -67,4 +72,25 @@ test('search finds listings by postcode, with or without its space', () => {
   const listing = provider('Services', { basePostcode: 'LE4 5AT' });
   assert.equal(matchesProviderSearch(listing, 'LE4 5AT'), true);
   assert.equal(matchesProviderSearch(listing, 'LE45AT'), true);
+});
+
+test('provider service filters match the selected real service only', () => {
+  const listing = provider('Home Services', {
+    services: [{ name: 'Boiler repair' }, { name: 'Bathroom fitting' }],
+  });
+  assert.equal(providerMatchesService(listing, 'Boiler repair'), true);
+  assert.equal(providerMatchesService(listing, 'Takeaway'), false);
+  assert.equal(providerMatchesService(listing, null), true);
+});
+
+test('provider card labels use provider services and price, not food defaults', () => {
+  assert.deepEqual(
+    providerCardLabels({
+      category: 'Home Services',
+      services: [{ name: 'Boiler repair' }, { name: 'Bathroom fitting' }],
+      priceRange: 2,
+    }),
+    ['Boiler repair', 'Bathroom fitting', '££'],
+  );
+  assert.deepEqual(providerCardLabels({ category: 'Property', priceRange: null }), ['Property']);
 });

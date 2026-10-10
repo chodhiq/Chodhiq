@@ -113,7 +113,13 @@ export async function loadMarketplace({ onCached } = {}) {
     const coordinateResult = await supabase
       .rpc('public_provider_coordinates')
       .abortSignal(controller.signal);
-    const coordinateRows = coordinateResult.error ? [] : coordinateResult.data || [];
+    if (coordinateResult.error) {
+      console.warn(
+        'Provider coordinates could not be loaded; map markers will be unavailable.',
+        coordinateResult.error.message,
+      );
+    }
+    const coordinateRows = coordinateResult.data || [];
     const coordinates = new Map(coordinateRows.map((row) => [row.id, row]));
     const providers = providerResult.data
       .map((row) => ({

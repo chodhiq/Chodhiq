@@ -16,6 +16,7 @@ import {
 } from 'lucide-react-native';
 import { categoryFallback, imageSource } from '../data/assetCatalog';
 import { shadows } from '../theme/theme';
+import { providerCardLabels } from '../data/categoryMatching';
 
 export function ExploreHeader({ onBack }) {
   return (
@@ -147,17 +148,18 @@ export function ExploreBusinessCard({ palette, provider, saved, onSave, onPress 
             {provider.distance ? ` · ${provider.distance}` : ''}
           </Text>
         </View>
-        <View style={s.tags}>
-          <Text style={[s.tag, { backgroundColor: palette.surfaceAlt, color: palette.text2 }]}>
-            Dine-in
-          </Text>
-          <Text style={[s.tag, { backgroundColor: palette.surfaceAlt, color: palette.text2 }]}>
-            Takeaway
-          </Text>
-          <Text style={[s.tag, { backgroundColor: palette.surfaceAlt, color: palette.text2 }]}>
-            $$
-          </Text>
-        </View>
+        {providerCardLabels(provider).length > 0 && (
+          <View style={s.tags}>
+            {providerCardLabels(provider).map((label) => (
+              <Text
+                key={label}
+                style={[s.tag, { backgroundColor: palette.surfaceAlt, color: palette.text2 }]}
+              >
+                {label}
+              </Text>
+            ))}
+          </View>
+        )}
       </View>
       <TouchableOpacity
         accessibilityRole="button"

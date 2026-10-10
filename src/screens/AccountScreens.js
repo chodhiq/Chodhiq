@@ -41,6 +41,7 @@ import { useChodhiQTheme } from '../context/ThemeContext';
 import { FadeInView, FloatingView, PressableScale } from '../components/Motion';
 import * as ExpoLocation from 'expo-location';
 import { openPermissionSettings, showPermissionRecovery } from '../lib/permissionRecovery';
+import { getDeviceLocation } from '../lib/deviceLocation';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { generatedAssets } from '../data/assetCatalog';
 import { brand } from '../config/brand';
@@ -491,7 +492,11 @@ export function WelcomeScreen({ navigation, route }) {
           </FadeInView>
           <FadeInView delay={220}>
             <TouchableOpacity
-              onPress={() => setMode((value) => (value === 'signup' ? 'signin' : 'signup'))}
+              onPress={() => {
+                setMode((value) => (value === 'signup' ? 'signin' : 'signup'));
+                setAuthMessage(null);
+                setAwaitingConfirmation(false);
+              }}
             >
               <Text style={{ textAlign: 'center', color: palette.primary, fontWeight: '800' }}>
                 {mode === 'signup'
@@ -746,31 +751,27 @@ export function LocationScreen({ navigation }) {
   const detect = async () => {
     try {
       setDetecting(true);
-      const permission = await ExpoLocation.requestForegroundPermissionsAsync();
-      if (!permission.granted)
-        return showPermissionRecovery(
-          'Location permission needed',
-          'Allow location access to detect your nearest area.',
+      const detectedLocation = await getDeviceLocation(ExpoLocation);
+      const detected = detectedLocation.city;
+      if (!detected) {
+        Alert.alert(
+          'Location found',
+          'Your coordinates were found, but the area name could not be determined. Choose a city from the list.',
         );
-      const position = await ExpoLocation.getCurrentPositionAsync({
-        accuracy: ExpoLocation.Accuracy.Balanced,
-      });
-      const places = await ExpoLocation.reverseGeocodeAsync(position.coords);
-      const place = places[0] || {};
-      const detected = place.city || place.subregion || place.region;
-      if (!detected)
-        return Alert.alert('Location unavailable', 'Choose your nearest city from the list.');
+        return;
+      }
       const match = ukCities.find(
         (city) =>
           city.toLowerCase() === detected.toLowerCase() ||
           detected.toLowerCase().includes(city.toLowerCase()),
       );
-      choose(match || detected, {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
+      choose(match || detected, detectedLocation);
     } catch (error) {
-      Alert.alert('Could not detect location', 'Choose your nearest city manually.');
+      if (error.code === 'LOCATION_PERMISSION_DENIED') {
+        showPermissionRecovery('Location permission needed', error.message);
+      } else {
+        Alert.alert('Could not detect location', error.message);
+      }
     } finally {
       setDetecting(false);
     }

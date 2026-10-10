@@ -13,6 +13,7 @@ export default function OpenStreetMap({
   mapType,
 }) {
   const [failed, setFailed] = useState(false);
+  const [tileWarning, setTileWarning] = useState(false);
   const [revision, setRevision] = useState(0);
   const html = useMemo(
     () => openStreetMapHtml(providers, location, mapType),
@@ -27,10 +28,13 @@ export default function OpenStreetMap({
         style={{ flex: 1, backgroundColor: palette.surfaceAlt }}
         javaScriptEnabled
         onError={() => setFailed(true)}
+        onRenderProcessGone={() => setFailed(true)}
+        onContentProcessDidTerminate={() => setFailed(true)}
         onMessage={({ nativeEvent }) => {
           try {
             const message = JSON.parse(nativeEvent.data);
             if (message.type === 'error') setFailed(true);
+            if (message.type === 'warning') setTileWarning(true);
             if (message.type === 'select') {
               const provider = providers.find((item) => String(item.id) === message.id);
               if (provider) onSelect(provider);
@@ -41,6 +45,35 @@ export default function OpenStreetMap({
           }
         }}
       />
+      {tileWarning && !failed && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 16,
+            right: 16,
+            borderRadius: 12,
+            padding: 12,
+            backgroundColor: palette.surface,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Text style={{ color: palette.text, flex: 1, marginRight: 8 }}>
+            Some map tiles could not load. Check your connection.
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setTileWarning(false);
+              setRevision((value) => value + 1);
+            }}
+          >
+            <Text style={{ color: palette.primary, fontWeight: '700' }}>Retry</Text>
+          </Pressable>
+        </View>
+      )}
       {failed && (
         <View
           style={{
@@ -61,6 +94,7 @@ export default function OpenStreetMap({
             accessibilityRole="button"
             onPress={() => {
               setFailed(false);
+              setTileWarning(false);
               setRevision((value) => value + 1);
             }}
             style={{ padding: 12, alignItems: 'center' }}

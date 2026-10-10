@@ -83,6 +83,34 @@ export function providerMatchesCategory(provider, category) {
   return terms.some((term) => providerText.includes(normalize(term)));
 }
 
+/** @param {any} provider @param {string | null} serviceName */
+export function providerMatchesService(provider, serviceName) {
+  if (!serviceName) return true;
+  return /** @type {any[]} */ (provider.services || []).some((service) => {
+    const name = typeof service === 'string' ? service : service?.name;
+    return normalize(name) === normalize(serviceName);
+  });
+}
+
+/** @param {any} provider */
+export function providerCardLabels(provider) {
+  const services = /** @type {any[]} */ (provider.services || [])
+    .map((service) => (typeof service === 'string' ? service : service?.name))
+    .filter(Boolean);
+  const labels = [...new Set(services)].slice(0, 2);
+  if (!labels.length && (provider.subcategory || provider.category)) {
+    labels.push(provider.subcategory || provider.category);
+  }
+  if (
+    Number.isInteger(provider.priceRange) &&
+    provider.priceRange >= 1 &&
+    provider.priceRange <= 4
+  ) {
+    labels.push('£'.repeat(provider.priceRange));
+  }
+  return labels.slice(0, 3);
+}
+
 /** @param {any} provider @param {string} query */
 export function matchesProviderSearch(provider, query) {
   const needle = normalize(query);

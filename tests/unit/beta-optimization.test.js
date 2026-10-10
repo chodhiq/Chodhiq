@@ -11,9 +11,11 @@ import { performancePolicy } from '../../src/lib/performancePolicy.js';
 import { notificationDestination } from '../../src/lib/notificationDestination.js';
 import { isSafeAppLink } from '../../src/lib/authCallback.js';
 import { pushRegistrationErrorMessage } from '../../src/lib/pushRegistrationErrors.js';
-const { androidPushConfigPath, validateAndroidPushConfig } = createRequire(import.meta.url)(
-  '../../scripts/android-push-config.cjs',
-);
+const {
+  androidPushConfigPath,
+  validateAndroidPushConfig,
+  validateAndroidGoogleOAuthConfig,
+} = createRequire(import.meta.url)('../../scripts/android-push-config.cjs');
 test('keyboard clearance handles overlay, resized windows, and already-visible fields', () => {
   const base = {
     containerTop: 80,
@@ -132,6 +134,24 @@ test('Android push validation rejects service accounts and wrong package configu
   );
   assert.throws(() => validateAndroidPushConfig({ ...good, client: [] }), /does not match/);
   assert.throws(() => validateAndroidPushConfig({}), /incomplete/);
+});
+
+test('Android OAuth build validation is independent from Firebase push configuration', () => {
+  const webClientId = '123456789-web.apps.googleusercontent.com';
+  const signingSha1 = 'aa'.repeat(20);
+  assert.equal(validateAndroidGoogleOAuthConfig(webClientId, signingSha1), true);
+  assert.throws(
+    () => validateAndroidGoogleOAuthConfig('', signingSha1),
+    /EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID from the Google Cloud OAuth project/,
+  );
+  assert.throws(
+    () => validateAndroidGoogleOAuthConfig(webClientId, ''),
+    /EXPO_PUBLIC_GOOGLE_ANDROID_SHA1/,
+  );
+  assert.throws(
+    () => validateAndroidGoogleOAuthConfig(webClientId, 'not-a-sha'),
+    /EXPO_PUBLIC_GOOGLE_ANDROID_SHA1/,
+  );
 });
 
 test('Android push config resolves the local client file for native builds', () => {

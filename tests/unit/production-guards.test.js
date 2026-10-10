@@ -15,6 +15,14 @@ function resolveBuildConfig(profile, overrides = {}) {
         ? {
             androidPushConfigPath: () =>
               overrides.TEST_NO_PUSH_CONFIG ? null : 'synthetic/google-services.json',
+            validateAndroidGoogleOAuthConfig: (webClientId, certificateSha1) => {
+              if (!webClientId)
+                throw new Error('EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is required for Android OAuth.');
+              if (!certificateSha1)
+                throw new Error('EXPO_PUBLIC_GOOGLE_ANDROID_SHA1 is required for Android OAuth.');
+              if (overrides.TEST_INVALID_GOOGLE_OAUTH)
+                throw new Error('Synthetic Google Cloud OAuth configuration is invalid.');
+            },
           }
         : JSON.parse(read('app.base.json')),
     URL,
@@ -26,6 +34,9 @@ function resolveBuildConfig(profile, overrides = {}) {
         EXPO_PUBLIC_SUPABASE_ANON_KEY: 'public-key-fixture',
         EXPO_PUBLIC_EAS_PROJECT_ID: 'project-fixture',
         EXPO_PUBLIC_RELEASE_COMMIT: 'commit-fixture',
+        EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-test.apps.googleusercontent.com',
+        EXPO_PUBLIC_GOOGLE_ANDROID_SHA1: 'a'.repeat(40),
+        EAS_BUILD_PLATFORM: 'android',
         ...overrides,
       },
     },
@@ -60,6 +71,28 @@ test('internal beta refuses to ship without configured Android push', () => {
   assert.throws(
     () => resolveBuildConfig('beta-apk', { TEST_NO_PUSH_CONFIG: true }),
     /push setup is incomplete/,
+  );
+});
+
+test('Android beta/release builds validate Google OAuth independently from Firebase push config', () => {
+  assert.throws(
+    () => resolveBuildConfig('beta-apk', { EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '' }),
+    /EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID/,
+  );
+  assert.throws(
+    () =>
+      resolveBuildConfig('beta-apk', {
+        EXPO_PUBLIC_GOOGLE_ANDROID_SHA1: '',
+      }),
+    /EXPO_PUBLIC_GOOGLE_ANDROID_SHA1/,
+  );
+  assert.throws(
+    () => resolveBuildConfig('beta-apk', { TEST_INVALID_GOOGLE_OAUTH: true }),
+    /Synthetic Google Cloud OAuth configuration is invalid/,
+  );
+  assert.throws(
+    () => resolveBuildConfig('beta-apk', { EXPO_PUBLIC_GOOGLE_ANDROID_SHA1: '' }),
+    /EXPO_PUBLIC_GOOGLE_ANDROID_SHA1/,
   );
 });
 

@@ -39,4 +39,8 @@ test('authentication errors provide concise actionable messages', () => {
     authErrorMessage(new Error('Email not confirmed')),
     'Confirm your email address before signing in.',
   );
+  assert.match(
+    authErrorMessage(new Error('DEVELOPER_ERROR')),
+    /Android package and signing certificate.*Google Cloud OAuth client/,
+  );
 });

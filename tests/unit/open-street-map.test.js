@@ -31,3 +31,10 @@ test('map HTML safely embeds business names without executing their markup', () 
   assert.ok(html.includes('label.textContent=point.name'));
   assert.ok(html.includes('\\u003c/script>'));
 });
+
+test('individual failed map tiles do not report a fatal map error', () => {
+  const html = openStreetMapHtml([]);
+  assert.ok(html.includes("tiles.on('tileerror',function(){failedTiles++;});"));
+  assert.ok(html.includes("if(loadedTiles===0&&failedTiles>0)send({type:'warning'});"));
+  assert.ok(!html.includes("tiles.on('tileerror',function(){send({type:'error'});});"));
+});

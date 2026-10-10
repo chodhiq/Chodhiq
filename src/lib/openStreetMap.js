@@ -44,8 +44,11 @@ html,body,#map{height:100%;margin:0;background:#edf2eb}
     const satellite=${mapType === 'satellite'};
     const tileUrl=satellite ? 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
     const credit=satellite ? 'Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community' : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+    let loadedTiles=0,failedTiles=0;
     const tiles=L.tileLayer(tileUrl,{maxZoom:19,attribution:credit}).addTo(map);
-    tiles.on('tileerror',function(){send({type:'error'});});
+    tiles.on('tileload',function(){loadedTiles++;});
+    tiles.on('tileerror',function(){failedTiles++;});
+    tiles.once('load',function(){if(loadedTiles===0&&failedTiles>0)send({type:'warning'});});
     points.forEach(function(point){const label=document.createElement('span');label.textContent=point.name;L.marker([point.latitude,point.longitude]).addTo(map).bindTooltip(label).on('click',function(){send({type:'select',id:point.id});});});
     if(points.length && !${Boolean(location)})map.fitBounds(points.map(function(point){return [point.latitude,point.longitude];}),{paddingTopLeft:[36,160],paddingBottomRight:[36,190],maxZoom:14});
     map.on('moveend',function(){const c=map.getCenter(),b=map.getBounds();send({type:'region',region:{latitude:c.lat,longitude:c.lng,latitudeDelta:b.getNorth()-b.getSouth(),longitudeDelta:b.getEast()-b.getWest()}});});

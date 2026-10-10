@@ -1,15 +1,17 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-// OAuth client IDs are public identifiers. This web client ID is also configured
-// in Production Supabase Auth and is used only as the audience for Google's ID token.
-const GOOGLE_WEB_CLIENT_ID =
-  process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
-  '1070319512646-u438pverfgaanh0sahul7nmqjt2aih16.apps.googleusercontent.com';
+// OAuth client IDs are public identifiers and must match the Firebase Android project.
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
 let configured = false;
 
 export async function getNativeGoogleIdToken() {
   if (!configured) {
+    if (!GOOGLE_WEB_CLIENT_ID) {
+      throw new Error(
+        'Google sign-in is not configured for this app build. EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is missing.',
+      );
+    }
     GoogleSignin.configure({
       webClientId: GOOGLE_WEB_CLIENT_ID,
       offlineAccess: false,

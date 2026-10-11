@@ -47,34 +47,36 @@ async function openDatabase() {
   );
   const seedVersion = DEMO_MODE ? '2-demo' : '3-production-clean';
   if (seeded?.value !== seedVersion) {
-    await transactionQueue.runExclusive(() => db.withTransactionAsync(async () => {
-      await db.runAsync('DELETE FROM categories');
-      await db.runAsync('DELETE FROM providers');
-      const categoriesToSeed = DEMO_MODE ? seedCategories : [];
-      const providersToSeed = DEMO_MODE ? seedProviders : [];
-      for (let index = 0; index < categoriesToSeed.length; index += 1) {
-        const item = categoriesToSeed[index];
+    await transactionQueue.runExclusive(() =>
+      db.withTransactionAsync(async () => {
+        await db.runAsync('DELETE FROM categories');
+        await db.runAsync('DELETE FROM providers');
+        const categoriesToSeed = DEMO_MODE ? seedCategories : [];
+        const providersToSeed = DEMO_MODE ? seedProviders : [];
+        for (let index = 0; index < categoriesToSeed.length; index += 1) {
+          const item = categoriesToSeed[index];
+          await db.runAsync(
+            'INSERT INTO categories (id, payload, sort_order) VALUES (?, ?, ?)',
+            item.id,
+            json(item),
+            index,
+          );
+        }
+        for (let index = 0; index < providersToSeed.length; index += 1) {
+          const item = providersToSeed[index];
+          await db.runAsync(
+            'INSERT INTO providers (id, payload, sort_order) VALUES (?, ?, ?)',
+            String(item.id),
+            json(item),
+            index,
+          );
+        }
         await db.runAsync(
-          'INSERT INTO categories (id, payload, sort_order) VALUES (?, ?, ?)',
-          item.id,
-          json(item),
-          index,
+          "INSERT OR REPLACE INTO app_meta (key, value) VALUES ('catalog_seed_version', ?)",
+          seedVersion,
         );
-      }
-      for (let index = 0; index < providersToSeed.length; index += 1) {
-        const item = providersToSeed[index];
-        await db.runAsync(
-          'INSERT INTO providers (id, payload, sort_order) VALUES (?, ?, ?)',
-          String(item.id),
-          json(item),
-          index,
-        );
-      }
-      await db.runAsync(
-        "INSERT OR REPLACE INTO app_meta (key, value) VALUES ('catalog_seed_version', ?)",
-        seedVersion,
-      );
-    }));
+      }),
+    );
   }
   return db;
 }
@@ -102,32 +104,34 @@ export async function loadLocalMarketplace() {
 export async function cacheMarketplace(categories, providers) {
   const db = await getLocalDatabase();
   const updatedAt = new Date().toISOString();
-  await transactionQueue.runExclusive(() => db.withTransactionAsync(async () => {
-    await db.runAsync('DELETE FROM categories');
-    await db.runAsync('DELETE FROM providers');
-    for (let index = 0; index < categories.length; index += 1) {
-      const item = categories[index];
+  await transactionQueue.runExclusive(() =>
+    db.withTransactionAsync(async () => {
+      await db.runAsync('DELETE FROM categories');
+      await db.runAsync('DELETE FROM providers');
+      for (let index = 0; index < categories.length; index += 1) {
+        const item = categories[index];
+        await db.runAsync(
+          'INSERT INTO categories (id, payload, sort_order) VALUES (?, ?, ?)',
+          String(item.id),
+          json(item),
+          index,
+        );
+      }
+      for (let index = 0; index < providers.length; index += 1) {
+        const item = providers[index];
+        await db.runAsync(
+          'INSERT INTO providers (id, payload, sort_order) VALUES (?, ?, ?)',
+          String(item.id),
+          json(item),
+          index,
+        );
+      }
       await db.runAsync(
-        'INSERT INTO categories (id, payload, sort_order) VALUES (?, ?, ?)',
-        String(item.id),
-        json(item),
-        index,
+        "INSERT OR REPLACE INTO app_meta (key, value) VALUES ('catalog_cache_updated_at', ?)",
+        updatedAt,
       );
-    }
-    for (let index = 0; index < providers.length; index += 1) {
-      const item = providers[index];
-      await db.runAsync(
-        'INSERT INTO providers (id, payload, sort_order) VALUES (?, ?, ?)',
-        String(item.id),
-        json(item),
-        index,
-      );
-    }
-    await db.runAsync(
-      "INSERT OR REPLACE INTO app_meta (key, value) VALUES ('catalog_cache_updated_at', ?)",
-      updatedAt,
-    );
-  }));
+    }),
+  );
   return updatedAt;
 }
 
@@ -331,48 +335,52 @@ export async function updateLocalPost(id, body) {
   const db = await getLocalDatabase();
   const existing = await db.getFirstAsync('SELECT id FROM community_posts WHERE id = ?', id);
   if (!existing) return null;
-  await transactionQueue.runExclusive(() => db.withTransactionAsync(async () => {
-    await db.runAsync('UPDATE community_posts SET body = ? WHERE id = ?', body, id);
-    const operations = await db.getAllAsync(
-      "SELECT id, payload FROM pending_operations WHERE operation = 'community_post'",
-    );
-    for (const operation of operations) {
-      const payload = parse(operation.payload, {});
-      if (payload.localId !== id) continue;
-      await db.runAsync(
-        'UPDATE pending_operations SET payload = ? WHERE id = ?',
-        json({
-          ...payload,
-          remote: { ...payload.remote, body },
-        }),
-        operation.id,
+  await transactionQueue.runExclusive(() =>
+    db.withTransactionAsync(async () => {
+      await db.runAsync('UPDATE community_posts SET body = ? WHERE id = ?', body, id);
+      const operations = await db.getAllAsync(
+        "SELECT id, payload FROM pending_operations WHERE operation = 'community_post'",
       );
-    }
-  }));
+      for (const operation of operations) {
+        const payload = parse(operation.payload, {});
+        if (payload.localId !== id) continue;
+        await db.runAsync(
+          'UPDATE pending_operations SET payload = ? WHERE id = ?',
+          json({
+            ...payload,
+            remote: { ...payload.remote, body },
+          }),
+          operation.id,
+        );
+      }
+    }),
+  );
   return { id, body };
 }
 
 export async function cacheCommunityPosts(posts) {
   const db = await getLocalDatabase();
-  await transactionQueue.runExclusive(() => db.withTransactionAsync(async () => {
-    // Remove stale server rows (including posts moderated away) while keeping
-    // local post-* rows that still belong to the offline sync queue.
-    await db.runAsync("DELETE FROM community_posts WHERE id NOT LIKE 'post-%'");
-    for (const post of posts) {
-      await db.runAsync(
-        'INSERT OR REPLACE INTO community_posts (id, author_id, provider_id, post_type, body, image_url, created_at, region_key, location_city) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        String(post.id),
-        post.author_id || 'remote',
-        post.provider_id ? String(post.provider_id) : null,
-        post.post_type,
-        post.body,
-        post.image_url || null,
-        post.created_at,
-        post.region_key || null,
-        post.location_city || null,
-      );
-    }
-  }));
+  await transactionQueue.runExclusive(() =>
+    db.withTransactionAsync(async () => {
+      // Remove stale server rows (including posts moderated away) while keeping
+      // local post-* rows that still belong to the offline sync queue.
+      await db.runAsync("DELETE FROM community_posts WHERE id NOT LIKE 'post-%'");
+      for (const post of posts) {
+        await db.runAsync(
+          'INSERT OR REPLACE INTO community_posts (id, author_id, provider_id, post_type, body, image_url, created_at, region_key, location_city) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          String(post.id),
+          post.author_id || 'remote',
+          post.provider_id ? String(post.provider_id) : null,
+          post.post_type,
+          post.body,
+          post.image_url || null,
+          post.created_at,
+          post.region_key || null,
+          post.location_city || null,
+        );
+      }
+    }),
+  );
 }
 
 export async function enqueuePendingOperation(operation, payload) {
@@ -405,15 +413,17 @@ export async function clearLocalUserData(userId) {
   if (!userId) return;
   const db = await getLocalDatabase();
   const userPattern = `%${userId}%`;
-  await transactionQueue.runExclusive(() => db.withTransactionAsync(async () => {
-    await db.runAsync('DELETE FROM profiles WHERE user_id = ?', userId);
-    await db.runAsync('DELETE FROM saved_items WHERE user_id = ?', userId);
-    await db.runAsync('DELETE FROM quote_requests WHERE user_id = ?', userId);
-    await db.runAsync('DELETE FROM reviews WHERE user_id = ?', userId);
-    await db.runAsync('DELETE FROM notifications WHERE user_id IN (?, ?)', userId, 'local');
-    await db.runAsync('DELETE FROM provider_reports WHERE user_id = ?', userId);
-    await db.runAsync('DELETE FROM community_posts WHERE author_id = ?', userId);
-    await db.runAsync('DELETE FROM pending_operations WHERE payload LIKE ?', userPattern);
-    await db.runAsync('DELETE FROM app_meta WHERE key = ?', `saved_items_imported:${userId}`);
-  }));
+  await transactionQueue.runExclusive(() =>
+    db.withTransactionAsync(async () => {
+      await db.runAsync('DELETE FROM profiles WHERE user_id = ?', userId);
+      await db.runAsync('DELETE FROM saved_items WHERE user_id = ?', userId);
+      await db.runAsync('DELETE FROM quote_requests WHERE user_id = ?', userId);
+      await db.runAsync('DELETE FROM reviews WHERE user_id = ?', userId);
+      await db.runAsync('DELETE FROM notifications WHERE user_id IN (?, ?)', userId, 'local');
+      await db.runAsync('DELETE FROM provider_reports WHERE user_id = ?', userId);
+      await db.runAsync('DELETE FROM community_posts WHERE author_id = ?', userId);
+      await db.runAsync('DELETE FROM pending_operations WHERE payload LIKE ?', userPattern);
+      await db.runAsync('DELETE FROM app_meta WHERE key = ?', `saved_items_imported:${userId}`);
+    }),
+  );
 }

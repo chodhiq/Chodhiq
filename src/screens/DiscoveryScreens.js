@@ -305,10 +305,7 @@ export function MapScreen({ navigation, route }) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.mapCategoryRow}
           >
-            {[
-              { id: null, name: 'All', icon: 'grid' },
-              ...categories,
-            ].map((category) => {
+            {[{ id: null, name: 'All', icon: 'grid' }, ...categories].map((category) => {
               const Icon = mapCategoryIcon(category);
               const active = category.id ? activeCategory === category.id : !activeCategory;
               return (
@@ -398,7 +395,8 @@ export function MapScreen({ navigation, route }) {
             <View style={[styles.mapResultBadge, { backgroundColor: palette.surface }]}>
               <MapPin size={15} color={palette.primary} />
               <Text style={[styles.mapResultText, { color: palette.text }]}>
-                {visibleProviders.length} {visibleProviders.length === 1 ? 'result' : 'results'} in this area
+                {visibleProviders.length} {visibleProviders.length === 1 ? 'result' : 'results'} in
+                this area
               </Text>
             </View>
             <TouchableOpacity
@@ -474,7 +472,9 @@ export function MapScreen({ navigation, route }) {
             ]}
           >
             <Text style={[styles.mapEmptyTitle, { color: palette.text }]}>
-              {visibleProviders.length === 0 ? 'No businesses in this map area' : 'Map locations unavailable'}
+              {visibleProviders.length === 0
+                ? 'No businesses in this map area'
+                : 'Map locations unavailable'}
             </Text>
             <Text style={[styles.mapEmptyText, { color: palette.text2 }]}>
               {visibleProviders.length === 0
@@ -494,12 +494,17 @@ export function MapScreen({ navigation, route }) {
               { backgroundColor: palette.surface, bottom: Math.max(8, insets.bottom) },
             ]}
           >
-            <Text style={[styles.mapEmptyTitle, { color: palette.text }]}>Map locations unavailable</Text>
+            <Text style={[styles.mapEmptyTitle, { color: palette.text }]}>
+              Map locations unavailable
+            </Text>
             <Text style={[styles.mapEmptyText, { color: palette.text2 }]}>
-              These businesses don't have map coordinates yet. You can still browse the UK directory in Search.
+              These businesses don't have map coordinates yet. You can still browse the UK directory
+              in Search.
             </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
-              <Text style={[styles.mapResetText, { color: palette.primary }]}>Browse businesses in Search</Text>
+              <Text style={[styles.mapResetText, { color: palette.primary }]}>
+                Browse businesses in Search
+              </Text>
             </TouchableOpacity>
           </View>
         ) : (

@@ -482,7 +482,10 @@ export default function ProviderDetailScreen({ route, navigation }) {
     ) : tab === 'Offers' ? (
       <>
         <DetailSectionHeader palette={palette} title="Active Offers" />
-        <EmptyBlock palette={palette} text="There are no active offers right now. Check back later." />
+        <EmptyBlock
+          palette={palette}
+          text="There are no active offers right now. Check back later."
+        />
       </>
     ) : (
       <>
@@ -588,36 +591,39 @@ export default function ProviderDetailScreen({ route, navigation }) {
           style={{ flex: 1 }}
         >
           <BottomSheetScrollView
-            contentContainerStyle={[styles.sheet, { paddingBottom: Math.max(34, insets.bottom + 24) }]}
+            contentContainerStyle={[
+              styles.sheet,
+              { paddingBottom: Math.max(34, insets.bottom + 24) },
+            ]}
             keyboardShouldPersistTaps="handled"
           >
-          <Text style={[styles.sheetTitle, { color: palette.text }]}>Request a Quote</Text>
-          <Text style={{ color: palette.text2 }}>
-            Opens a WhatsApp chat with {provider.name}. We can't confirm delivery.
-          </Text>
-          <BottomSheetTextInput
-            style={[
-              styles.input,
-              {
-                borderColor: palette.border,
-                color: palette.text,
-                backgroundColor: palette.background,
-              },
-            ]}
-            placeholder={`Hi ${provider.name}, I'd like a quote for...`}
-            placeholderTextColor={palette.muted}
-            value={quoteMessage}
-            onChangeText={setQuoteMessage}
-            multiline
-          />
-          <TouchableOpacity
-            style={[styles.primary, { backgroundColor: palette.primary }]}
-            onPress={sendQuote}
-          >
-            <Text style={{ color: palette.dark ? '#081B2C' : '#FFFFFF', fontWeight: '800' }}>
-              Send via WhatsApp
+            <Text style={[styles.sheetTitle, { color: palette.text }]}>Request a Quote</Text>
+            <Text style={{ color: palette.text2 }}>
+              Opens a WhatsApp chat with {provider.name}. We can't confirm delivery.
             </Text>
-          </TouchableOpacity>
+            <BottomSheetTextInput
+              style={[
+                styles.input,
+                {
+                  borderColor: palette.border,
+                  color: palette.text,
+                  backgroundColor: palette.background,
+                },
+              ]}
+              placeholder={`Hi ${provider.name}, I'd like a quote for...`}
+              placeholderTextColor={palette.muted}
+              value={quoteMessage}
+              onChangeText={setQuoteMessage}
+              multiline
+            />
+            <TouchableOpacity
+              style={[styles.primary, { backgroundColor: palette.primary }]}
+              onPress={sendQuote}
+            >
+              <Text style={{ color: palette.dark ? '#081B2C' : '#FFFFFF', fontWeight: '800' }}>
+                Send via WhatsApp
+              </Text>
+            </TouchableOpacity>
           </BottomSheetScrollView>
         </KeyboardAvoidingView>
       </BottomSheetModal>

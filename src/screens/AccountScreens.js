@@ -1068,7 +1068,8 @@ export function QuoteRequestsScreen({ navigation }) {
       <ScrollView contentContainerStyle={pageStyles.content}>
         {quoteRequests.length > 0 ? (
           <Text style={[pageStyles.body, { color: palette.text2 }]}>
-            Opening WhatsApp doesn't confirm delivery. Check the chat to see whether your message was sent.
+            Opening WhatsApp doesn't confirm delivery. Check the chat to see whether your message
+            was sent.
           </Text>
         ) : null}
         {!quoteRequests.length ? (
@@ -1121,9 +1122,9 @@ export function QuoteRequestsScreen({ navigation }) {
                       </Text>
                     </View>
                   ) : null}
-              <Text style={[pageStyles.muted, { color: palette.muted }]}>
-                {formatReviewDate(item.createdAt)}
-              </Text>
+                  <Text style={[pageStyles.muted, { color: palette.muted }]}>
+                    {formatReviewDate(item.createdAt)}
+                  </Text>
                 </View>
                 <Text
                   style={[
@@ -1405,7 +1406,8 @@ export function ReviewsScreen({ navigation, route }) {
               <>
                 <View style={pageStyles.row}>
                   <Text style={[pageStyles.title, pageStyles.grow]}>
-                    {providers.find((entry) => String(entry.id) === String(item.providerId))?.name ||
+                    {providers.find((entry) => String(entry.id) === String(item.providerId))
+                      ?.name ||
                       item.providerName ||
                       'Business'}
                   </Text>
@@ -1596,22 +1598,24 @@ export function SettingsScreen({ navigation }) {
             />
           </View>
         ))}
-        {Platform.OS !== 'web' && preferences.push && (permissionDenied || settingsPermissionDenied) && (
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Open device notification settings"
-            onPress={openPermissionSettings}
-            style={[
-              pageStyles.card,
-              pageStyles.row,
-              { backgroundColor: palette.surface, borderColor: palette.border },
-            ]}
-          >
-            <Text style={[pageStyles.title, { color: palette.text }]}>
-              Notifications denied? Open device settings
-            </Text>
-          </TouchableOpacity>
-        )}
+        {Platform.OS !== 'web' &&
+          preferences.push &&
+          (permissionDenied || settingsPermissionDenied) && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Open device notification settings"
+              onPress={openPermissionSettings}
+              style={[
+                pageStyles.card,
+                pageStyles.row,
+                { backgroundColor: palette.surface, borderColor: palette.border },
+              ]}
+            >
+              <Text style={[pageStyles.title, { color: palette.text }]}>
+                Notifications denied? Open device settings
+              </Text>
+            </TouchableOpacity>
+          )}
         <TouchableOpacity
           accessibilityRole="button"
           style={[

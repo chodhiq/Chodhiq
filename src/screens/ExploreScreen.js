@@ -4,6 +4,7 @@ import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } fr
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -361,7 +362,7 @@ export default function ExploreScreen({ navigation, route }) {
 
             <View style={styles.resultsHeader}>
               <Text style={[styles.resultsText, { color: palette.text }]}>
-                {resultCount} results
+                {resultCount} {resultCount === 1 ? 'result' : 'results'}
               </Text>
               <TouchableOpacity
                 onPress={() => setHighestRated((value) => !value)}
@@ -404,6 +405,7 @@ export default function ExploreScreen({ navigation, route }) {
         setRating={setRating}
         cities={cities}
         serviceOptions={serviceOptions}
+        safeAreaBottom={insets.bottom}
         service={service}
         setService={setService}
         openNow={openNow}
@@ -443,6 +445,7 @@ function FiltersModal(props) {
     setRating,
     cities,
     serviceOptions,
+    safeAreaBottom,
     service,
     setService,
     openNow,
@@ -457,6 +460,15 @@ function FiltersModal(props) {
     onClose,
     onApply,
   } = props;
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
   const choices = (items, selected, onSelect, compact = false) => (
     <View style={styles.optionGrid}>
       {items.map((item) => {
@@ -486,7 +498,13 @@ function FiltersModal(props) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
-        <View style={[styles.sheet, { backgroundColor: palette.surface }]}>
+        <View
+          style={[
+            styles.sheet,
+            keyboardVisible && styles.sheetKeyboard,
+            { backgroundColor: palette.surface },
+          ]}
+        >
           <View style={styles.sheetHeader}>
             <TouchableOpacity
               accessibilityRole="button"
@@ -501,7 +519,10 @@ function FiltersModal(props) {
               <Text style={[styles.reset, { color: palette.primary }]}>Reset</Text>
             </TouchableOpacity>
           </View>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetBody}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.sheetBody, { paddingBottom: safeAreaBottom + 84 }]}
+          >
             <Text style={[styles.filterHeading, { color: palette.text }]}>Sort by</Text>
             {choices(
               ['Best match', 'Highest rated', 'Nearest first', 'Most reviewed'],
@@ -514,6 +535,11 @@ function FiltersModal(props) {
             {choices(['Any', '4.0+', '4.5+', '4.8+'], rating, setRating, true)}
             <Text style={[styles.filterHeading, { color: palette.text }]}>Service</Text>
             {choices(['Any service', ...serviceOptions], service, setService)}
+            {serviceOptions.length === 0 ? (
+              <Text style={[styles.filterNote, { color: palette.text2 }]}>
+                No businesses have published service details yet.
+              </Text>
+            ) : null}
             <Text style={[styles.filterHeading, { color: palette.text }]}>Availability & area</Text>
             {choices(['Any time', 'Open now'], openNow ? 'Open now' : 'Any time', (value) =>
               setOpenNow(value === 'Open now'),
@@ -529,6 +555,8 @@ function FiltersModal(props) {
               autoCapitalize="characters"
               value={postcodeQuery}
               onChangeText={setPostcodeQuery}
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
               placeholder="e.g. LE4 5AT"
               placeholderTextColor={palette.muted}
               style={[
@@ -545,7 +573,9 @@ function FiltersModal(props) {
             onPress={onApply}
             style={[styles.applyButton, { backgroundColor: palette.primary }]}
           >
-            <Text style={styles.applyText}>Show {resultCount} results</Text>
+            <Text style={styles.applyText}>
+              Show {resultCount} {resultCount === 1 ? 'result' : 'results'}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -642,6 +672,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingBottom: 24,
   },
+  sheetKeyboard: { maxHeight: '58%' },
   sheetHeader: {
     height: 60,
     paddingHorizontal: 16,
@@ -654,6 +685,7 @@ const styles = StyleSheet.create({
   reset: { fontSize: 13, fontWeight: '700' },
   sheetBody: { paddingHorizontal: 16, paddingBottom: 18 },
   filterHeading: { fontSize: 14, fontWeight: '700', marginTop: 18, marginBottom: 10 },
+  filterNote: { fontSize: 12, lineHeight: 17, marginTop: 8 },
   optionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   option: {
     minHeight: 42,

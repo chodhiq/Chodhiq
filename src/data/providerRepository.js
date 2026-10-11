@@ -35,11 +35,16 @@ function mapProvider(row) {
     whatsapp: row.whatsapp,
     website: row.website,
     address: row.base_postcode ? `${row.base_city} ${row.base_postcode}` : row.base_city,
-    googleMapsUrl: row.google_place_id
-      ? `https://www.google.com/maps/search/?api=1&query_place_id=${row.google_place_id}`
-      : row.base_city
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${row.business_name} ${row.base_city} ${row.base_postcode || ''}`)}`
-        : null,
+    googlePlaceId: row.google_place_id || null,
+    googleMapsUrl:
+      row.latitude != null && row.longitude != null
+        ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${row.latitude},${row.longitude}`)}`
+        : row.google_place_id
+          ? `https://www.google.com/maps/dir/?api=1&destination_place_id=${encodeURIComponent(row.google_place_id)}`
+          : null,
+    googleMapsSearchUrl: row.base_city
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${row.business_name} ${row.base_city} ${row.base_postcode || ''}`)}`
+      : null,
     image: row.cover_image_url || null,
     baseLatitude: row.latitude == null ? null : Number(row.latitude),
     baseLongitude: row.longitude == null ? null : Number(row.longitude),

@@ -37,6 +37,7 @@ export default function ProfileScreen({ navigation }) {
     preferences,
     preferencesError,
     preferencesSyncing,
+    permissionDenied,
     retryPreferencesSync,
     setPreferences,
   } = useAppState();
@@ -192,6 +193,7 @@ export default function ProfileScreen({ navigation }) {
           delay={35}
           style={[
             styles.menuCard,
+            styles.userIdCard,
             { backgroundColor: palette.surface, borderColor: palette.border },
           ]}
         >
@@ -234,7 +236,7 @@ export default function ProfileScreen({ navigation }) {
                 <Text style={{ color: palette.text, fontWeight: '700' }}>
                   Notification vibration
                 </Text>
-                <Text style={{ color: palette.text2, fontSize: 12 }}>
+                <Text style={[styles.preferenceHint, { color: palette.text2 }]}>
                   {preferencesSyncing
                     ? 'Syncing notification settings...'
                     : preferencesError || 'Vibrate when a new phone notification arrives'}
@@ -246,8 +248,8 @@ export default function ProfileScreen({ navigation }) {
                 onValueChange={(vibration) =>
                   setPreferences((current) => ({ ...current, vibration }))
                 }
-                trackColor={{ false: palette.border, true: palette.primaryTint }}
-                thumbColor={palette.primary}
+                trackColor={{ false: palette.border, true: palette.primary }}
+                thumbColor={palette.onPrimary}
               />
             </View>
           </View>
@@ -259,11 +261,11 @@ export default function ProfileScreen({ navigation }) {
               style={{ padding: 14 }}
             >
               <Text style={{ color: palette.primary, fontWeight: '700' }}>
-                {preferencesSyncing ? 'Retrying...' : 'Retry notification sync'}
+                {preferencesSyncing ? 'Syncing...' : "Couldn't sync. Retry"}
               </Text>
             </TouchableOpacity>
           )}
-          {!!preferencesError && Platform.OS !== 'web' && (
+          {permissionDenied && Platform.OS !== 'web' && (
             <TouchableOpacity
               accessibilityRole="button"
               onPress={() => Linking.openSettings().catch(() => {})}
@@ -439,7 +441,9 @@ function MenuCard({ items, palette, navigation, emphasized = false }) {
                     ? 'Share trusted experiences'
                     : item.route === 'QuoteRequests'
                       ? 'Track conversations with providers'
-                      : 'Grow with the ChodhiQ community'}
+                      : item.route === 'Bookings'
+                        ? 'Track your appointments'
+                        : 'Grow with the ChodhiQ community'}
                 </Text>
               )}
             </View>
@@ -602,7 +606,9 @@ const styles = StyleSheet.create({
   paletteName: { flex: 1, fontSize: 9, fontWeight: '800' },
   check: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   menuCard: { borderRadius: radius.lg, borderWidth: 1, overflow: 'hidden' },
+  userIdCard: { padding: spacing.md },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: 12 },
+  preferenceHint: { fontSize: 12, minHeight: 34, lineHeight: 17 },
   menuIcon: {
     width: 38,
     height: 38,

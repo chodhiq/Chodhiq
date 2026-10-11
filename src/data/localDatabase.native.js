@@ -1,9 +1,11 @@
 import * as SQLite from 'expo-sqlite';
 import { categories as seedCategories, providers as seedProviders } from './mockData';
 import { DEMO_MODE } from '../config/runtime';
+import { createSerialQueue } from '../lib/serialQueue';
 
 const DATABASE_NAME = 'chodhiq.db';
 let databasePromise;
+const transactionQueue = createSerialQueue();
 
 const json = (value) => JSON.stringify(value ?? null);
 const parse = (value, fallback) => {
@@ -45,7 +47,7 @@ async function openDatabase() {
   );
   const seedVersion = DEMO_MODE ? '2-demo' : '3-production-clean';
   if (seeded?.value !== seedVersion) {
-    await db.withTransactionAsync(async () => {
+    await transactionQueue.runExclusive(() => db.withTransactionAsync(async () => {
       await db.runAsync('DELETE FROM categories');
       await db.runAsync('DELETE FROM providers');
       const categoriesToSeed = DEMO_MODE ? seedCategories : [];
@@ -72,7 +74,7 @@ async function openDatabase() {
         "INSERT OR REPLACE INTO app_meta (key, value) VALUES ('catalog_seed_version', ?)",
         seedVersion,
       );
-    });
+    }));
   }
   return db;
 }
@@ -100,7 +102,7 @@ export async function loadLocalMarketplace() {
 export async function cacheMarketplace(categories, providers) {
   const db = await getLocalDatabase();
   const updatedAt = new Date().toISOString();
-  await db.withTransactionAsync(async () => {
+  await transactionQueue.runExclusive(() => db.withTransactionAsync(async () => {
     await db.runAsync('DELETE FROM categories');
     await db.runAsync('DELETE FROM providers');
     for (let index = 0; index < categories.length; index += 1) {
@@ -125,7 +127,7 @@ export async function cacheMarketplace(categories, providers) {
       "INSERT OR REPLACE INTO app_meta (key, value) VALUES ('catalog_cache_updated_at', ?)",
       updatedAt,
     );
-  });
+  }));
   return updatedAt;
 }
 
@@ -217,7 +219,7 @@ export async function createLocalQuote(userId, input) {
     provider_id: String(input.providerId),
     message: input.message,
     preferred_contact: input.preferredContact,
-    status: 'sent',
+    status: 'opened',
     created_at: new Date().toISOString(),
   };
   await db.runAsync(
@@ -329,7 +331,7 @@ export async function updateLocalPost(id, body) {
   const db = await getLocalDatabase();
   const existing = await db.getFirstAsync('SELECT id FROM community_posts WHERE id = ?', id);
   if (!existing) return null;
-  await db.withTransactionAsync(async () => {
+  await transactionQueue.runExclusive(() => db.withTransactionAsync(async () => {
     await db.runAsync('UPDATE community_posts SET body = ? WHERE id = ?', body, id);
     const operations = await db.getAllAsync(
       "SELECT id, payload FROM pending_operations WHERE operation = 'community_post'",
@@ -346,13 +348,13 @@ export async function updateLocalPost(id, body) {
         operation.id,
       );
     }
-  });
+  }));
   return { id, body };
 }
 
 export async function cacheCommunityPosts(posts) {
   const db = await getLocalDatabase();
-  await db.withTransactionAsync(async () => {
+  await transactionQueue.runExclusive(() => db.withTransactionAsync(async () => {
     // Remove stale server rows (including posts moderated away) while keeping
     // local post-* rows that still belong to the offline sync queue.
     await db.runAsync("DELETE FROM community_posts WHERE id NOT LIKE 'post-%'");
@@ -370,7 +372,7 @@ export async function cacheCommunityPosts(posts) {
         post.location_city || null,
       );
     }
-  });
+  }));
 }
 
 export async function enqueuePendingOperation(operation, payload) {
@@ -403,7 +405,7 @@ export async function clearLocalUserData(userId) {
   if (!userId) return;
   const db = await getLocalDatabase();
   const userPattern = `%${userId}%`;
-  await db.withTransactionAsync(async () => {
+  await transactionQueue.runExclusive(() => db.withTransactionAsync(async () => {
     await db.runAsync('DELETE FROM profiles WHERE user_id = ?', userId);
     await db.runAsync('DELETE FROM saved_items WHERE user_id = ?', userId);
     await db.runAsync('DELETE FROM quote_requests WHERE user_id = ?', userId);
@@ -413,5 +415,5 @@ export async function clearLocalUserData(userId) {
     await db.runAsync('DELETE FROM community_posts WHERE author_id = ?', userId);
     await db.runAsync('DELETE FROM pending_operations WHERE payload LIKE ?', userPattern);
     await db.runAsync('DELETE FROM app_meta WHERE key = ?', `saved_items_imported:${userId}`);
-  });
+  }));
 }

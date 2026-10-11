@@ -254,6 +254,7 @@ export async function createQuote(userId, input) {
         provider_id: quote.providerId,
         message: quote.message,
         preferred_contact: quote.preferredContact,
+        status: 'opened',
       })
       .select('id,provider_id,message,status,created_at')
       .single();
@@ -266,6 +267,7 @@ export async function createQuote(userId, input) {
     provider_id: quote.providerId,
     message: quote.message,
     preferred_contact: quote.preferredContact,
+    status: 'opened',
   });
   return createLocalQuote(userId, quote);
 }

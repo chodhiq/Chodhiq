@@ -54,6 +54,8 @@ import {
 } from '../lib/supabase';
 import { cleanEmail, cleanPassword } from '../lib/validation';
 import { authErrorMessage } from '../lib/authOperations';
+import { getNotificationsModule } from '../lib/notificationRuntime';
+import { formatReviewDate } from '../data/accountMappers';
 
 const pageStyles = StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.background },
@@ -197,7 +199,7 @@ export function WelcomeScreen({ navigation, route }) {
         setMode('signin');
         setAuthMessage({
           type: 'success',
-          text: 'Check your email. Confirm your address, then return to ChodhiQ and sign in.',
+          text: 'Your account was created. Check your inbox and spam folder for the confirmation email. If it does not arrive, tap Resend confirmation email below.',
         });
         return;
       }
@@ -239,11 +241,12 @@ export function WelcomeScreen({ navigation, route }) {
   const resendConfirmation = async () => {
     try {
       setBusy(true);
+      setAuthMessage(null);
       await resendEmailConfirmation(cleanEmail(email));
       setAwaitingConfirmation(true);
       setAuthMessage({
         type: 'success',
-        text: 'If this account needs confirmation, a new email has been sent. Use the latest link, then return here to sign in.',
+        text: 'The confirmation request was accepted. Check your inbox and spam folder, then use the newest link. If no message arrives, the email provider may be delaying delivery.',
       });
     } catch (error) {
       setAuthMessage({ type: 'error', text: authErrorMessage(error) });
@@ -254,7 +257,12 @@ export function WelcomeScreen({ navigation, route }) {
   const inputStyle = [
     pageStyles.input,
     stylesWelcome.authInput,
-    { backgroundColor: palette.field, borderColor: 'transparent', color: palette.text },
+    {
+      backgroundColor: palette.field,
+      borderColor: palette.field,
+      borderWidth: 0,
+      color: palette.text,
+    },
   ];
   return (
     <SafeAreaView style={[pageStyles.page, { backgroundColor: palette.background }]}>
@@ -427,14 +435,22 @@ export function WelcomeScreen({ navigation, route }) {
               style={[
                 pageStyles.button,
                 stylesWelcome.authButton,
-                { backgroundColor: palette.primary, opacity: submitDisabled ? 0.4 : 1 },
+                {
+                  backgroundColor: submitDisabled ? palette.surfaceAlt : palette.primary,
+                  opacity: 1,
+                },
               ]}
               onPress={() => submit(mode === 'signup' ? 'signup' : 'email')}
             >
               {busy ? (
                 <ActivityIndicator size={18} color={palette.onPrimary} />
               ) : (
-                <Text style={[pageStyles.buttonText, { color: palette.onPrimary, fontSize: 16 }]}>
+                <Text
+                  style={[
+                    pageStyles.buttonText,
+                    { color: submitDisabled ? palette.text2 : palette.onPrimary, fontSize: 16 },
+                  ]}
+                >
                   {mode === 'signup' ? 'Create account' : 'Sign in'}
                 </Text>
               )}
@@ -895,36 +911,149 @@ export function NotificationsScreen({ navigation }) {
           </TouchableOpacity>
         }
       />
-      <ScrollView contentContainerStyle={pageStyles.content}>
-        {!unread.length && <Text style={{ color: palette.text2 }}>You're all caught up.</Text>}
-        {unread.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            accessibilityRole="button"
-            accessibilityLabel={item.communityPostId ? `Open ${item.title}` : item.title}
-            disabled={!item.communityPostId}
-            onPress={() => navigation.navigate('Community', { postId: item.communityPostId })}
+      <ScrollView contentContainerStyle={[pageStyles.content, stylesNotifications.content]}>
+        <View
+          style={[
+            stylesNotifications.hero,
+            { backgroundColor: palette.primarySoft, borderColor: palette.border },
+          ]}
+        >
+          <View style={[stylesNotifications.heroIcon, { backgroundColor: palette.primary }]}>
+            <Bell size={22} color={palette.onPrimary} />
+          </View>
+          <View style={pageStyles.grow}>
+            <Text style={[pageStyles.title, { color: palette.text, fontSize: 20 }]}>
+              Your activity
+            </Text>
+            <Text style={[pageStyles.body, { color: palette.text2 }]}>
+              {unread.length
+                ? `${unread.length} new update${unread.length === 1 ? '' : 's'} for you`
+                : "You're all caught up"}
+            </Text>
+          </View>
+        </View>
+        {!unread.length && (
+          <View
             style={[
-              pageStyles.card,
-              pageStyles.row,
-              {
-                backgroundColor: palette.surface,
-                borderColor: !item.read ? palette.primary : palette.border,
-              },
+              stylesNotifications.empty,
+              { backgroundColor: palette.surface, borderColor: palette.border },
             ]}
           >
-            <Bell size={18} color={item.read ? palette.muted : palette.primary} />
-            <View style={pageStyles.grow}>
-              <Text style={[pageStyles.title, { color: palette.text }]}>{item.title}</Text>
-              <Text style={[pageStyles.body, { color: palette.text2 }]}>{item.body}</Text>
-              <Text style={[pageStyles.muted, { color: palette.muted }]}>{item.time}</Text>
+            <View style={[stylesNotifications.emptyIcon, { backgroundColor: palette.primarySoft }]}>
+              <Check size={24} color={palette.primary} />
             </View>
-          </TouchableOpacity>
-        ))}
+            <Text style={[pageStyles.title, { color: palette.text }]}>All caught up</Text>
+            <Text style={[pageStyles.body, { color: palette.text2, textAlign: 'center' }]}>
+              When something needs your attention, you’ll find it here.
+            </Text>
+          </View>
+        )}
+        {unread.map((item) => {
+          const ActivityIcon =
+            item.type === 'community_like'
+              ? Star
+              : item.type === 'community_comment' || item.type === 'community_reply'
+                ? MessageCircle
+                : Bell;
+          return (
+            <TouchableOpacity
+              key={item.id}
+              accessibilityRole="button"
+              accessibilityLabel={item.communityPostId ? `Open ${item.title}` : item.title}
+              disabled={!item.communityPostId}
+              onPress={() => navigation.navigate('Community', { postId: item.communityPostId })}
+              style={[
+                stylesNotifications.card,
+                {
+                  backgroundColor: palette.surface,
+                  borderColor: palette.border,
+                },
+              ]}
+            >
+              <View
+                style={[stylesNotifications.itemIcon, { backgroundColor: palette.primarySoft }]}
+              >
+                <ActivityIcon size={18} color={palette.primary} />
+              </View>
+              <View style={pageStyles.grow}>
+                <View style={stylesNotifications.titleRow}>
+                  <Text style={[pageStyles.title, { color: palette.text, flex: 1 }]}>
+                    {item.title}
+                  </Text>
+                  <View
+                    style={[stylesNotifications.unreadDot, { backgroundColor: palette.primary }]}
+                  />
+                </View>
+                <Text style={[pageStyles.body, { color: palette.text2, marginTop: 5 }]}>
+                  {item.body}
+                </Text>
+                <Text style={[pageStyles.muted, { color: palette.muted, marginTop: 8 }]}>
+                  {item.time}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </View>
   );
 }
+
+const stylesNotifications = StyleSheet.create({
+  content: { paddingTop: 8, paddingBottom: 36 },
+  hero: {
+    minHeight: 86,
+    borderWidth: 1,
+    borderRadius: 24,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 8,
+  },
+  heroIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  empty: {
+    minHeight: 240,
+    borderWidth: 1,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 26,
+    gap: 12,
+  },
+  emptyIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  card: {
+    minHeight: 100,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 13,
+  },
+  itemIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4 },
+});
 
 export function QuoteRequestsScreen({ navigation }) {
   const { quoteRequests } = useAppState();
@@ -937,6 +1066,11 @@ export function QuoteRequestsScreen({ navigation }) {
         subtitle="Track businesses you contacted"
       />
       <ScrollView contentContainerStyle={pageStyles.content}>
+        {quoteRequests.length > 0 ? (
+          <Text style={[pageStyles.body, { color: palette.text2 }]}>
+            Opening WhatsApp doesn't confirm delivery. Check the chat to see whether your message was sent.
+          </Text>
+        ) : null}
         {!quoteRequests.length ? (
           <View style={pageStyles.empty}>
             <MessageCircle size={34} color={palette.text2} />
@@ -987,7 +1121,9 @@ export function QuoteRequestsScreen({ navigation }) {
                       </Text>
                     </View>
                   ) : null}
-                  <Text style={[pageStyles.muted, { color: palette.muted }]}>{item.createdAt}</Text>
+              <Text style={[pageStyles.muted, { color: palette.muted }]}>
+                {formatReviewDate(item.createdAt)}
+              </Text>
                 </View>
                 <Text
                   style={[
@@ -1268,11 +1404,17 @@ export function ReviewsScreen({ navigation, route }) {
             ) : (
               <>
                 <View style={pageStyles.row}>
-                  <Text style={[pageStyles.title, pageStyles.grow]}>{item.providerName}</Text>
+                  <Text style={[pageStyles.title, pageStyles.grow]}>
+                    {providers.find((entry) => String(entry.id) === String(item.providerId))?.name ||
+                      item.providerName ||
+                      'Business'}
+                  </Text>
                   <Text style={{ color: colors.star }}>★ {item.rating}</Text>
                 </View>
-                <Text style={[pageStyles.body, { color: palette.text2 }]}>{item.comment}</Text>
-                <Text style={pageStyles.muted}>{item.createdAt}</Text>
+                <Text style={[pageStyles.body, { color: palette.text2 }]}>
+                  {item.comment || item.text || ''}
+                </Text>
+                <Text style={pageStyles.muted}>{formatReviewDate(item.createdAt)}</Text>
                 {item.userId && (
                   <View style={[pageStyles.row, { marginTop: spacing.sm }]}>
                     <TouchableOpacity
@@ -1328,7 +1470,6 @@ export function EditProfileScreen({ navigation }) {
       <ScrollView contentContainerStyle={pageStyles.content}>
         {[
           ['Name', 'name'],
-          ['Email', 'email'],
           ['Phone', 'phone'],
         ].map(([label, key]) => (
           <View key={key}>
@@ -1351,6 +1492,20 @@ export function EditProfileScreen({ navigation }) {
             />
           </View>
         ))}
+        {profile.email ? (
+          <View
+            style={[
+              pageStyles.card,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
+          >
+            <Text style={[pageStyles.label, { color: palette.text2 }]}>Account email</Text>
+            <Text style={[pageStyles.body, { color: palette.text }]}>{profile.email}</Text>
+            <Text style={[pageStyles.muted, { color: palette.muted, marginTop: 6 }]}>
+              Email changes require secure account verification.
+            </Text>
+          </View>
+        ) : null}
         <TouchableOpacity
           style={[pageStyles.button, { backgroundColor: palette.primary }]}
           onPress={save}
@@ -1365,8 +1520,22 @@ export function EditProfileScreen({ navigation }) {
 }
 
 export function SettingsScreen({ navigation }) {
-  const { preferences, setPreferences } = useAppState();
+  const { preferences, setPreferences, permissionDenied } = useAppState();
   const { palette, mode, setMode } = useChodhiQTheme();
+  const [settingsPermissionDenied, setSettingsPermissionDenied] = useState(false);
+  useEffect(() => {
+    if (Platform.OS === 'web') return undefined;
+    let active = true;
+    getNotificationsModule()
+      ?.getPermissionsAsync()
+      .then((permission) => {
+        if (active) setSettingsPermissionDenied(permission?.status === 'denied');
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
   return (
     <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
       <ScreenHeader navigation={navigation} title="Settings" />
@@ -1393,8 +1562,8 @@ export function SettingsScreen({ navigation }) {
               accessibilityLabel="Dark mode"
               value={mode === 'dark'}
               onValueChange={(enabled) => setMode(enabled ? 'dark' : 'fresh')}
-              trackColor={{ false: palette.border, true: palette.primaryTint }}
-              thumbColor={palette.primary}
+              trackColor={{ false: palette.border, true: palette.primary }}
+              thumbColor={palette.onPrimary}
               pointerEvents="none"
             />
             <Text style={[pageStyles.title, { color: palette.text }]}>Dark</Text>
@@ -1422,12 +1591,12 @@ export function SettingsScreen({ navigation }) {
               accessibilityLabel={label}
               value={preferences[key]}
               onValueChange={(value) => setPreferences((p) => ({ ...p, [key]: value }))}
-              trackColor={{ false: palette.surfaceAlt, true: palette.goldSoft }}
-              thumbColor={preferences[key] ? palette.saffron : palette.muted}
+              trackColor={{ false: palette.surfaceAlt, true: palette.primary }}
+              thumbColor={preferences[key] ? palette.onPrimary : palette.muted}
             />
           </View>
         ))}
-        {Platform.OS !== 'web' && preferences.push && (
+        {Platform.OS !== 'web' && preferences.push && (permissionDenied || settingsPermissionDenied) && (
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Open device notification settings"

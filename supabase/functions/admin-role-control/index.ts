@@ -1,4 +1,4 @@
-import { createClient, type User } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, type User } from "npm:@supabase/supabase-js@2.112.2";
 import { checkRateLimit, RATE_LIMITS } from "../rate-limit-helper.ts";
 
 const allowedOrigins=(Deno.env.get("ADMIN_ALLOWED_ORIGINS")??"http://localhost:3000,http://localhost:3012").split(",").map(value=>value.trim()).filter(Boolean);

@@ -68,6 +68,11 @@ const worker = {
       'Content-Security-Policy',
       "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
     );
+    secured.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+    secured.headers.set(
+      'Content-Security-Policy-Report-Only',
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
+    );
     if (!url.pathname.startsWith('/_vinext/static'))
       secured.headers.set('Cache-Control', 'private, no-store');
     return secured;

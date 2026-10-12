@@ -1,5 +1,6 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.112.2';
 import { checkRateLimit } from '../rate-limit-helper.ts';
+import { matchesAnySecret } from '../secure-compare.ts';
 interface NotificationRow {
   id: string;
   user_id: string;
@@ -22,10 +23,7 @@ Deno.serve(async (request) => {
   const webhookSecret = Deno.env.get('PUSH_WEBHOOK_SECRET');
   const communityWebhookSecret = Deno.env.get('COMMUNITY_PUSH_WEBHOOK_SECRET');
   const suppliedSecret = request.headers.get('x-webhook-secret');
-  if (
-    !suppliedSecret ||
-    ![webhookSecret, communityWebhookSecret].filter(Boolean).includes(suppliedSecret)
-  )
+  if (!(await matchesAnySecret(suppliedSecret, [webhookSecret, communityWebhookSecret])))
     return json({ error: 'Unauthorized' }, 401);
   const payload = (await request.json().catch(() => null)) as WebhookPayload | null;
   if (!payload?.record?.user_id || payload.type !== 'INSERT' || payload.table !== 'notifications')

@@ -2,11 +2,24 @@
   "version": "4",
   "specifiers": {
     "npm:@supabase/supabase-js@2": "2.112.4",
+    "npm:@supabase/supabase-js@2.112.2": "2.112.2",
     "npm:stripe@18.5.0": "18.5.0"
   },
   "npm": {
+    "@supabase/auth-js@2.112.2": {
+      "integrity": "sha512-l1InCp4j98d09LZ6+RgubgF4eVPGBGXcLEhFusLg1qUCHJ2IEkYu5FohKK+eaFmIOwEk0kqG/j/lycw5e15mcQ==",
+      "dependencies": [
+        "tslib"
+      ]
+    },
     "@supabase/auth-js@2.112.4": {
       "integrity": "sha512-z8DesgwLzKM5PiT0yNmJU8VJyh1zAhYi+20Z7drdJQLXg/wWW4yGt/un+He5ERYUo94Vz66t5aeyr1DIDemI5A==",
+      "dependencies": [
+        "tslib"
+      ]
+    },
+    "@supabase/functions-js@2.112.2": {
+      "integrity": "sha512-oMuSWN0ERmrG9S6kOM0bwhHmESGVl3kMtkZl2dNCU/r89hMiziX4GfD1omNo9QcBDele4N0GwSZ7hdbpuiA35A==",
       "dependencies": [
         "tslib"
       ]
@@ -20,9 +33,22 @@
     "@supabase/phoenix@0.4.5": {
       "integrity": "sha512-aAn9H9ovVyeApKy11OWOrrOGq8DV68yWeH4ud2lN9fzn4aO8Zb5GLL9m1pUg9nLqIcT+ZDfAcsZe0E/nqdv2lw=="
     },
+    "@supabase/postgrest-js@2.112.2": {
+      "integrity": "sha512-ewhhtRny/HFRGhUTTg/PsqIatsl8OhW8Eha/Tz4S+SRAXBnuhKei9ZpsQTgL/3XcH9UEwuPQyQgQ9itq7nRQeg==",
+      "dependencies": [
+        "tslib"
+      ]
+    },
     "@supabase/postgrest-js@2.112.4": {
       "integrity": "sha512-uaubtPSeg2TR4wrtfQoQWgkTAe+a0qWX2KhmwvTfNl5mGN9+U7owiJt6abk3o/V6O899PSRD1yzxs5RlF4xTug==",
       "dependencies": [
+        "tslib"
+      ]
+    },
+    "@supabase/realtime-js@2.112.2": {
+      "integrity": "sha512-cd9/CEUJ6Go13FxtfiuC5rYELJtuQzVzTXlGG+XjSppjDS+anq+xo++WQe7ZRUNTuHOCeyKRwmx9Hw/OQJ04ig==",
+      "dependencies": [
+        "@supabase/phoenix",
         "tslib"
       ]
     },
@@ -33,6 +59,13 @@
         "tslib"
       ]
     },
+    "@supabase/storage-js@2.112.2": {
+      "integrity": "sha512-6jyBq/J1iXOHNpbjCZS7gFcDk49iM1MCJUVkDl71gLd/+XnLDzpUBs8icGebtwiHpl4kVszxIRDYAosbF4Rsig==",
+      "dependencies": [
+        "iceberg-js",
+        "tslib"
+      ]
+    },
     "@supabase/storage-js@2.112.4": {
       "integrity": "sha512-lQ0JemuTlMIXVKgSci1qez8yPnM5hyDngeAfEBjZS2Om4D+Cus0EE5BE6glFobrxdyii1OF4UzWfF0zcQgDq5A==",
       "dependencies": [
@@ -40,14 +73,24 @@
         "tslib"
       ]
     },
+    "@supabase/supabase-js@2.112.2": {
+      "integrity": "sha512-UyI1epU9B4X51HvNpkmlwTdF20fEcz2vyvrcDKVzFN4jZN41f5iQRqsiIQjAY5OVJD6ljqA/1g9JQeOTvFHpkA==",
+      "dependencies": [
+        "@supabase/auth-js@2.112.2",
+        "@supabase/functions-js@2.112.2",
+        "@supabase/postgrest-js@2.112.2",
+        "@supabase/realtime-js@2.112.2",
+        "@supabase/storage-js@2.112.2"
+      ]
+    },
     "@supabase/supabase-js@2.112.4": {
       "integrity": "sha512-UiCX1udlFY1fQQrO7Z3GU7obQsju0w5Vk9mOOwalfo/+Gy+tahWVenSSuu5E/GTy/q//HxvGv2IrCdW66/61kw==",
       "dependencies": [
-        "@supabase/auth-js",
-        "@supabase/functions-js",
-        "@supabase/postgrest-js",
-        "@supabase/realtime-js",
-        "@supabase/storage-js"
+        "@supabase/auth-js@2.112.4",
+        "@supabase/functions-js@2.112.4",
+        "@supabase/postgrest-js@2.112.4",
+        "@supabase/realtime-js@2.112.4",
+        "@supabase/storage-js@2.112.4"
       ]
     },
     "call-bind-apply-helpers@1.0.2": {
@@ -188,5 +231,10 @@
   },
   "remote": {
     "https://esm.sh/@supabase/supabase-js@2.112.4": "cfaa762b66cf8717f1b32db2699c4277aa673b39417cb9be9c0b19d9c7786bd7"
+  },
+  "workspace": {
+    "dependencies": [
+      "npm:@supabase/supabase-js@2.112.2"
+    ]
   }
 }

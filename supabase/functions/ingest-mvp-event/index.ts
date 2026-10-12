@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.112.2';
 import { checkRateLimit } from '../rate-limit-helper.ts';
 
 const allowedEvents = new Set([
@@ -68,6 +68,21 @@ Deno.serve(async (request) => {
       limit.error ? 503 : 429,
       limit.headers,
     );
+
+  // Second limit on the network address alone, so rotating installation IDs does not
+  // bypass throttling. Mobile carriers share addresses, so keep this generous.
+  if (network !== 'unknown') {
+    const ipLimit = await checkRateLimit(admin, await digest(`ip:${network}`), 'ingest-mvp-event-ip', {
+      maxRequests: 600,
+      windowSeconds: 3600,
+    });
+    if (!ipLimit.allowed)
+      return json(
+        { error: ipLimit.error ? 'Rate limiter unavailable' : 'Too many events' },
+        ipLimit.error ? 503 : 429,
+        ipLimit.headers,
+      );
+  }
 
   let userId: string | null = null;
   const authorization = request.headers.get('Authorization') ?? '';

@@ -1,12 +1,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
-
 const [auditFile, bundleDirectory, auditStatusText] = process.argv.slice(2);
 if (!auditFile || !bundleDirectory || !auditStatusText) {
   console.error('Usage: node check-android-bundle-audit.cjs <audit-json> <android-export-dir> <npm-exit-code>');
   process.exit(1);
 }
-
 const auditStatus = Number(auditStatusText);
 let audit;
 try {
@@ -20,7 +18,6 @@ if (audit.error || !audit.metadata?.vulnerabilities || !audit.vulnerabilities) {
   console.error(JSON.stringify(audit.error || audit, null, 2));
   process.exit(1);
 }
-
 function findSourceMaps(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const fullPath = path.join(directory, entry.name);
@@ -38,7 +35,6 @@ const sources = maps.flatMap((file) => {
   if (!Array.isArray(map.sources)) throw new Error('Source map has no sources array: ' + file);
   return map.sources.map((source) => source.replaceAll('\\', '/'));
 });
-
 const allowed = new Map([
   ['GHSA-vfj7-8cjw-p6xm', 'braces'],
   ['GHSA-86w9-cpqp-85rv', 'node-forge'],
@@ -46,11 +42,11 @@ const allowed = new Map([
 function collectAdvisories(name, seen) {
   const visited = seen || new Set();
   if (visited.has(name)) return [];
-  const vulnerability = audit.vulnerabilities[name];
-  if (!vulnerability) return [];
+  const item = audit.vulnerabilities[name];
+  if (!item) return [];
   const nextSeen = new Set(visited);
   nextSeen.add(name);
-  return (vulnerability.via || []).flatMap((entry) => {
+  return (item.via || []).flatMap((entry) => {
     if (typeof entry === 'string') return collectAdvisories(entry, nextSeen);
     return typeof entry === 'object' && entry !== null ? [entry] : [];
   });
@@ -58,19 +54,19 @@ function collectAdvisories(name, seen) {
 function bundled(packageName) {
   return sources.some((source) => source.includes('/node_modules/' + packageName + '/'));
 }
-
 const high = Object.entries(audit.vulnerabilities).filter(([, item]) =>
   ['high', 'critical'].includes(item.severity),
 );
 const blocked = high.filter(([name]) => {
-  const advisories = collectAdvisories(name);
-  return advisories.length === 0 || advisories.some((advisory) => {
-    const id = advisory.url?.split('/').pop();
+  const advisories = collectAdvisories(name).filter((item) =>
+    ['high', 'critical'].includes(item.severity),
+  );
+  return advisories.length === 0 || advisories.some((item) => {
+    const id = item.url?.split('/').pop();
     const packageName = allowed.get(id);
     return !packageName || bundled(packageName);
   });
 }).map(([name]) => name);
-
 if (blocked.length) {
   console.error('High or critical advisories affect Android-bundled dependencies: ' + blocked.join(', '));
   process.exit(1);

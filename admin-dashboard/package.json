@@ -19,7 +19,7 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.2",
+    "@supabase/supabase-js": "^2.117.3",
     "drizzle-orm": "0.45.2",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

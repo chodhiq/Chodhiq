@@ -62,6 +62,7 @@ import { useChodhiQTheme } from '../context/ThemeContext';
 import { imageSource } from '../data/assetCatalog';
 import { devicePerformance } from '../lib/devicePerformance';
 import { mergeCommunityPage } from '../lib/communityPaging';
+import { communityFeedErrorMessage, withCommunityFeedDeadline } from '../lib/communityFeedDeadline';
 import { shadows } from '../theme/theme';
 import { REGION_KEYWORDS } from '../components/RegionEmblem';
 
@@ -219,80 +220,88 @@ export default function CommunityScreen({ navigation, route }) {
     const request = ++loadSequence.current;
     try {
       if (supabase) {
-        const fields =
-          'id,author_id,provider_id,post_type,body,image_url,offer_expires_at,region_key,location_city,created_at,providers(id,business_name,is_verified,categories(name,slug))' +
-          (communityReady ? ',community_id' : '');
-        let query = supabase
-          .from('community_posts')
-          .select(fields)
-          .eq('status', 'published')
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-          .range((page - 1) * 30, page * 30 - 1);
-        if (communityReady && activeSpace?.id) query = query.eq('community_id', activeSpace.id);
-        const [{ data, error }, saveResult, generalResult] = await Promise.all([
-          query,
-          session
-            ? supabase
-                .from('community_saved_posts')
-                .select('post_id')
-                .eq('user_id', session.user.id)
-            : Promise.resolve({ data: [] }),
-          communityReady && activeSpace?.slug !== 'general' && spaces[0]?.id
-            ? supabase
-                .from('community_posts')
-                .select(fields)
-                .eq('status', 'published')
-                .eq('community_id', spaces[0].id)
-                .order('created_at', { ascending: false })
-                .limit(3)
-            : Promise.resolve({ data: [] }),
-        ]);
-        if (request !== loadSequence.current) return;
-        if (error) throw error;
-        const countResult = data?.length
-          ? await supabase.rpc('community_post_engagement_for_posts', {
-              requested_posts: data.map((post) => post.id),
-            })
-          : { data: [], error: null };
-        setLoadError(
-          countResult.error ? 'Posts loaded, but reactions could not refresh. Tap to retry.' : '',
-        );
-        const [resolvedPosts, resolvedGeneral] = await Promise.all([
-          resolveCommunityImages(data || []),
-          resolveCommunityImages(generalResult.error ? [] : generalResult.data || []),
-        ]);
-        if (request !== loadSequence.current) return;
+        await withCommunityFeedDeadline(async () => {
+          const fields =
+            'id,author_id,provider_id,post_type,body,image_url,offer_expires_at,region_key,location_city,created_at,providers(id,business_name,is_verified,categories(name,slug))' +
+            (communityReady ? ',community_id' : '');
+          let query = supabase
+            .from('community_posts')
+            .select(fields)
+            .eq('status', 'published')
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false })
+            .range((page - 1) * 30, page * 30 - 1);
+          if (communityReady && activeSpace?.id) query = query.eq('community_id', activeSpace.id);
+          const [{ data, error }, saveResult, generalResult] = await Promise.all([
+            query,
+            session
+              ? supabase
+                  .from('community_saved_posts')
+                  .select('post_id')
+                  .eq('user_id', session.user.id)
+              : Promise.resolve({ data: [] }),
+            communityReady && activeSpace?.slug !== 'general' && spaces[0]?.id
+              ? supabase
+                  .from('community_posts')
+                  .select(fields)
+                  .eq('status', 'published')
+                  .eq('community_id', spaces[0].id)
+                  .order('created_at', { ascending: false })
+                  .limit(3)
+              : Promise.resolve({ data: [] }),
+          ]);
+          if (request !== loadSequence.current) return;
+          if (error) throw error;
+          const countResult = data?.length
+            ? await supabase.rpc('community_post_engagement_for_posts', {
+                requested_posts: data.map((post) => post.id),
+              })
+            : { data: [], error: null };
+          if (request !== loadSequence.current) return;
+          setLoadError(countResult.error ? 'Posts loaded, but reactions could not refresh.' : '');
+          const [resolvedPosts, resolvedGeneral] = await Promise.all([
+            resolveCommunityImages(data || []),
+            resolveCommunityImages(generalResult.error ? [] : generalResult.data || []),
+          ]);
+          if (request !== loadSequence.current) return;
         const merged = mergeCommunityPage(loadedPosts.current, resolvedPosts, page === 1);
-        loadedPosts.current = merged;
-        setPosts(merged);
-        setHasMore((data || []).length === 30);
-        setGeneralPosts(resolvedGeneral);
-        setEngagement((current) => ({
-          counts: countResult.error
-            ? current.counts
-            : {
-                ...(page > 1 ? current.counts : {}),
-                ...Object.fromEntries((countResult.data || []).map((row) => [row.post_id, row])),
-              },
-          saves: saveResult.error ? current.saves : saveResult.data || [],
-        }));
-        if (activeSpace?.slug === 'general')
-          await cacheCommunityPosts(
-            merged.map((post) => ({
-              ...post,
-              image_url: post.storage_image_ref || post.image_url,
-            })),
-          );
+          loadedPosts.current = merged;
+          setPosts(merged);
+          setHasMore((data || []).length === 30);
+          setGeneralPosts(resolvedGeneral);
+          setEngagement((current) => ({
+            counts: countResult.error
+              ? current.counts
+              : {
+                  ...(page > 1 ? current.counts : {}),
+                  ...Object.fromEntries((countResult.data || []).map((row) => [row.post_id, row])),
+                },
+            saves: saveResult.error ? current.saves : saveResult.data || [],
+          }));
+          if (activeSpace?.slug === 'general')
+            await cacheCommunityPosts(
+              merged.map((post) => ({
+                ...post,
+                image_url: post.storage_image_ref || post.image_url,
+              })),
+            );
+        });
       } else {
         setPosts(activeSpace?.slug === 'general' ? await loadLocalPosts(providers) : []);
         setLoadError('');
       }
     } catch (error) {
       if (request !== loadSequence.current) return;
+      if (error?.code === 'COMMUNITY_FEED_TIMEOUT') {
+        loadSequence.current += 1;
+        setHasMore(false);
+        setLoadError(communityFeedErrorMessage(error));
+        setLoading(false);
+        return;
+      }
       console.warn('Community sync failed; using the local cache.', error.message);
       setHasMore(false);
-      setLoadError('Could not refresh the community feed. Showing saved posts if available.');
+      setLoadError(communityFeedErrorMessage(error));
       try {
         const cached = activeSpace?.slug === 'general' ? await loadLocalPosts(providers) : [];
         if (request === loadSequence.current) setPosts(cached);
@@ -325,9 +334,14 @@ export default function CommunityScreen({ navigation, route }) {
       setPage(1);
       return;
     }
+    setLoading(true);
+    setLoadError('');
     setRefreshing(true);
-    await loadPosts();
-    setRefreshing(false);
+    try {
+      await loadPosts();
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const matchingProviders = useMemo(() => {
@@ -944,11 +958,29 @@ export default function CommunityScreen({ navigation, route }) {
             </View>
             {loading ? <ActivityIndicator style={{ padding: 30 }} color={palette.primary} /> : null}
             {!!loadError && (
-              <TouchableOpacity onPress={refresh} style={{ marginHorizontal: 18, padding: 10 }}>
-                <Text style={{ color: palette.coral, fontSize: 12 }}>
-                  {loadError} Tap to retry.
-                </Text>
-              </TouchableOpacity>
+              <View
+                accessibilityRole="alert"
+                style={{
+                  marginHorizontal: 18,
+                  padding: 12,
+                  borderRadius: 12,
+                  backgroundColor: palette.surfaceAlt,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}
+              >
+                <Text style={{ color: palette.text, fontSize: 13, flex: 1 }}>{loadError}</Text>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry loading posts"
+                  onPress={refresh}
+                  style={{ paddingVertical: 6, paddingHorizontal: 10 }}
+                >
+                  <Text style={{ color: palette.primary, fontWeight: '800' }}>Retry</Text>
+                </TouchableOpacity>
+              </View>
             )}
             {!loading && visiblePosts.length === 0 && (
               <EmptySpace

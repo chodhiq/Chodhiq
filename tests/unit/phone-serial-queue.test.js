@@ -3,6 +3,10 @@ import test from 'node:test';
 import { toWhatsAppNumber } from '../../src/lib/phone.js';
 import { createSerialQueue } from '../../src/lib/serialQueue.js';
 import { withTimeout } from '../../src/lib/withTimeout.js';
+import {
+  communityFeedErrorMessage,
+  withCommunityFeedDeadline,
+} from '../../src/lib/communityFeedDeadline.js';
 
 test('WhatsApp numbers are normalized to international digits', () => {
   assert.equal(toWhatsAppNumber('07917322353'), '447917322353');
@@ -42,5 +46,16 @@ test('notification sync deadline rejects a stalled operation with a reportable c
       'PUSH_TIMEOUT',
     ),
     (error) => error.code === 'PUSH_TIMEOUT',
+  );
+});
+
+test('community feed deadline turns a stalled fetch into a visible retry error', async () => {
+  await assert.rejects(
+    withCommunityFeedDeadline(() => new Promise(() => {})),
+    (error) => {
+      assert.equal(error.code, 'COMMUNITY_FEED_TIMEOUT');
+      assert.equal(communityFeedErrorMessage(error), "Couldn't load posts.");
+      return true;
+    },
   );
 });

@@ -48,10 +48,21 @@ jobs:
           npm audit --omit=dev --audit-level=high
       - name: Verify coming-soon site
         working-directory: coming-soon
+        shell: bash
         run: |
           npm ci
           npm run verify
-          npm audit --omit=dev --audit-level=high
+          npm run build -- --sourcemap hidden
+          set +e
+          npm audit --omit=dev --json > npm-audit.json
+          audit_status=$?
+          set -e
+          if [ "$audit_status" -gt 1 ]; then
+            echo "npm audit could not complete (exit $audit_status)."
+            cat npm-audit.json
+            exit "$audit_status"
+          fi
+          node ../scripts/check-static-site-audit.cjs npm-audit.json dist/client .openai/hosting.json "$audit_status"
       - name: Reject untracked deployment and unsafe database regressions
         run: |
           test -f supabase/functions/deliver-provider-leads/index.ts

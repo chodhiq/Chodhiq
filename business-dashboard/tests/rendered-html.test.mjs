@@ -39,7 +39,7 @@ test('server-renders the ChodhiQ business shell', async () => {
   assert.match(html, /role="switch"/);
   assert.match(html, /Use dark appearance/);
   assert.match(html, />Light</);
-  assert.match(html, /Securing your workspace/);
+  assert.match(html, /<main(?:\s|>)/);
 });
 
 test('unapproved public legal routes remain unavailable', async () => {

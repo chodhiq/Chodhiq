@@ -4,10 +4,11 @@ export async function withAuthTimeout(work, timeoutMs = 15000) {
     return await Promise.race([
       Promise.resolve(work),
       new Promise((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error('The request timed out. Check your connection and try again.')),
-          timeoutMs,
-        );
+        timer = setTimeout(() => {
+          const error = new Error('The request timed out. Check your connection and try again.');
+          error.code = 'AUTH_TIMEOUT';
+          reject(error);
+        }, timeoutMs);
       }),
     ]);
   } finally {
@@ -22,6 +23,8 @@ export function authErrorMessage(
   const raw = typeof error?.message === 'string' ? error.message.trim() : '';
   const comparable = `${raw} ${error?.code || ''} ${error?.status || ''}`.toLowerCase();
 
+  if (error?.code === 'AUTH_TIMEOUT')
+    return 'This is taking longer than expected. Check your connection and try again.';
   if (/invalid login credentials|invalid_credentials/.test(comparable))
     return 'The email address or password is incorrect.';
   if (/email not confirmed|email_not_confirmed/.test(comparable))

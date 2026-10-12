@@ -1,7 +1,7 @@
 import { AppAlert as Alert } from '../components/AppDialog';
 import ScrollView from '../components/KeyboardAwareScrollView';
 import { MotionTouchable as TouchableOpacity } from '../components/Motion';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AppTextInput from '../components/AppTextInput';
 import {
   ActivityIndicator,
@@ -54,6 +54,7 @@ import {
 } from '../lib/supabase';
 import { cleanEmail, cleanPassword } from '../lib/validation';
 import { authErrorMessage } from '../lib/authOperations';
+import { runSingleFlight } from '../lib/singleFlight';
 import { getNotificationsModule } from '../lib/notificationRuntime';
 import { formatReviewDate } from '../data/accountMappers';
 
@@ -169,6 +170,7 @@ export function WelcomeScreen({ navigation, route }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const submitLock = useRef(false);
   const [authMessage, setAuthMessage] = useState(null);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   useEffect(() => {
@@ -188,30 +190,31 @@ export function WelcomeScreen({ navigation, route }) {
     consent;
   const submitDisabled = busy || (mode === 'signup' ? !signupValid : !emailValid || !password);
   const finish = () => navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
-  const submit = async (method) => {
-    try {
-      setBusy(true);
-      setAuthMessage(null);
+  const submit = (method) =>
+    runSingleFlight(submitLock, async () => {
+      try {
+        setBusy(true);
+        setAuthMessage(null);
 
-      const nextSession = await authenticate(method, { name, email: email.trim(), password });
-      if (method === 'signup' && !nextSession) {
-        setAwaitingConfirmation(true);
-        setMode('signin');
-        setAuthMessage({
-          type: 'success',
-          text: 'Your account was created. Check your inbox and spam folder for the confirmation email. If it does not arrive, tap Resend confirmation email below.',
-        });
-        return;
+        const nextSession = await authenticate(method, { name, email: email.trim(), password });
+        if (method === 'signup' && !nextSession) {
+          setAwaitingConfirmation(true);
+          setMode('signin');
+          setAuthMessage({
+            type: 'success',
+            text: 'Your account was created. Check your inbox and spam folder for the confirmation email. If it does not arrive, tap Resend confirmation email below.',
+          });
+          return;
+        }
+        if (!nextSession) throw new Error('Authentication completed without creating a session.');
+
+        finish();
+      } catch (error) {
+        setAuthMessage({ type: 'error', text: authErrorMessage(error) });
+      } finally {
+        setBusy(false);
       }
-      if (!nextSession) throw new Error('Authentication completed without creating a session.');
-
-      finish();
-    } catch (error) {
-      setAuthMessage({ type: 'error', text: authErrorMessage(error) });
-    } finally {
-      setBusy(false);
-    }
-  };
+    });
   const guest = () => {
     continueAsGuest();
     finish();

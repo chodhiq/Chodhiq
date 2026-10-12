@@ -17,8 +17,8 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - run: npm test
       - run: npx expo export --platform web --output-dir dist-ci
-      # The current braces advisory has no patched release; npm audit still fails
-      # on every other high or critical production dependency finding.
+      # These two upstream advisories have no patched releases. Keep the exception
+      # limited to dependency paths caused only by those advisories.
       - name: Audit customer production dependencies
         run: |
           set +e
@@ -28,20 +28,30 @@ jobs:
           AUDIT_STATUS="$audit_status" node --input-type=commonjs -e '
             const fs = require("node:fs");
             const audit = JSON.parse(fs.readFileSync("npm-audit.json", "utf8"));
-            const ignored = new Set(["GHSA-vfj7-8cjw-p6xm"]);
-            const blockers = Object.entries(audit.vulnerabilities || {}).filter(([name, item]) =>
-              (item.severity === "high" || item.severity === "critical") &&
-              !(name === "braces" && (item.via || []).every((via) => typeof via === "object" && ignored.has(via.url?.split("/").pop())))
+            const ignored = new Set(["GHSA-vfj7-8cjw-p6xm", "GHSA-86w9-cpqp-85rv"]);
+            const vulnerabilities = audit.vulnerabilities || {};
+            function onlyIgnoredAdvisories(name, seen = new Set()) {
+              if (seen.has(name) || !vulnerabilities[name]) return false;
+              const path = new Set(seen).add(name);
+              const via = vulnerabilities[name].via || [];
+              return via.length > 0 && via.every((entry) =>
+                typeof entry === "string"
+                  ? onlyIgnoredAdvisories(entry, path)
+                  : ignored.has(entry.url?.split("/").pop())
+              );
+            }
+            const blockers = Object.entries(vulnerabilities).filter(([name, item]) =>
+              (item.severity === "high" || item.severity === "critical") && !onlyIgnoredAdvisories(name)
             );
             if (blockers.length) {
               console.error("Unresolved high or critical production advisories:", blockers.map(([name]) => name).join(", "));
               process.exit(1);
             }
-            if (process.env.AUDIT_STATUS !== "0" && !Object.keys(audit.vulnerabilities || {}).length) {
+            if (process.env.AUDIT_STATUS !== "0" && !Object.keys(vulnerabilities).length) {
               console.error("npm audit failed without reporting vulnerability details.");
               process.exit(1);
             }
-            console.log("No unexcepted high or critical production advisories.");
+            console.log("No unexcepted high or critical production advisories; known unpatched advisories remain.");
           ' || exit 1
       - name: Verify provider dashboard
         working-directory: business-dashboard

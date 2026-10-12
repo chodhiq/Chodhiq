@@ -64,6 +64,7 @@ export function AppStateProvider({ children }) {
     preferences,
     preferencesError,
     preferencesSyncing,
+    permissionDenied,
     retryPreferencesSync,
     setPreferences: updatePreferences,
     clearPreferences,
@@ -141,9 +142,12 @@ export function AppStateProvider({ children }) {
     AsyncStorage.getItem(LOCATION_COORDINATES_KEY)
       .then((value) => {
         if (!value) return;
-        const coordinates = JSON.parse(value);
+        const savedLocation = JSON.parse(value);
+        const coordinates = savedLocation.coordinates || savedLocation;
         if (Number.isFinite(coordinates.latitude) && Number.isFinite(coordinates.longitude))
           setLocationCoordinates(coordinates);
+        if (typeof savedLocation.city === 'string' && savedLocation.city.trim())
+          setProfile((current) => ({ ...current, location: savedLocation.city }));
       })
       .catch(() => {});
   }, []);
@@ -314,7 +318,7 @@ export function AppStateProvider({ children }) {
   const selectLocation = useCallback(
     (city) => {
       setLocationCoordinates(null);
-      AsyncStorage.removeItem(LOCATION_COORDINATES_KEY).catch(() => {});
+      AsyncStorage.setItem(LOCATION_COORDINATES_KEY, JSON.stringify({ city })).catch(() => {});
       setProfile((current) => ({ ...current, location: city }));
       if (session)
         updateProfile(session.user.id, { ...profile, location: city }).catch((error) => {
@@ -330,7 +334,10 @@ export function AppStateProvider({ children }) {
   const setCurrentLocation = useCallback(
     (city, coordinates) => {
       setLocationCoordinates(coordinates);
-      AsyncStorage.setItem(LOCATION_COORDINATES_KEY, JSON.stringify(coordinates)).catch(() => {});
+      AsyncStorage.setItem(
+        LOCATION_COORDINATES_KEY,
+        JSON.stringify({ ...coordinates, city }),
+      ).catch(() => {});
       setProfile((current) => ({ ...current, location: city }));
       if (session)
         updateProfile(session.user.id, { ...profile, location: city }).catch((error) => {
@@ -480,6 +487,7 @@ export function AppStateProvider({ children }) {
       preferences,
       preferencesError,
       preferencesSyncing,
+      permissionDenied,
       retryPreferencesSync,
       setPreferences: updatePreferences,
       signedIn,
@@ -531,6 +539,7 @@ export function AppStateProvider({ children }) {
       preferences,
       preferencesError,
       preferencesSyncing,
+      permissionDenied,
       retryPreferencesSync,
       updatePreferences,
       signedIn,

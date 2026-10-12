@@ -24,6 +24,7 @@ import {
 } from '../lib/validation';
 import { brand } from '../lib/brand';
 import { respondToLead, updateLeadStatus } from '../lib/lead-api';
+import { normalizeUkPhone } from '../lib/uk-phone';
 import { updateBookingStatus } from '../lib/booking-api';
 import { signInErrorMessage, withAuthTimeout } from '../lib/auth-operations';
 import { BusinessApplication, CreateAccount } from './business-application';
@@ -1170,6 +1171,12 @@ function Profile({
     if (nameError) return notify(nameError);
     const websiteError = validateOptionalUrl(draft.website || '');
     if (websiteError) return notify(websiteError);
+    const phone = normalizeUkPhone(draft.phone);
+    const whatsapp = normalizeUkPhone(draft.whatsapp);
+    if (draft.phone?.trim() && !phone)
+      return notify('Enter a valid UK phone number. It will be saved in +44 international format.');
+    if (draft.whatsapp?.trim() && !whatsapp)
+      return notify('Enter a valid UK WhatsApp number. It will be saved in +44 international format.');
     const { error } = await supabase
       .from('providers')
       .update({
@@ -1177,8 +1184,8 @@ function Profile({
         description: draft.description,
         base_city: draft.base_city,
         base_postcode: draft.base_postcode,
-        phone: draft.phone,
-        whatsapp: draft.whatsapp,
+        phone,
+        whatsapp,
         website: draft.website,
         cover_image_url: draft.cover_image_url,
         updated_at: new Date().toISOString(),
@@ -1186,7 +1193,9 @@ function Profile({
       .eq('id', provider.id);
     if (error) notify(error.message);
     else {
-      setProvider(draft);
+      const savedProfile = { ...draft, phone, whatsapp };
+      setDraft(savedProfile);
+      setProvider(savedProfile);
       notify('Profile saved to your live listing');
     }
   }
@@ -1245,6 +1254,7 @@ function Profile({
               <span>{label}</span>
               <input
                 value={String(draft[key as keyof Provider] || '')}
+                placeholder={key === 'phone' || key === 'whatsapp' ? '+44 7911 123456' : undefined}
                 onChange={(e) => setDraft((current) => ({ ...current, [key]: e.target.value }))}
               />
             </label>
@@ -1883,7 +1893,9 @@ function Leads({
           <h2>Leads & messages</h2>
           <p>Respond quickly to customer enquiries and keep their progress organised.</p>
         </div>
-        <span className="rating-chip">{leads.filter((l) => l.status === 'sent').length} NEW</span>
+        <span className="rating-chip">
+          {leads.filter((l) => l.status === 'opened' || l.status === 'sent').length} NEW
+        </span>
       </div>
       <div className="lead-layout">
         <section className="panel lead-list">

@@ -17,7 +17,23 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - run: npm test
       - run: npx expo export --platform web --output-dir dist-ci
-      - run: npm audit --omit=dev --audit-level=high
+      - name: Export Android JavaScript bundle and source map
+        run: npx expo export --platform android --output-dir dist-android-ci --source-maps
+      - name: Verify vulnerable build tools are absent from the Android bundle
+        run: node scripts/verify-android-bundle.cjs dist-android-ci
+      - name: Audit shipped Android JavaScript dependencies
+        shell: bash
+        run: |
+          set +e
+          npm audit --omit=dev --json > npm-audit.json
+          audit_status=$?
+          set -e
+          if [ "$audit_status" -gt 1 ]; then
+            echo "npm audit could not complete (exit $audit_status)."
+            cat npm-audit.json
+            exit "$audit_status"
+          fi
+          node scripts/check-android-bundle-audit.cjs npm-audit.json dist-android-ci "$audit_status"
       - name: Verify provider dashboard
         working-directory: business-dashboard
         run: |
@@ -32,10 +48,21 @@ jobs:
           npm audit --omit=dev --audit-level=high
       - name: Verify coming-soon site
         working-directory: coming-soon
+        shell: bash
         run: |
           npm ci
           npm run verify
-          npm audit --omit=dev --audit-level=high
+          npm run build -- --sourcemap hidden
+          set +e
+          npm audit --omit=dev --json > npm-audit.json
+          audit_status=$?
+          set -e
+          if [ "$audit_status" -gt 1 ]; then
+            echo "npm audit could not complete (exit $audit_status)."
+            cat npm-audit.json
+            exit "$audit_status"
+          fi
+          node ../scripts/check-static-site-audit.cjs npm-audit.json dist/client .openai/hosting.json "$audit_status"
       - name: Reject untracked deployment and unsafe database regressions
         run: |
           test -f supabase/functions/deliver-provider-leads/index.ts

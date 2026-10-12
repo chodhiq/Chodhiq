@@ -212,22 +212,14 @@ export function MapScreen({ navigation, route }) {
     }
   };
   const directions = (provider) => {
-    const destination = hasCoordinates(provider)
-      ? `${provider.baseLatitude},${provider.baseLongitude}`
-      : provider.address || `${provider.name} ${provider.baseCity || ''}`;
-    Linking.openURL(
-      `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`,
-    ).catch(() => {});
+    const url = hasCoordinates(provider)
+      ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${provider.baseLatitude},${provider.baseLongitude}`)}`
+      : provider.googlePlaceId
+        ? `https://www.google.com/maps/dir/?api=1&destination_place_id=${encodeURIComponent(provider.googlePlaceId)}`
+        : provider.googleMapsSearchUrl ||
+          (provider.googleMapsUrl?.includes('/search/') ? provider.googleMapsUrl : null);
+    if (url) Linking.openURL(url).catch(() => {});
   };
-  const categoryShortcuts = [
-    ['All', null, LayoutGrid],
-    ['Restaurants', ['restaurant', 'restaurants'], Utensils],
-    ['Shops', ['shop', 'shops', 'grocery'], Store],
-    ['Salons & Beauty', ['beauty', 'salon', 'salons & beauty'], Scissors],
-    ['Home & Property', ['home-property', 'property', 'home & property'], Building2],
-    ['Hotels & Stay', ['hotel', 'hotels', 'hotels & stay'], Hotel],
-    ['Events & Catering', ['events', 'event', 'catering', 'events & catering'], PartyPopper],
-  ];
   return (
     <SafeAreaView style={[styles.mapPage, { backgroundColor: palette.background }]} edges={[]}>
       <View style={[styles.map, { backgroundColor: palette.surfaceAlt, marginTop: insets.top }]}>
@@ -313,21 +305,14 @@ export function MapScreen({ navigation, route }) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.mapCategoryRow}
           >
-            {categoryShortcuts.map(([label, categoryIds, Icon]) => {
-              const target =
-                categoryIds &&
-                categories.find((item) => {
-                  const id = String(item.id || '').toLowerCase();
-                  const name = String(item.name || '').toLowerCase();
-                  return categoryIds.some((value) => id === value || name === value);
-                });
-              const categoryId = target?.id;
-              const active = categoryId ? activeCategory === target?.id : !activeCategory;
+            {[{ id: null, name: 'All', icon: 'grid' }, ...categories].map((category) => {
+              const Icon = mapCategoryIcon(category);
+              const active = category.id ? activeCategory === category.id : !activeCategory;
               return (
                 <TouchableOpacity
-                  key={label}
+                  key={category.id || 'all'}
                   onPress={() =>
-                    setActiveCategory(categoryId ? (active ? null : target?.id || null) : null)
+                    setActiveCategory(category.id ? (active ? null : category.id) : null)
                   }
                   style={[
                     styles.mapCategoryCard,
@@ -349,7 +334,7 @@ export function MapScreen({ navigation, route }) {
                     numberOfLines={2}
                     style={[styles.mapCategoryLabel, { color: active ? '#FFFFFF' : palette.text }]}
                   >
-                    {label}
+                    {category.name}
                   </Text>
                 </TouchableOpacity>
               );
@@ -410,7 +395,8 @@ export function MapScreen({ navigation, route }) {
             <View style={[styles.mapResultBadge, { backgroundColor: palette.surface }]}>
               <MapPin size={15} color={palette.primary} />
               <Text style={[styles.mapResultText, { color: palette.text }]}>
-                {visibleProviders.length} results in this area
+                {visibleProviders.length} {visibleProviders.length === 1 ? 'result' : 'results'} in
+                this area
               </Text>
             </View>
             <TouchableOpacity
@@ -478,7 +464,30 @@ export function MapScreen({ navigation, route }) {
               ))}
             </ScrollView>
           </View>
-        ) : providers.length > 0 && mapProviders.length === 0 ? (
+        ) : mapProviders.length > 0 ? (
+          <View
+            style={[
+              styles.mapEmptyCard,
+              { backgroundColor: palette.surface, bottom: Math.max(8, insets.bottom) },
+            ]}
+          >
+            <Text style={[styles.mapEmptyTitle, { color: palette.text }]}>
+              {visibleProviders.length === 0
+                ? 'No businesses in this map area'
+                : 'Map locations unavailable'}
+            </Text>
+            <Text style={[styles.mapEmptyText, { color: palette.text2 }]}>
+              {visibleProviders.length === 0
+                ? 'Move the map or choose another area to see businesses with map locations.'
+                : 'No businesses match the current view. Clear your filters or browse Search.'}
+            </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
+              <Text style={[styles.mapResetText, { color: palette.primary }]}>
+                Browse businesses in Search
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : providers.length > 0 ? (
           <View
             style={[
               styles.mapEmptyCard,
@@ -489,7 +498,8 @@ export function MapScreen({ navigation, route }) {
               Map locations unavailable
             </Text>
             <Text style={[styles.mapEmptyText, { color: palette.text2 }]}>
-              Businesses are available in Search, but their map locations could not be loaded.
+              These businesses don't have map coordinates yet. You can still browse the UK directory
+              in Search.
             </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
               <Text style={[styles.mapResetText, { color: palette.primary }]}>
@@ -543,6 +553,17 @@ function MapFilterChip({ label, active, onPress, palette }) {
       </Text>
     </TouchableOpacity>
   );
+}
+
+function mapCategoryIcon(category) {
+  const value = `${category.id || ''} ${category.name || ''}`.toLowerCase();
+  if (/restaurant|food|cater|bakery/.test(value)) return Utensils;
+  if (/shop|grocery|store|retail/.test(value)) return Store;
+  if (/beauty|salon|hair/.test(value)) return Scissors;
+  if (/property|home|house/.test(value)) return Building2;
+  if (/hotel|stay|travel/.test(value)) return Hotel;
+  if (/event|party/.test(value)) return PartyPopper;
+  return LayoutGrid;
 }
 
 function hasCoordinates(provider) {

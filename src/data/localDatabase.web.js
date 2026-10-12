@@ -92,7 +92,7 @@ export async function createLocalQuote(userId, input) {
     provider_id: String(input.providerId),
     message: input.message,
     preferred_contact: input.preferredContact,
-    status: 'sent',
+    status: 'opened',
     created_at: new Date().toISOString(),
   };
   await write('quotes', userId, [row, ...(await read('quotes', userId))]);

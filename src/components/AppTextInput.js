@@ -23,6 +23,7 @@ export default function AppTextInput({ style, onFocus, onBlur, ...props }) {
   return (
     <NativeTextInput
       {...props}
+      underlineColorAndroid={props.underlineColorAndroid || 'transparent'}
       onBlur={(event) => {
         onBlur?.(event);
         revealInput?.blur();

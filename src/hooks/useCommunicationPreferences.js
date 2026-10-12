@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getNotificationsModule } from '../lib/notificationRuntime';
 import { pushRegistrationErrorMessage } from '../lib/pushRegistrationErrors';
 import { clearPushToken, registerPushToken } from '../lib/pushNotifications';
+import { captureError } from '../lib/sentryUtils';
+import { withTimeout } from '../lib/withTimeout';
 
 export const PREFERENCES_KEY = '@chodhiq/communication-preferences';
 const defaults = { push: true, vibration: true, email: true, marketing: false };
@@ -13,6 +15,7 @@ export function useCommunicationPreferences(userId) {
   const [ready, setReady] = useState(false);
   const [preferencesError, setPreferencesError] = useState('');
   const [preferencesSyncing, setPreferencesSyncing] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const [retry, setRetry] = useState(0);
   const retryPreferencesSync = useCallback(() => setRetry((value) => value + 1), []);
   const syncQueue = useRef(Promise.resolve());
@@ -51,10 +54,17 @@ export function useCommunicationPreferences(userId) {
         .then(async () => {
           if (!active) return;
           setPreferencesSyncing(true);
-          const token = await (preferences.push
-            ? registerPushToken(userId, preferences.vibration)
-            : clearPushToken(userId));
+          const token = await withTimeout(
+            () =>
+              preferences.push
+                ? registerPushToken(userId, preferences.vibration)
+                : clearPushToken(userId),
+            10000,
+            'Notification settings sync timed out.',
+            'PUSH_TIMEOUT',
+          );
           if (active) {
+            setPermissionDenied(false);
             setPreferencesError(
               preferences.push && !token && Platform.OS !== 'web'
                 ? 'Saved on this device. Push notifications are not registered; check notification permissions in Settings.'
@@ -64,7 +74,11 @@ export function useCommunicationPreferences(userId) {
           }
         })
         .catch((error) => {
-          if (active) setPreferencesError(pushRegistrationErrorMessage(error));
+          if (active) {
+            setPermissionDenied(error?.code === 'PUSH_PERMISSION_DENIED');
+            setPreferencesError(pushRegistrationErrorMessage(error));
+            captureError(error, { operation: 'syncCommunicationPreferences' });
+          }
         })
         .finally(() => {
           if (active) setPreferencesSyncing(false);
@@ -90,6 +104,7 @@ export function useCommunicationPreferences(userId) {
     preferencesReady: ready,
     preferencesError,
     preferencesSyncing,
+    permissionDenied,
     retryPreferencesSync,
   };
 }

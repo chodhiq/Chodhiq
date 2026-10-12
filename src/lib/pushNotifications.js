@@ -18,7 +18,7 @@ async function registrationDeadline(promise) {
       new Promise((_, reject) => {
         timer = setTimeout(
           () => reject(pushError('PUSH_TIMEOUT', 'Push registration timed out')),
-          20000,
+          10000,
         );
       }),
     ]);

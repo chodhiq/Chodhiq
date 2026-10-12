@@ -1,4 +1,14 @@
 // @ts-check
+/** @param {string | null | undefined} value */
+export const formatReviewDate = (value) => {
+  if (!value) return '';
+  if (value === 'Today') return value;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? ''
+    : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
 /** @param {any} row @param {any[]} providers */
 export const formatQuote = (row, providers) => ({
   id: row.id,
@@ -7,7 +17,14 @@ export const formatQuote = (row, providers) => ({
     providers.find((provider) => String(provider.id) === String(row.provider_id))?.name ||
     'Provider',
   message: row.message,
-  status: row.status ? row.status[0].toUpperCase() + row.status.slice(1) : 'Sent',
+  status:
+    row.status === 'opened'
+      ? 'Opened in WhatsApp'
+      : row.status === 'sent'
+        ? 'Status unconfirmed'
+        : row.status
+          ? row.status[0].toUpperCase() + row.status.slice(1)
+          : 'Status unconfirmed',
   createdAt: row.created_at ? new Date(row.created_at).toLocaleDateString() : 'Today',
   responseMessage: row.response_message || '',
   respondedAt: row.responded_at ? new Date(row.responded_at).toLocaleDateString() : null,
@@ -20,6 +37,8 @@ export const formatNotification = (row) => ({
   body: row.body,
   read: Boolean(row.read_at),
   time: row.created_at ? new Date(row.created_at).toLocaleDateString() : '',
+  ...(row.type ? { type: row.type } : {}),
+  ...(row.entity_type ? { entityType: row.entity_type } : {}),
   ...(row.entity_type === 'community_post' && row.entity_id
     ? { communityPostId: row.entity_id }
     : {}),

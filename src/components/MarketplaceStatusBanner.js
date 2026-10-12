@@ -9,7 +9,7 @@ export default function MarketplaceStatusBanner({
   onRetry,
   palette,
 }) {
-  if (!offline) return null;
+  if (!offline || loading) return null;
   const updated = lastUpdatedAt ? new Date(lastUpdatedAt) : null;
   const lastUpdatedLabel =
     updated && !Number.isNaN(updated.getTime()) ? updated.toLocaleString() : null;

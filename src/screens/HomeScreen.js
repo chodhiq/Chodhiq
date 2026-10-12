@@ -10,7 +10,6 @@ import { showPermissionRecovery } from '../lib/permissionRecovery';
 import { getDeviceLocation } from '../lib/deviceLocation';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
-import { banners } from '../data/assetCatalog';
 import { spacing } from '../theme/theme';
 import {
   HomeBusinessCard,
@@ -47,12 +46,7 @@ export default function HomeScreen({ navigation }) {
     setCurrentLocation,
   } = useAppState();
   const { palette, mode } = useChodhiQTheme();
-  const themedHero =
-    mode === 'dark'
-      ? require('../../assets/theme/banner-dark.webp')
-      : mode === 'warm'
-        ? require('../../assets/theme/banner-warm.webp')
-        : banners.featured;
+  const themedHero = require('../../assets/theme/banner-dark.webp');
   const [campaigns, setCampaigns] = useState([]);
   const [discoveryMode, setDiscoveryMode] = useState('popular');
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -157,7 +151,8 @@ export default function HomeScreen({ navigation }) {
           (provider) =>
             Number.isFinite(provider.baseLatitude) &&
             Number.isFinite(provider.baseLongitude) &&
-            provider.distance,
+            provider.distance &&
+            parseDistance(provider.distance) <= 50,
         )
         .sort((a, b) => parseDistance(a.distance) - parseDistance(b.distance))
         .slice(0, 12);
@@ -178,6 +173,9 @@ export default function HomeScreen({ navigation }) {
         recentlyAdded: recent,
       };
     }, [providers, location, locationCoordinates, selectedCategoryId]);
+  const locationPopular = locationCoordinates
+    ? popular.filter((provider) => nearby.some((item) => item.id === provider.id))
+    : popular;
   const discoveryProviders =
     discoveryMode === 'nearby'
       ? nearby
@@ -185,18 +183,33 @@ export default function HomeScreen({ navigation }) {
         ? openNow
         : discoveryMode === 'topRated'
           ? popular
-          : popular.length
-            ? popular
-            : browseBusinesses;
+          : locationCoordinates
+            ? locationPopular.length
+              ? locationPopular
+              : nearby.length
+                ? nearby
+                : browseBusinesses
+            : popular.length
+              ? popular
+              : browseBusinesses;
+  const directoryFallback = discoveryMode === 'popular' && !!locationCoordinates && !nearby.length;
   const popularTitle = {
     nearby: 'Nearby businesses',
     open: 'Open now',
     topRated: 'Top rated near you',
-    popular: popular.length
-      ? selectedCategoryId
-        ? 'Popular in this category'
-        : 'Popular near you'
-      : 'Businesses to explore',
+    popular: directoryFallback
+      ? 'UK businesses to explore'
+      : locationCoordinates
+        ? locationPopular.length
+          ? selectedCategoryId
+            ? 'Popular in this category'
+            : 'Popular near you'
+          : 'Nearby businesses'
+        : popular.length
+          ? selectedCategoryId
+            ? 'Popular in this category'
+            : 'Popular businesses'
+          : 'Businesses to explore',
   }[discoveryMode];
   const featuredCategories = categories.slice(0, 10);
   return (
@@ -281,7 +294,7 @@ export default function HomeScreen({ navigation }) {
               palette={palette}
               mode={mode}
               image={themedHero}
-              images={[themedHero, banners.premium, banners.soft]}
+              images={[themedHero]}
               location={location}
               onPress={() => navigation.navigate('Explore')}
             />
@@ -304,9 +317,13 @@ export default function HomeScreen({ navigation }) {
                   ? 'Based on business opening hours'
                   : discoveryMode === 'topRated'
                     ? 'Based on genuine customer reviews'
-                    : popular.length
-                      ? 'Top businesses people love around you'
-                      : 'Real listings from the ChodhiQ directory'
+                    : directoryFallback
+                      ? 'No businesses near you yet. Showing the UK directory.'
+                      : locationCoordinates
+                        ? 'Based on businesses within 50 km'
+                        : popular.length
+                          ? 'Top businesses people love around you'
+                          : 'Real listings from the ChodhiQ directory'
             }
             onPress={() => navigation.navigate('Explore')}
           />
@@ -355,8 +372,10 @@ export default function HomeScreen({ navigation }) {
               <Text style={[styles.emptyTitle, { color: palette.text }]}>
                 {discoveryMode === 'topRated'
                   ? 'No reviewed businesses to rank yet'
-                  : discoveryMode === 'nearby' && !locationCoordinates
-                    ? 'Choose your current location'
+                  : discoveryMode === 'nearby'
+                    ? locationCoordinates
+                      ? 'No nearby businesses yet'
+                      : 'Choose your current location'
                     : discoveryMode === 'open'
                       ? 'No businesses are marked open right now'
                       : `No ${categories.find((category) => category.id === selectedCategoryId)?.name || 'business'} listings here yet`}
@@ -366,8 +385,10 @@ export default function HomeScreen({ navigation }) {
                   ? 'Connect to the internet and retry to load business listings.'
                   : discoveryMode === 'topRated'
                     ? 'Ratings will appear when customers leave genuine reviews.'
-                    : discoveryMode === 'nearby' && !locationCoordinates
-                      ? 'Allow location access or choose an area to see nearby listings.'
+                    : discoveryMode === 'nearby'
+                      ? locationCoordinates
+                        ? 'No nearby businesses have map locations yet. Browse the UK directory in Search.'
+                        : 'Allow location access or choose an area to see nearby listings.'
                       : 'Check back soon or try another category.'}
               </Text>
             </View>

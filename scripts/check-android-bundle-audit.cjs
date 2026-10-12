@@ -1,0 +1,78 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const [auditFile, bundleDirectory, auditStatusText] = process.argv.slice(2);
+if (!auditFile || !bundleDirectory || !auditStatusText) {
+  console.error('Usage: node check-android-bundle-audit.cjs <audit-json> <android-export-dir> <npm-exit-code>');
+  process.exit(1);
+}
+const auditStatus = Number(auditStatusText);
+let audit;
+try {
+  audit = JSON.parse(fs.readFileSync(auditFile, 'utf8'));
+} catch (error) {
+  console.error('Could not read npm audit JSON: ' + error.message);
+  process.exit(1);
+}
+if (audit.error || !audit.metadata?.vulnerabilities || !audit.vulnerabilities) {
+  console.error('npm audit did not return a complete vulnerability report.');
+  console.error(JSON.stringify(audit.error || audit, null, 2));
+  process.exit(1);
+}
+function findSourceMaps(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const fullPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) return findSourceMaps(fullPath);
+    return entry.isFile() && entry.name.endsWith('.hbc.map') ? [fullPath] : [];
+  });
+}
+const maps = findSourceMaps(path.resolve(bundleDirectory));
+if (maps.length === 0) {
+  console.error('Android export did not produce a Hermes source map; cannot scope the audit.');
+  process.exit(1);
+}
+const sources = maps.flatMap((file) => {
+  const map = JSON.parse(fs.readFileSync(file, 'utf8'));
+  if (!Array.isArray(map.sources)) throw new Error('Source map has no sources array: ' + file);
+  return map.sources.map((source) => source.replaceAll('\\', '/'));
+});
+const allowed = new Map([
+  ['GHSA-vfj7-8cjw-p6xm', 'braces'],
+  ['GHSA-86w9-cpqp-85rv', 'node-forge'],
+]);
+function collectAdvisories(name, seen) {
+  const visited = seen || new Set();
+  if (visited.has(name)) return [];
+  const item = audit.vulnerabilities[name];
+  if (!item) return [];
+  const nextSeen = new Set(visited);
+  nextSeen.add(name);
+  return (item.via || []).flatMap((entry) => {
+    if (typeof entry === 'string') return collectAdvisories(entry, nextSeen);
+    return typeof entry === 'object' && entry !== null ? [entry] : [];
+  });
+}
+function bundled(packageName) {
+  return sources.some((source) => source.includes('/node_modules/' + packageName + '/'));
+}
+const high = Object.entries(audit.vulnerabilities).filter(([, item]) =>
+  ['high', 'critical'].includes(item.severity),
+);
+const blocked = high.filter(([name]) => {
+  const advisories = collectAdvisories(name).filter((item) =>
+    ['high', 'critical'].includes(item.severity),
+  );
+  return advisories.length === 0 || advisories.some((item) => {
+    const id = item.url?.split('/').pop();
+    const packageName = allowed.get(id);
+    return !packageName || bundled(packageName);
+  });
+}).map(([name]) => name);
+if (blocked.length) {
+  console.error('High or critical advisories affect Android-bundled dependencies: ' + blocked.join(', '));
+  process.exit(1);
+}
+if (auditStatus !== 0 && high.length === 0 && audit.metadata.vulnerabilities.total === 0) {
+  console.error('npm audit exited ' + auditStatus + ' without a reported vulnerability; failing closed.');
+  process.exit(1);
+}
+console.log('No high or critical advisories affect bundled Android JavaScript (' + high.length + ' dependency-tree entries traced). Known unpatched build-tool advisories are excluded only after source-map verification.');

@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "overrides": {
+    "node-forge": "^1.4.0"
+  },
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
@@ -22,7 +25,7 @@
     "accessibility:check": "node scripts/accessibility-check.cjs",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.checked-js.json --noEmit",
     "types:generate": "node workspace-scripts/generate-database-types.mjs",
-    "test": "node --experimental-strip-types --test tests/showcase-readiness.test.mjs tests/validation.behavior.test.mjs tests/auth-operations.behavior.test.mjs tests/booking-mapper.behavior.test.mjs tests/booking-validation.behavior.test.mjs tests/provider-discovery.behavior.test.mjs tests/schema-contract.test.mjs tests/sync-policy.behavior.test.mjs tests/rate-limit.behavior.test.mjs tests/architecture-boundaries.test.mjs tests/admin-policy-gaps.test.mjs tests/unit/account-mappers.test.js tests/unit/category-matching.test.js tests/unit/device-location.test.js tests/unit/navigation-contract.test.js tests/unit/production-guards.test.js tests/unit/runtime.test.js tests/unit/sync-policy.test.js tests/unit/validation.test.js tests/unit/mela-feed.test.js tests/unit/community-safety.test.js tests/unit/beta-optimization.test.js tests/unit/motion-preferences.test.js tests/unit/image-reveal.test.js tests/unit/local-import-contract.test.js tests/unit/open-street-map.test.js tests/unit/auth-callback.test.js tests/unit/notification-state.test.js tests/unit/google-signin.test.js",
+    "test": "node --experimental-strip-types --test tests/showcase-readiness.test.mjs tests/validation.behavior.test.mjs tests/auth-operations.behavior.test.mjs tests/booking-mapper.behavior.test.mjs tests/booking-validation.behavior.test.mjs tests/provider-discovery.behavior.test.mjs tests/schema-contract.test.mjs tests/sync-policy.behavior.test.mjs tests/rate-limit.behavior.test.mjs tests/architecture-boundaries.test.mjs tests/admin-policy-gaps.test.mjs tests/unit/account-mappers.test.js tests/unit/category-matching.test.js tests/unit/device-location.test.js tests/unit/navigation-contract.test.js tests/unit/production-guards.test.js tests/unit/runtime.test.js tests/unit/sync-policy.test.js tests/unit/validation.test.js tests/unit/mela-feed.test.js tests/unit/community-safety.test.js tests/unit/beta-optimization.test.js tests/unit/motion-preferences.test.js tests/unit/image-reveal.test.js tests/unit/local-import-contract.test.js tests/unit/open-street-map.test.js tests/unit/auth-callback.test.js tests/unit/notification-state.test.js tests/unit/google-signin.test.js tests/unit/phone-serial-queue.test.js",
     "verify": "npm run security:check && expo export --platform web --output-dir dist-verify --clear",
     "test:e2e:staging": "node --test tests/authenticated-workflows.mjs",
     "test:db": "supabase test db",

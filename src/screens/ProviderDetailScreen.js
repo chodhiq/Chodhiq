@@ -44,6 +44,7 @@ import {
   ReviewSummary,
 } from '../components/ProviderDetailComponents';
 import { getUkLocalDateTime } from '../data/bookingValidation';
+import { toWhatsAppNumber } from '../lib/phone';
 
 const priceLabel = (value) => (value ? '£'.repeat(value) : null);
 const futureDate = (days) => {
@@ -144,9 +145,17 @@ export default function ProviderDetailScreen({ route, navigation }) {
 
   const providerReviews = (reviews || []).filter((review) => review.providerId === provider.id);
   const isRestaurant = /restaurant|food|cater|bakery|grocery/i.test(provider.category || '');
-  const directionsUrl =
-    provider.googleMapsUrl ||
-    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${provider.name} ${provider.baseCity}`)}`;
+  const hasMapCoordinates =
+    Number.isFinite(provider.baseLatitude) && Number.isFinite(provider.baseLongitude);
+  const preciseDirectionsUrl = hasMapCoordinates
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${provider.baseLatitude},${provider.baseLongitude}`)}`
+    : provider.googlePlaceId
+      ? `https://www.google.com/maps/dir/?api=1&destination_place_id=${encodeURIComponent(provider.googlePlaceId)}`
+      : provider.googleMapsUrl?.includes('/dir/')
+        ? provider.googleMapsUrl
+        : null;
+  const directionsUrl = preciseDirectionsUrl || provider.googleMapsSearchUrl || null;
+  const directionsLabel = preciseDirectionsUrl ? 'Directions' : 'Search on Google Maps';
   const shareProvider = () =>
     Share.share({
       message: `${provider.name} — ${provider.category} in ${provider.baseCity}. Find them on ChodhiQ.${provider.website ? ` ${provider.website}` : ''}`,
@@ -169,28 +178,24 @@ export default function ProviderDetailScreen({ route, navigation }) {
       ]);
       return;
     }
-    if (!provider.whatsapp && !provider.phone)
-      return Alert.alert(
-        'Contact unavailable',
-        'This listing has not supplied a WhatsApp number yet.',
-      );
+    const number = toWhatsAppNumber(provider.whatsapp || provider.phone);
+    if (!number)
+      return Alert.alert('Contact unavailable', 'This business has no valid WhatsApp number.');
     const message =
       quoteMessage || `Hi ${provider.name}, I found you on ChodhiQ and I'd like a quote.`;
     try {
-      await addQuoteRequest({ providerId: provider.id, providerName: provider.name, message });
+      await Linking.openURL(`https://wa.me/${number}?text=${encodeURIComponent(message)}`);
     } catch (error) {
-      Alert.alert('Could not save quote request', error.message || 'Please try again.');
+      Alert.alert('WhatsApp could not be opened', error.message || 'Please try again.');
       return;
     }
     try {
-      await Linking.openURL(
-        `https://wa.me/${(provider.whatsapp || provider.phone).replace(/\D/g, '')}?text=${encodeURIComponent(message)}`,
-      );
+      await addQuoteRequest({ providerId: provider.id, providerName: provider.name, message });
       quoteSheetRef.current?.dismiss();
-    } catch {
+    } catch (error) {
       Alert.alert(
-        'Quote request saved',
-        `Your request is recorded, but WhatsApp could not be opened. You can contact ${provider.name} directly.`,
+        'WhatsApp opened',
+        `We can't confirm delivery. Check your WhatsApp chat. This request could not be saved in ChodhiQ: ${error.message || 'Please try again.'}`,
       );
     }
   };
@@ -265,10 +270,14 @@ export default function ProviderDetailScreen({ route, navigation }) {
   const actions = [
     {
       label: 'Call',
-      disabled: !provider.phone,
-      onPress: () => Linking.openURL(`tel:${provider.phone}`),
+      disabled: !toWhatsAppNumber(provider.phone),
+      onPress: () => Linking.openURL(`tel:+${toWhatsAppNumber(provider.phone)}`),
     },
-    { label: 'Directions', onPress: () => Linking.openURL(directionsUrl) },
+    {
+      label: directionsLabel,
+      disabled: !directionsUrl,
+      onPress: () => directionsUrl && Linking.openURL(directionsUrl),
+    },
     {
       label: 'Website',
       disabled: !provider.website,
@@ -284,7 +293,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
       },
     },
     { label: 'Save', active: saved, onPress: saveProvider },
-  ];
+  ].filter((action) => !action.disabled);
   const photos = provider.portfolio || [];
   const info = [];
   const todayHours = Array.isArray(provider.openingHours)
@@ -307,11 +316,15 @@ export default function ProviderDetailScreen({ route, navigation }) {
 
   const overview = (
     <>
-      <DetailSectionHeader palette={palette} title="About" />
-      <Text style={[styles.about, { color: palette.text2 }]}>
-        {provider.description || 'No description provided.'}
-      </Text>
-      <ProviderMapPreview palette={palette} onPress={() => navigation.navigate('Map')} />
+      {provider.description?.trim() ? (
+        <>
+          <DetailSectionHeader palette={palette} title="About" />
+          <Text style={[styles.about, { color: palette.text2 }]}>{provider.description}</Text>
+        </>
+      ) : null}
+      {Number.isFinite(provider.baseLatitude) && Number.isFinite(provider.baseLongitude) ? (
+        <ProviderMapPreview palette={palette} onPress={() => navigation.navigate('Map')} />
+      ) : null}
       {info.length > 0 && (
         <View style={styles.infoGrid}>
           {info.map((item) => (
@@ -319,10 +332,12 @@ export default function ProviderDetailScreen({ route, navigation }) {
           ))}
         </View>
       )}
-      <DetailSectionHeader palette={palette} title="Top Offers" />
-      <EmptyBlock palette={palette} text="No active offers available." />
-      <DetailSectionHeader palette={palette} title="Photos" onPress={() => setTab('Photos')} />
-      <PhotoGallery palette={palette} photos={photos} />
+      {photos.length ? (
+        <>
+          <DetailSectionHeader palette={palette} title="Photos" onPress={() => setTab('Photos')} />
+          <PhotoGallery palette={palette} photos={photos} />
+        </>
+      ) : null}
       <DetailSectionHeader palette={palette} title="Reviews" onPress={() => setTab('Reviews')} />
       <ReviewSummary
         palette={palette}
@@ -467,7 +482,10 @@ export default function ProviderDetailScreen({ route, navigation }) {
     ) : tab === 'Offers' ? (
       <>
         <DetailSectionHeader palette={palette} title="Active Offers" />
-        <EmptyBlock palette={palette} text="No active offers available." />
+        <EmptyBlock
+          palette={palette}
+          text="There are no active offers right now. Check back later."
+        />
       </>
     ) : (
       <>
@@ -489,7 +507,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
         ) : (
           <EmptyBlock
             palette={palette}
-            text={`No ${isRestaurant ? 'menu' : 'services'} information has been added yet.`}
+            text={`This business hasn't added ${isRestaurant ? 'menu' : 'service'} details yet. Contact them to ask.`}
           />
         )}
       </>
@@ -567,38 +585,47 @@ export default function ProviderDetailScreen({ route, navigation }) {
         handleIndicatorStyle={{ backgroundColor: palette.muted }}
         backdropComponent={renderBackdrop}
       >
-        <BottomSheetScrollView
-          contentContainerStyle={styles.sheet}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+          style={{ flex: 1 }}
         >
-          <Text style={[styles.sheetTitle, { color: palette.text }]}>Request a Quote</Text>
-          <Text style={{ color: palette.text2 }}>
-            Sent directly to {provider.name} via WhatsApp
-          </Text>
-          <BottomSheetTextInput
-            style={[
-              styles.input,
-              {
-                borderColor: palette.border,
-                color: palette.text,
-                backgroundColor: palette.background,
-              },
+          <BottomSheetScrollView
+            contentContainerStyle={[
+              styles.sheet,
+              { paddingBottom: Math.max(34, insets.bottom + 24) },
             ]}
-            placeholder={`Hi ${provider.name}, I'd like a quote for...`}
-            placeholderTextColor={palette.muted}
-            value={quoteMessage}
-            onChangeText={setQuoteMessage}
-            multiline
-          />
-          <TouchableOpacity
-            style={[styles.primary, { backgroundColor: palette.primary }]}
-            onPress={sendQuote}
+            keyboardShouldPersistTaps="handled"
           >
-            <Text style={{ color: palette.dark ? '#081B2C' : '#FFFFFF', fontWeight: '800' }}>
-              Send via WhatsApp
+            <Text style={[styles.sheetTitle, { color: palette.text }]}>Request a Quote</Text>
+            <Text style={{ color: palette.text2 }}>
+              Opens a WhatsApp chat with {provider.name}. We can't confirm delivery.
             </Text>
-          </TouchableOpacity>
-        </BottomSheetScrollView>
+            <BottomSheetTextInput
+              style={[
+                styles.input,
+                {
+                  borderColor: palette.border,
+                  color: palette.text,
+                  backgroundColor: palette.background,
+                },
+              ]}
+              placeholder={`Hi ${provider.name}, I'd like a quote for...`}
+              placeholderTextColor={palette.muted}
+              value={quoteMessage}
+              onChangeText={setQuoteMessage}
+              multiline
+            />
+            <TouchableOpacity
+              style={[styles.primary, { backgroundColor: palette.primary }]}
+              onPress={sendQuote}
+            >
+              <Text style={{ color: palette.dark ? '#081B2C' : '#FFFFFF', fontWeight: '800' }}>
+                Send via WhatsApp
+              </Text>
+            </TouchableOpacity>
+          </BottomSheetScrollView>
+        </KeyboardAvoidingView>
       </BottomSheetModal>
       <Modal
         visible={reportOpen}

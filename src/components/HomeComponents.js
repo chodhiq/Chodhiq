@@ -420,7 +420,10 @@ export function HomeBusinessCard({ palette, provider, saved, onSave, onPress, on
         {provider.image ? (
           <Image
             resizeMethod="resize"
-            source={imageSource(provider.image)}
+            source={imageSource(
+              provider.image,
+              categoryFallback(provider.category, provider.categoryId),
+            )}
             style={s.businessImage}
           />
         ) : (

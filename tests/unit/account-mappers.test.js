@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { mapNotification, mapProfile, mapQuote } from '../../src/data/accountMappers.js';
+import {
+  formatReviewDate,
+  mapNotification,
+  mapProfile,
+  mapQuote,
+} from '../../src/data/accountMappers.js';
 
 test('mapQuote joins provider identity across string-compatible IDs', () => {
   const result = mapQuote({ id: 'q1', provider_id: 42, message: 'Hello', status: 'responded' }, [
@@ -10,6 +15,16 @@ test('mapQuote joins provider identity across string-compatible IDs', () => {
   assert.equal(result.providerName, 'Malabar Foods');
   assert.equal(result.status, 'Responded');
   assert.equal(result.responseMessage, '');
+});
+
+test('quote status never claims delivery when WhatsApp only opened', () => {
+  assert.equal(mapQuote({ id: 'q2', status: 'opened' }, []).status, 'Opened in WhatsApp');
+  assert.equal(mapQuote({ id: 'q3', status: 'sent' }, []).status, 'Status unconfirmed');
+});
+
+test('review dates use a short UK date instead of a raw timestamp', () => {
+  assert.equal(formatReviewDate('2026-10-11T11:14:15.45406+00:00'), '11 Oct 2026');
+  assert.equal(formatReviewDate('not a date'), '');
 });
 
 test('mapNotification derives read state without leaking database fields', () => {

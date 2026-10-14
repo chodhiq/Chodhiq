@@ -33,7 +33,7 @@ jobs:
 
       - name: Confirm marked drafts are present
         run: |
-          if ! rg -n -i 'private beta draft|do not publish before review|review required|review draft' site-static; then
+          if ! grep -Eiq 'private beta draft|do not publish before review|review required|review draft' site-static/*.html; then
             echo "Expected visible draft/review markers in this explicitly approved draft publication."
             exit 1
           fi

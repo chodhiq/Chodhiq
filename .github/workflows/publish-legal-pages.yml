@@ -1,0 +1,56 @@
+name: Publish approved legal pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_marked_drafts:
+        description: Publish the current pages with visible draft and review markers
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: >-
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+      inputs.publish_marked_drafts
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the approved branch
+        uses: actions/checkout@v4
+
+      - name: Confirm marked drafts are present
+        run: |
+          if ! rg -n -i 'private beta draft|do not publish before review|review required|review draft' site-static; then
+            echo "Expected visible draft/review markers in this explicitly approved draft publication."
+            exit 1
+          fi
+          test -f site-static/index.html
+          test -f site-static/privacy.html
+          test -f site-static/terms.html
+          test -f site-static/delete-account.html
+          test -f site-static/styles.css
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site-static
+
+      - name: Publish site
+        id: deployment
+        uses: actions/deploy-pages@v4

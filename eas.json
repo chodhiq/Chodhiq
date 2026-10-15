@@ -96,6 +96,12 @@
     }
   },
   "submit": {
+    "beta-play": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "completed"
+      }
+    },
     "production": {}
   }
 }

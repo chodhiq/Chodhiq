@@ -30,6 +30,7 @@ import {
   uploadVerificationDocument,
 } from '../data/claimRepository';
 import { radius, spacing } from '../theme/theme';
+import useUkPostcodeSuggestions from '../hooks/useUkPostcodeSuggestions';
 
 export default function ClaimListingScreen({ navigation }) {
   const { session } = useAppState();
@@ -40,6 +41,7 @@ export default function ClaimListingScreen({ navigation }) {
   const [listings, setListings] = useState([]),
     [categories, setCategories] = useState([]);
   const [form, setForm] = useState({ businessName: '', city: '', postcode: '', categoryId: '' });
+  const { suggestions: postcodeSuggestions } = useUkPostcodeSuggestions(form.postcode);
   const [provider, setProvider] = useState(null),
     [requestId, setRequestId] = useState('');
   const [documentType, setDocumentType] = useState('business_registration'),
@@ -353,7 +355,41 @@ export default function ClaimListingScreen({ navigation }) {
                       style={[styles.input, styles.formInput, card, { color: palette.text }]}
                       value={form[key]}
                       onChangeText={(value) => setForm((current) => ({ ...current, [key]: value }))}
+                      autoCapitalize={key === 'postcode' ? 'characters' : 'words'}
+                      returnKeyType={key === 'postcode' ? 'done' : 'next'}
                     />
+                    {key === 'postcode' && postcodeSuggestions.length > 0 && (
+                      <View
+                        accessibilityLabel="UK postcode suggestions"
+                        style={{
+                          borderWidth: 1,
+                          borderColor: palette.border,
+                          borderRadius: 10,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {postcodeSuggestions.map((suggestion) => (
+                          <TouchableOpacity
+                            key={suggestion.id}
+                            accessibilityRole="button"
+                            onPress={() =>
+                              setForm((current) => ({
+                                ...current,
+                                postcode: suggestion.postcode || suggestion.label,
+                                city: suggestion.town || current.city,
+                              }))
+                            }
+                            style={{
+                              padding: 12,
+                              borderBottomWidth: 1,
+                              borderColor: palette.border,
+                            }}
+                          >
+                            <Text style={{ color: palette.text }}>{suggestion.label}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 ))}
                 <View style={styles.formField}>

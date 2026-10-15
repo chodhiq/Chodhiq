@@ -11,11 +11,8 @@ import { performancePolicy } from '../../src/lib/performancePolicy.js';
 import { notificationDestination } from '../../src/lib/notificationDestination.js';
 import { isSafeAppLink } from '../../src/lib/authCallback.js';
 import { pushRegistrationErrorMessage } from '../../src/lib/pushRegistrationErrors.js';
-const {
-  androidPushConfigPath,
-  validateAndroidPushConfig,
-  validateAndroidGoogleOAuthConfig,
-} = createRequire(import.meta.url)('../../scripts/android-push-config.cjs');
+const { androidPushConfigPath, validateAndroidPushConfig, validateAndroidGoogleOAuthConfig } =
+  createRequire(import.meta.url)('../../scripts/android-push-config.cjs');
 test('keyboard clearance handles overlay, resized windows, and already-visible fields', () => {
   const base = {
     containerTop: 80,
@@ -67,7 +64,7 @@ test('community comment composer resizes above the Android keyboard', () => {
   const source = readFileSync(
     new URL('../../src/screens/CommunityScreen.js', import.meta.url),
     'utf8',
-  );
+  ).replace(/\r\n/g, '\n');
   const modalStart = source.indexOf('<Modal\n        visible={!!commentsPost}');
   assert.notEqual(modalStart, -1);
   const modalEnd = source.indexOf('</Modal>', modalStart);

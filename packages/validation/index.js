@@ -1,6 +1,8 @@
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const PASSWORD_MIN_LENGTH = 8;
+export const NEW_PASSWORD_MIN_LENGTH = 12;
 
 export function cleanText(value, { field = 'Value', min = 0, max = 500, multiline = false } = {}) {
   if (typeof value !== 'string') throw new Error(`${field} must be text.`);
@@ -16,9 +18,24 @@ export function cleanEmail(value) {
   return email;
 }
 export function cleanPassword(value) {
-  if (typeof value !== 'string' || value.length < 10 || value.length > 128)
-    throw new Error('Password must be between 10 and 128 characters.');
+  if (typeof value !== 'string' || value.length < PASSWORD_MIN_LENGTH || value.length > 128)
+    throw new Error(`Password must be between ${PASSWORD_MIN_LENGTH} and 128 characters.`);
   return value;
+}
+export function cleanNewPassword(value) {
+  if (typeof value !== 'string' || value.length < NEW_PASSWORD_MIN_LENGTH || value.length > 128)
+    throw new Error(`New password must be between ${NEW_PASSWORD_MIN_LENGTH} and 128 characters.`);
+  if (!/[A-Za-z]/.test(value) || !/[0-9]/.test(value))
+    throw new Error('New password must include at least one letter and one number.');
+  return value;
+}
+export function isValidNewPassword(value) {
+  try {
+    cleanNewPassword(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 export function requireUuid(value, field = 'Identifier') {
   if (typeof value !== 'string' || !UUID.test(value)) throw new Error(`${field} is invalid.`);

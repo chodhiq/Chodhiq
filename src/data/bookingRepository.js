@@ -7,6 +7,19 @@ import { validateBookingDateTime } from './bookingValidation';
 /** @typedef {import('../types/domain').BookingRecord} BookingRecord */
 export { mapBooking } from './bookingMapper';
 
+/** @param {string} providerId @param {string} date @returns {Promise<string[]>} */
+export async function loadConfirmedBookingTimes(providerId, date) {
+  if (!supabase) throw new Error('Availability needs an internet connection.');
+  const { data, error } = await supabase.rpc('get_confirmed_booking_slots', {
+    target_provider: providerId,
+    target_date: date,
+  });
+  if (error) throw error;
+  /** @type {{ requested_time: string }[]} */
+  const rows = data || [];
+  return rows.map((row) => String(row.requested_time).slice(0, 5));
+}
+
 /** @param {string} userId @returns {Promise<BookingRecord[]>} */
 export async function loadBookings(userId) {
   if (!supabase) return [];
@@ -41,6 +54,8 @@ export async function createBooking(userId, input) {
       'id,user_id,provider_id,service_id,requested_date,requested_time,status,notes,provider_message,created_at,providers(business_name),services(name)',
     )
     .single();
+  if (error?.code === '23P01' || error?.code === '23505')
+    throw new Error('This time is already booked. Choose a different date or time.');
   if (error) throw error;
   return mapBooking(data);
 }

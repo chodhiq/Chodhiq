@@ -4,7 +4,14 @@ import { MotionModal as Modal } from '../components/Motion';
 import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppTextInput from '../components/AppTextInput';
-import { KeyboardAvoidingView, Linking, Platform, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  StyleSheet,
+  View,
+} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import Text from '../components/AppText';
@@ -44,7 +51,24 @@ import {
   ReviewSummary,
 } from '../components/ProviderDetailComponents';
 import { getUkLocalDateTime } from '../data/bookingValidation';
+import { loadConfirmedBookingTimes } from '../data/bookingRepository';
 import { toWhatsAppNumber } from '../lib/phone';
+import { captureError } from '../lib/sentryUtils';
+
+function bookingFailureMessage(error) {
+  const code = String(error?.code || '');
+  const message = String(error?.message || error || '');
+  if (/23503/.test(code))
+    return 'The selected provider or service is no longer available. Refresh the listing and try again.';
+  if (/23P01|23505/.test(code) || /already booked|slot.*taken/i.test(message))
+    return 'This time is already booked. Choose a different date or time.';
+  if (code === '42501' || [401, 403].includes(Number(error?.status)))
+    return 'Your session may have expired. Sign in again, then try your booking.';
+  if (/choose (a date|a valid booking|a future)|booking time/i.test(message)) return message;
+  if (/network|fetch failed|offline|timed out|timeout/i.test(message))
+    return 'We could not reach the booking service. Check your connection and try again.';
+  return 'We could not send your booking request. Please try again. If it keeps failing, contact support.';
+}
 
 const priceLabel = (value) => (value ? '£'.repeat(value) : null);
 const futureDate = (days) => {
@@ -94,6 +118,10 @@ export default function ProviderDetailScreen({ route, navigation }) {
     reportProvider,
     recordProviderView,
     reviews,
+    reviewsLoading,
+    reviewsError,
+    marketplaceLoading,
+    refreshMarketplace,
     addReview,
     editReview,
     session,
@@ -111,14 +139,17 @@ export default function ProviderDetailScreen({ route, navigation }) {
   const [editingReviewId, setEditingReviewId] = useState(null);
   const [reviewBusy, setReviewBusy] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [bookingDate, setBookingDate] = useState('');
+  const [bookingDate, setBookingDate] = useState(futureDate(1));
   const [bookingTime, setBookingTime] = useState('');
   const [bookingNotes, setBookingNotes] = useState('');
   const [selectedService, setSelectedService] = useState(null);
   const [bookingBusy, setBookingBusy] = useState(false);
   const [bookingPicker, setBookingPicker] = useState(null);
+  const [bookedTimes, setBookedTimes] = useState([]);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState(false);
   const quoteSheetRef = useRef(null);
-  const quoteSnapPoints = useMemo(() => ['48%'], []);
+  const quoteSnapPoints = useMemo(() => ['48%', '84%'], []);
   const renderBackdrop = useCallback(
     (props) => <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />,
     [],
@@ -126,6 +157,26 @@ export default function ProviderDetailScreen({ route, navigation }) {
   useEffect(() => {
     if (provider) recordProviderView(id);
   }, [id, provider, recordProviderView]);
+  useEffect(() => {
+    if (!bookingOpen || !provider || !bookingDate) return undefined;
+    let active = true;
+    setBookedTimes([]);
+    setAvailabilityLoading(true);
+    setAvailabilityError(false);
+    loadConfirmedBookingTimes(provider.id, bookingDate)
+      .then((times) => {
+        if (active) setBookedTimes(times);
+      })
+      .catch(() => {
+        if (active) setAvailabilityError(true);
+      })
+      .finally(() => {
+        if (active) setAvailabilityLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [bookingOpen, bookingDate, provider?.id]);
   if (!provider)
     return (
       <SafeAreaView style={[styles.error, { backgroundColor: palette.background }]}>
@@ -144,6 +195,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
     );
 
   const providerReviews = (reviews || []).filter((review) => review.providerId === provider.id);
+  const selectedTimeBooked = Boolean(bookingTime && bookedTimes.includes(bookingTime));
   const isRestaurant = /restaurant|food|cater|bakery|grocery/i.test(provider.category || '');
   const hasMapCoordinates =
     Number.isFinite(provider.baseLatitude) && Number.isFinite(provider.baseLongitude);
@@ -251,7 +303,9 @@ export default function ProviderDetailScreen({ route, navigation }) {
 
       Alert.alert('Booking requested', `${provider.name} will confirm or suggest another time.`);
     } catch (error) {
-      Alert.alert('Could not request booking', error.message);
+      if (!/^Choose (a date|a valid booking|a future)/i.test(String(error?.message || '')))
+        captureError(error, { operation: 'createBooking' });
+      Alert.alert('Could not request booking', bookingFailureMessage(error));
     } finally {
       setBookingBusy(false);
     }
@@ -441,6 +495,24 @@ export default function ProviderDetailScreen({ route, navigation }) {
     ) : tab === 'Reviews' ? (
       <>
         <DetailSectionHeader palette={palette} title="Reviews" />
+        {reviewsLoading && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 12 }}>
+            <ActivityIndicator size="small" color={palette.primary} />
+            <Text style={{ color: palette.text2 }}>Loading reviews…</Text>
+          </View>
+        )}
+        {reviewsError && (
+          <View style={{ marginBottom: 12 }}>
+            <Text style={{ color: palette.danger || '#B42318' }}>{reviewsError}</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => refreshMarketplace().catch(() => {})}
+              style={{ alignSelf: 'flex-start', paddingVertical: 8 }}
+            >
+              <Text style={{ color: palette.primary, fontWeight: '700' }}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {session ? (
           reviewForm
         ) : (
@@ -475,9 +547,9 @@ export default function ProviderDetailScreen({ route, navigation }) {
               }
             />
           ))
-        ) : (
+        ) : !reviewsLoading && !reviewsError ? (
           <EmptyBlock palette={palette} text="No reviews yet. Be the first to review." />
-        )}
+        ) : null}
       </>
     ) : tab === 'Offers' ? (
       <>
@@ -542,7 +614,12 @@ export default function ProviderDetailScreen({ route, navigation }) {
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel="Report incorrect provider information"
-              onPress={() => (session ? setBookingOpen(true) : navigation.navigate('Welcome'))}
+              onPress={() => {
+                if (!session) return navigation.navigate('Welcome');
+                setBookingDate(futureDate(1));
+                setBookingTime('');
+                setBookingOpen(true);
+              }}
               style={[styles.primary, { backgroundColor: palette.primary }]}
             >
               <CalendarDays size={18} color={palette.dark ? '#081B2C' : '#FFFFFF'} />
@@ -574,7 +651,8 @@ export default function ProviderDetailScreen({ route, navigation }) {
         </View>
       </ScrollView>
       <BottomSheetModal
-        keyboardBehavior="interactive"
+        enableDynamicSizing={false}
+        keyboardBehavior="extend"
         keyboardBlurBehavior="restore"
         android_keyboardInputMode="adjustResize"
         ref={quoteSheetRef}
@@ -585,47 +663,51 @@ export default function ProviderDetailScreen({ route, navigation }) {
         handleIndicatorStyle={{ backgroundColor: palette.muted }}
         backdropComponent={renderBackdrop}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+        <BottomSheetScrollView
           style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.sheet,
+            { flexGrow: 1, paddingBottom: Math.max(34, insets.bottom + 24) },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
         >
-          <BottomSheetScrollView
-            contentContainerStyle={[
-              styles.sheet,
-              { paddingBottom: Math.max(34, insets.bottom + 24) },
+          <Text style={[styles.sheetTitle, { color: palette.text }]}>Request a Quote</Text>
+          <Text style={{ color: palette.text2 }}>
+            Opens a WhatsApp chat with {provider.name}. We can't confirm delivery.
+          </Text>
+          <BottomSheetTextInput
+            style={[
+              styles.input,
+              {
+                borderColor: palette.border,
+                color: palette.text,
+                backgroundColor: palette.background,
+              },
             ]}
-            keyboardShouldPersistTaps="handled"
+            placeholder={`Hi ${provider.name}, I'd like a quote for...`}
+            placeholderTextColor={palette.muted}
+            value={quoteMessage}
+            onChangeText={setQuoteMessage}
+            multiline
+          />
+          <TouchableOpacity
+            style={[
+              styles.primary,
+              {
+                flex: 0,
+                alignSelf: 'stretch',
+                marginTop: 4,
+                backgroundColor: palette.primary,
+              },
+            ]}
+            onPress={sendQuote}
           >
-            <Text style={[styles.sheetTitle, { color: palette.text }]}>Request a Quote</Text>
-            <Text style={{ color: palette.text2 }}>
-              Opens a WhatsApp chat with {provider.name}. We can't confirm delivery.
+            <Text style={{ color: palette.dark ? '#081B2C' : '#FFFFFF', fontWeight: '800' }}>
+              Send via WhatsApp
             </Text>
-            <BottomSheetTextInput
-              style={[
-                styles.input,
-                {
-                  borderColor: palette.border,
-                  color: palette.text,
-                  backgroundColor: palette.background,
-                },
-              ]}
-              placeholder={`Hi ${provider.name}, I'd like a quote for...`}
-              placeholderTextColor={palette.muted}
-              value={quoteMessage}
-              onChangeText={setQuoteMessage}
-              multiline
-            />
-            <TouchableOpacity
-              style={[styles.primary, { backgroundColor: palette.primary }]}
-              onPress={sendQuote}
-            >
-              <Text style={{ color: palette.dark ? '#081B2C' : '#FFFFFF', fontWeight: '800' }}>
-                Send via WhatsApp
-              </Text>
-            </TouchableOpacity>
-          </BottomSheetScrollView>
-        </KeyboardAvoidingView>
+          </TouchableOpacity>
+        </BottomSheetScrollView>
       </BottomSheetModal>
       <Modal
         visible={reportOpen}
@@ -761,11 +843,27 @@ export default function ProviderDetailScreen({ route, navigation }) {
               ))}
             </View>
             <Text style={[styles.quickLabel, { color: palette.text2 }]}>Suggested times</Text>
+            {availabilityLoading ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <ActivityIndicator size="small" color={palette.primary} />
+                <Text style={{ color: palette.text2, fontSize: 12 }}>Checking availability…</Text>
+              </View>
+            ) : availabilityError ? (
+              <Text style={{ color: palette.danger || '#B42318', fontSize: 12, marginBottom: 8 }}>
+                Availability could not be checked. The business will confirm your request.
+              </Text>
+            ) : bookedTimes.length > 0 ? (
+              <Text style={{ color: palette.text2, fontSize: 12, marginBottom: 8 }}>
+                Greyed times are already booked.
+              </Text>
+            ) : null}
             <View style={styles.quickRow}>
               {['09:00', '12:00', '15:00', '18:00'].map((time) => (
                 <TouchableOpacity
                   accessibilityRole="button"
+                  disabled={bookedTimes.includes(time)}
                   accessibilityState={{ selected: bookingTime === time }}
+                  accessibilityLabel={bookedTimes.includes(time) ? `${time}, already booked` : time}
                   key={time}
                   onPress={() => setBookingTime(time)}
                   style={[
@@ -774,6 +872,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
                       borderColor: bookingTime === time ? palette.primary : palette.border,
                       backgroundColor:
                         bookingTime === time ? palette.primarySoft : palette.background,
+                      ...(bookedTimes.includes(time) ? { opacity: 0.4 } : {}),
                     },
                   ]}
                 >
@@ -862,14 +961,20 @@ export default function ProviderDetailScreen({ route, navigation }) {
               placeholder="What do you need help with?"
               placeholderTextColor={palette.muted}
             />
+            {selectedTimeBooked && (
+              <Text style={{ color: palette.danger || '#B42318', marginTop: 6 }}>
+                This time is already booked. Choose a different time.
+              </Text>
+            )}
             <TouchableOpacity
               accessibilityRole="button"
-              disabled={bookingBusy || !bookingDate || !bookingTime}
+              disabled={bookingBusy || !bookingDate || !bookingTime || selectedTimeBooked}
               style={[
                 styles.primary,
                 {
                   backgroundColor: palette.primary,
-                  opacity: bookingBusy || !bookingDate || !bookingTime ? 0.55 : 1,
+                  opacity:
+                    bookingBusy || !bookingDate || !bookingTime || selectedTimeBooked ? 0.55 : 1,
                 },
               ]}
               onPress={submitBooking}

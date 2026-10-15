@@ -45,7 +45,7 @@ test('production demo assets are not referenced and ad delivery requires consent
   assert.match(privacy, /Advertising choice/);
   assert.match(appConfig, /Ad-enabled production builds require genuine IDs/);
   assert.match(appConfig, /ca-app-pub-3940256099942544~3347511713/);
-  assert.match(appConfig, /\n\s*googleMobileAdsPlugin,\n/);
+  assert.match(appConfig.replace(/\r\n/g, '\n'), /\n\s*googleMobileAdsPlugin,\n/);
   assert.match(appConfig, /Google Maps cannot be enabled without GOOGLE_MAPS_API_KEY/);
 });
 

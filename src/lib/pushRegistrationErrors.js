@@ -1,5 +1,7 @@
 export function pushRegistrationErrorMessage(error) {
   const code = error?.code;
+  if (code === 'PUSH_NETWORK_UNAVAILABLE')
+    return 'Could not reach Expo push services. Check your internet connection and tap Retry.';
   if (code === 'PUSH_NATIVE_UNAVAILABLE')
     return 'Push notifications require an installed ChodhiQ build.';
   if (code === 'PUSH_PERMISSION_DENIED')
@@ -10,5 +12,11 @@ export function pushRegistrationErrorMessage(error) {
     return 'Your account profile is not ready for notifications. Sign in again and retry.';
   if (code === 'PUSH_TIMEOUT')
     return 'Notification registration timed out. Check your connection and tap Retry.';
+  if (
+    /unknownhostexception|unable to resolve host|fetch failed|network request failed|enetunreach|econn|dns/i.test(
+      String(error?.message || error),
+    )
+  )
+    return 'Could not reach notification services. Check your internet connection and tap Retry.';
   return 'Saved on this device. Notification sync failed; check your connection and tap Retry.';
 }

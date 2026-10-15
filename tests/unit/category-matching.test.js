@@ -5,6 +5,7 @@ import {
   providerCardLabels,
   providerMatchesCategory,
   providerMatchesService,
+  providerMatchesCityAndPostcode,
 } from '../../src/data/categoryMatching.js';
 
 const category = (id, name) => ({ id, name });
@@ -72,6 +73,22 @@ test('search finds listings by postcode, with or without its space', () => {
   const listing = provider('Services', { basePostcode: 'LE4 5AT' });
   assert.equal(matchesProviderSearch(listing, 'LE4 5AT'), true);
   assert.equal(matchesProviderSearch(listing, 'LE45AT'), true);
+});
+
+test('location filters match city and postcode from listing address or postcode field', () => {
+  const listing = provider('Services', {
+    baseCity: 'Leicester',
+    address: '68 Gough Road, Leicester LE5 4AN',
+  });
+  assert.equal(providerMatchesCityAndPostcode(listing, { city: 'Leicester' }), true);
+  assert.equal(providerMatchesCityAndPostcode(listing, { city: 'London' }), false);
+  assert.equal(providerMatchesCityAndPostcode(listing, { postcode: 'LE54AN' }), true);
+  assert.equal(providerMatchesCityAndPostcode(listing, { postcode: 'LE5' }), true);
+  assert.equal(providerMatchesCityAndPostcode(listing, { postcode: 'BD7' }), false);
+  assert.equal(
+    providerMatchesCityAndPostcode(listing, { city: 'Leicester', postcode: 'BD7' }),
+    false,
+  );
 });
 
 test('provider service filters match the selected real service only', () => {

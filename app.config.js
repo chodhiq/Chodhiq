@@ -8,11 +8,11 @@ const brandName = process.env.EXPO_PUBLIC_BRAND_NAME || base.name;
 const googleAdsEnabled = process.env.EXPO_PUBLIC_ENABLE_GOOGLE_ADS === 'true';
 const googleMapsEnabled = process.env.EXPO_PUBLIC_ENABLE_GOOGLE_MAPS === 'true';
 const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY || '';
-const easProjectId =
-  process.env.EXPO_PUBLIC_EAS_PROJECT_ID || '599ec186-c5e2-4228-b7f4-17ea866c409b';
+const easProjectId = '1ace485e-57df-4d2a-ad23-8e51f9286e75';
 const productionBuild =
   process.env.EAS_BUILD === 'true' &&
-  (process.env.EAS_BUILD_PROFILE === 'beta' ||
+  (process.env.EAS_BUILD_PROFILE === 'beta-play' ||
+    process.env.EAS_BUILD_PROFILE === 'beta' ||
     process.env.EAS_BUILD_PROFILE === 'production' ||
     process.env.EAS_BUILD_PROFILE === 'production-apk');
 const internalBetaBuild =
@@ -35,6 +35,7 @@ const requiredProductionValues = [
   ['EXPO_PUBLIC_TERMS_URL', process.env.EXPO_PUBLIC_TERMS_URL],
   ['EXPO_PUBLIC_PRIVACY_URL', process.env.EXPO_PUBLIC_PRIVACY_URL],
   ['EXPO_PUBLIC_DELETE_ACCOUNT_URL', process.env.EXPO_PUBLIC_DELETE_ACCOUNT_URL],
+  ['EXPO_PUBLIC_SUPPORT_EMAIL', process.env.EXPO_PUBLIC_SUPPORT_EMAIL],
 ];
 const validLegalUrl = (value) => {
   try {
@@ -43,8 +44,19 @@ const validLegalUrl = (value) => {
       url.protocol === 'https:' &&
       !url.username &&
       !url.password &&
-      !['localhost', 'example.com', 'example.org', 'example.net'].includes(url.hostname) &&
-      !url.hostname.endsWith('.test')
+      ![
+        'localhost',
+        'example.com',
+        'example.org',
+        'example.net',
+        'example.invalid',
+      ].includes(url.hostname) &&
+      !['.example.com', '.example.org', '.example.net'].some((suffix) =>
+        url.hostname.endsWith(suffix),
+      ) &&
+      !['.localhost', '.test', '.example', '.invalid'].some((suffix) =>
+        url.hostname.endsWith(suffix),
+      )
     );
   } catch {
     return false;
@@ -88,6 +100,9 @@ if (productionBuild || internalBetaBuild) {
     throw new Error(
       `Production builds require published HTTPS legal pages: ${invalidLegal.join(', ')}`,
     );
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(process.env.EXPO_PUBLIC_SUPPORT_EMAIL)) {
+    throw new Error('Production builds require a valid EXPO_PUBLIC_SUPPORT_EMAIL.');
   }
   if (process.env.EXPO_PUBLIC_SUPABASE_URL !== 'https://gfjhvsajwjrrlylgrkhf.supabase.co') {
     throw new Error('Production builds must target ChodhiQ Production Supabase.');
@@ -164,7 +179,7 @@ const plugins = base.plugins.map((plugin) => {
 
 module.exports = {
   ...base,
-  owner: process.env.EXPO_OWNER || 'chodhiq26',
+  owner: 'dom789',
   name: brandName,
   slug: process.env.EXPO_APP_SLUG || base.slug,
   scheme: process.env.EXPO_APP_SCHEME || base.scheme,

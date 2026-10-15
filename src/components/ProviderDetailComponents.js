@@ -115,12 +115,18 @@ export function ProviderIdentity({ provider, palette }) {
     </View>
   );
 }
-const actionIcons = { Call: Phone, Directions: Navigation, Website: Globe, Save: Bookmark };
+const actionIcons = {
+  Call: Phone,
+  Directions: Navigation,
+  'Search on Google Maps': Navigation,
+  Website: Globe,
+  Save: Bookmark,
+};
 export function ProviderActions({ palette, items }) {
   return (
     <View style={s.actions}>
       {items.map((item, index) => {
-        const Icon = actionIcons[item.label];
+        const Icon = actionIcons[item.label] || Navigation;
         return (
           <TouchableOpacity
             key={item.label}

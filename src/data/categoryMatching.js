@@ -92,6 +92,20 @@ export function providerMatchesService(provider, serviceName) {
   });
 }
 
+/** @param {any} provider @param {{ city?: string | null, postcode?: string | null }} filters */
+export function providerMatchesCityAndPostcode(provider, { city, postcode } = {}) {
+  /** @param {string} value */
+  const normalizeLocation = (value) => normalize(value);
+  const cityMatches = !city || normalizeLocation(provider.baseCity) === normalizeLocation(city);
+  const postcodeNeedle = normalize(postcode).replace(/\s+/g, '');
+  const postcodeValues = [provider.basePostcode, provider.address]
+    .filter(Boolean)
+    .map((value) => normalize(value).replace(/\s+/g, ''));
+  const postcodeMatches =
+    !postcodeNeedle || postcodeValues.some((value) => value.includes(postcodeNeedle));
+  return cityMatches && postcodeMatches;
+}
+
 /** @param {any} provider */
 export function providerCardLabels(provider) {
   const services = /** @type {any[]} */ (provider.services || [])

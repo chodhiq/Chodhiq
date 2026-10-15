@@ -41,9 +41,14 @@ supabase/.branches/
 # Exclude old upload archives and audit packages from release source
 *.zip
 audit-packages/
+*.jks
+*.keystore
+*.p12
+supabase/
 
 # Firebase client files are supplied through the EAS file environment
 google-services.json
+!google-services.json
 *service-account*.json
 *firebase-adminsdk*.json
 

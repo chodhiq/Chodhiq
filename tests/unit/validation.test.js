@@ -4,6 +4,10 @@ import test from 'node:test';
 import {
   cleanEmail,
   cleanPassword,
+  cleanNewPassword,
+  isValidNewPassword,
+  PASSWORD_MIN_LENGTH,
+  NEW_PASSWORD_MIN_LENGTH,
   cleanText,
   requireUuid,
   validateProfile,
@@ -32,8 +36,20 @@ test('cleanEmail normalizes valid addresses and rejects malformed ones', () => {
 });
 
 test('cleanPassword preserves password bytes and enforces safe bounds', () => {
+  assert.equal(PASSWORD_MIN_LENGTH, 8);
   assert.equal(cleanPassword('long enough password'), 'long enough password');
-  assert.throws(() => cleanPassword('short'), /between 10 and 128/);
+  assert.equal(cleanPassword('12345678'), '12345678');
+  assert.throws(() => cleanPassword('1234567'), /between 8 and 128/);
+});
+
+test('new passwords require 12 to 128 characters with letters and numbers', () => {
+  assert.equal(NEW_PASSWORD_MIN_LENGTH, 12);
+  assert.equal(cleanNewPassword('A secure passphrase 27'), 'A secure passphrase 27');
+  assert.equal(isValidNewPassword('A secure passphrase 27'), true);
+  assert.equal(isValidNewPassword('short7'), false);
+  assert.throws(() => cleanNewPassword('onlyletterslong'), /letter and one number/);
+  assert.throws(() => cleanNewPassword('123456789012'), /letter and one number/);
+  assert.throws(() => cleanNewPassword(`A1${'x'.repeat(127)}`), /128 characters/);
 });
 
 test('requireUuid accepts supported UUIDs and rejects arbitrary identifiers', () => {

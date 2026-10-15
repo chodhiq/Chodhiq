@@ -28,7 +28,13 @@ import {
 import { clearLocalUserData, saveLocalReview } from '../data/localDatabase';
 import { createReview, deleteReview, updateReview } from '../data/reviewRepository';
 import { cancelBooking as cancelBookingRecord, createBooking } from '../data/bookingRepository';
-import { cleanEmail, cleanPassword, cleanText, validateProfile } from '../lib/validation';
+import {
+  cleanEmail,
+  cleanPassword,
+  cleanNewPassword,
+  cleanText,
+  validateProfile,
+} from '../lib/validation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearPushToken } from '../lib/pushNotifications';
 import { useCommunicationPreferences } from '../hooks/useCommunicationPreferences';
@@ -75,6 +81,8 @@ export function AppStateProvider({ children }) {
     providers,
     reviews,
     setReviews,
+    reviewsLoading,
+    reviewsError,
     offline,
     lastUpdatedAt,
     marketplaceLoading,
@@ -245,7 +253,10 @@ export function AppStateProvider({ children }) {
         method === 'email' || method === 'signup'
           ? {
               email: cleanEmail(values.email || ''),
-              password: cleanPassword(values.password || ''),
+              password:
+                method === 'signup'
+                  ? cleanNewPassword(values.password || '')
+                  : cleanPassword(values.password || ''),
               name:
                 method === 'signup'
                   ? cleanText(values.name || '', { field: 'Name', min: 1, max: 100 })
@@ -286,7 +297,10 @@ export function AppStateProvider({ children }) {
             setQuoteRequests(account.quotes.map((row) => formatQuote(row, providers)));
             setBookings(account.bookings || []);
             replaceNotifications(account.notifications || []);
-            if (account.reviews?.length) setReviews(account.reviews);
+            setReviews((current) => {
+              const remoteReviews = current.filter((item) => item.userId !== nextSession.user.id);
+              return [...remoteReviews, ...(account.reviews || [])];
+            });
           })
           .catch((error) => console.warn('Account details will refresh later.', error.message));
       }
@@ -478,6 +492,8 @@ export function AppStateProvider({ children }) {
       addBooking,
       cancelBooking,
       reviews,
+      reviewsLoading,
+      reviewsError,
       addReview,
       editReview,
       removeReview,
@@ -531,6 +547,8 @@ export function AppStateProvider({ children }) {
       addBooking,
       cancelBooking,
       reviews,
+      reviewsLoading,
+      reviewsError,
       addReview,
       editReview,
       removeReview,

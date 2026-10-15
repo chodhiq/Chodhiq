@@ -1,8 +1,9 @@
 export const brand = Object.freeze({
   name: process.env.EXPO_PUBLIC_BRAND_NAME || 'ChodhiQ',
   shortName: process.env.EXPO_PUBLIC_BRAND_SHORT_NAME || 'ChodhiQ',
-  supportEmail: process.env.EXPO_PUBLIC_SUPPORT_EMAIL || 'support@chodhiq.app',
-  privacyEmail: process.env.EXPO_PUBLIC_PRIVACY_EMAIL || 'privacy@chodhiq.app',
+  supportEmail: process.env.EXPO_PUBLIC_SUPPORT_EMAIL || '',
+  privacyEmail:
+    process.env.EXPO_PUBLIC_PRIVACY_EMAIL || process.env.EXPO_PUBLIC_SUPPORT_EMAIL || '',
   businessEmail: process.env.EXPO_PUBLIC_BUSINESS_EMAIL || 'business@chodhiq.app',
 });
 

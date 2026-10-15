@@ -1,10 +1,12 @@
 import { MotionModal as Modal } from '../components/Motion';
 import { MotionTouchable as TouchableOpacity } from '../components/Motion';
-import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -17,10 +19,12 @@ import { Check, SlidersHorizontal, X } from 'lucide-react-native';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { events } from '../data/discoveryData';
+import { ukCities } from '../data/mockData';
 import {
   matchesProviderSearch,
   providerMatchesCategory,
   providerMatchesService,
+  providerMatchesCityAndPostcode,
 } from '../data/categoryMatching';
 import { distanceKm, isProviderOpenNow } from '../data/providerDiscovery';
 import {
@@ -31,6 +35,7 @@ import {
   ExploreSearch,
 } from '../components/ExploreComponents';
 import MarketplaceStatusBanner from '../components/MarketplaceStatusBanner';
+import useUkPostcodeSuggestions from '../hooks/useUkPostcodeSuggestions';
 
 export default function ExploreScreen({ navigation, route }) {
   const [query, setQuery] = useState('');
@@ -71,9 +76,11 @@ export default function ExploreScreen({ navigation, route }) {
   const savedIdSet = useMemo(() => new Set(savedIds), [savedIds]);
   const cities = useMemo(
     () =>
-      [...new Set(providers.map((provider) => provider.baseCity).filter(Boolean))].sort((a, b) =>
-        a.localeCompare(b),
-      ),
+      [
+        ...new Set(
+          [...ukCities, ...providers.map((provider) => provider.baseCity)].filter(Boolean),
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
     [providers],
   );
   const serviceOptions = useMemo(() => {
@@ -101,7 +108,6 @@ export default function ExploreScreen({ navigation, route }) {
         .trim()
         .toLowerCase();
     const minimumRating = appliedRating ? Number(appliedRating.replace('+', '')) : 0;
-    const normalizedPostcode = appliedPostcode.replace(/\s+/g, '').toLowerCase();
     const withLocation = providers.map((provider) => {
       const km =
         locationCoordinates &&
@@ -124,15 +130,16 @@ export default function ExploreScreen({ navigation, route }) {
       const providerLocations = [provider.baseCity, ...(provider.serviceAreas || [])].map(
         normalize,
       );
-      const postcode = normalize(provider.basePostcode).replace(/\s+/g, '');
       return (
         matchesProviderSearch(provider, deferredQuery) &&
         providerMatchesCategory(provider, selected) &&
         providerMatchesService(provider, appliedService) &&
         (!appliedPrice || provider.priceRange === appliedPrice) &&
         Number(provider.rating || 0) >= minimumRating &&
-        (!appliedCity || normalize(provider.baseCity) === normalize(appliedCity)) &&
-        (!normalizedPostcode || postcode.includes(normalizedPostcode)) &&
+        providerMatchesCityAndPostcode(provider, {
+          city: appliedCity,
+          postcode: appliedPostcode,
+        }) &&
         (!openNow || provider.openNow === true) &&
         (!nearbyOnly ||
           providerLocations.some(
@@ -201,23 +208,7 @@ export default function ExploreScreen({ navigation, route }) {
     setService('Any service');
     setAppliedService(null);
   };
-  const resetFilters = () => {
-    setSelectedCategory(null);
-    setSortBy('Best match');
-    setPrice('Any');
-    setRating('Any');
-    setSelectedCity('Any city');
-    setPostcodeQuery('');
-    setHighestRated(false);
-    setOpenNow(false);
-    setNearbyOnly(false);
-    setAppliedPrice(null);
-    setAppliedRating(null);
-    setAppliedCity(null);
-    setAppliedPostcode('');
-    setService('Any service');
-    setAppliedService(null);
-  };
+  const resetFilters = clearFilters;
 
   const renderResult = useCallback(
     ({ item }) =>
@@ -461,6 +452,9 @@ function FiltersModal(props) {
     onApply,
   } = props;
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const filterScrollRef = useRef(null);
+  const { suggestions: postcodeSuggestions, loading: postcodeSuggestionsLoading } =
+    useUkPostcodeSuggestions(postcodeQuery);
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
     const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
@@ -469,6 +463,11 @@ function FiltersModal(props) {
       hide.remove();
     };
   }, []);
+  useEffect(() => {
+    if (!keyboardVisible || !postcodeSuggestions.length) return;
+    const timer = setTimeout(() => filterScrollRef.current?.scrollToEnd({ animated: true }), 80);
+    return () => clearTimeout(timer);
+  }, [keyboardVisible, postcodeSuggestions.length]);
   const choices = (items, selected, onSelect, compact = false) => (
     <View style={styles.optionGrid}>
       {items.map((item) => {
@@ -498,86 +497,124 @@ function FiltersModal(props) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
-        <View
-          style={[
-            styles.sheet,
-            keyboardVisible && styles.sheetKeyboard,
-            { backgroundColor: palette.surface },
-          ]}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoiding}
         >
-          <View style={styles.sheetHeader}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Close filters"
-              onPress={onClose}
-              style={styles.closeButton}
+          <View style={[styles.sheet, { backgroundColor: palette.surface }]}>
+            <View style={styles.sheetHeader}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Close filters"
+                onPress={onClose}
+                style={styles.closeButton}
+              >
+                <X size={20} color={palette.text} />
+              </TouchableOpacity>
+              <Text style={[styles.sheetTitle, { color: palette.text }]}>Filters</Text>
+              <TouchableOpacity onPress={onReset}>
+                <Text style={[styles.reset, { color: palette.primary }]}>Reset</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              ref={filterScrollRef}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              contentContainerStyle={[styles.sheetBody, { paddingBottom: safeAreaBottom + 84 }]}
             >
-              <X size={20} color={palette.text} />
-            </TouchableOpacity>
-            <Text style={[styles.sheetTitle, { color: palette.text }]}>Filters</Text>
-            <TouchableOpacity onPress={onReset}>
-              <Text style={[styles.reset, { color: palette.primary }]}>Reset</Text>
+              <Text style={[styles.filterHeading, { color: palette.text }]}>Sort by</Text>
+              {choices(
+                ['Best match', 'Highest rated', 'Nearest first', 'Most reviewed'],
+                sortBy,
+                setSortBy,
+              )}
+              <Text style={[styles.filterHeading, { color: palette.text }]}>Price range</Text>
+              {choices(['Any', '£', '££', '£££', '££££'], price, setPrice, true)}
+              <Text style={[styles.filterHeading, { color: palette.text }]}>Rating</Text>
+              {choices(['Any', '4.0+', '4.5+', '4.8+'], rating, setRating, true)}
+              <Text style={[styles.filterHeading, { color: palette.text }]}>Service</Text>
+              {choices(['Any service', ...serviceOptions], service, setService)}
+              {serviceOptions.length === 0 ? (
+                <Text style={[styles.filterNote, { color: palette.text2 }]}>
+                  No businesses have published service details yet.
+                </Text>
+              ) : null}
+              <Text style={[styles.filterHeading, { color: palette.text }]}>
+                Availability & area
+              </Text>
+              {choices(['Any time', 'Open now'], openNow ? 'Open now' : 'Any time', (value) =>
+                setOpenNow(value === 'Open now'),
+              )}
+              {choices(
+                ['Any area', 'In my area'],
+                nearbyOnly ? 'In my area' : 'Any area',
+                (value) => setNearbyOnly(value === 'In my area'),
+              )}
+              <Text style={[styles.filterHeading, { color: palette.text }]}>City</Text>
+              {choices(['Any city', ...cities], selectedCity, setSelectedCity)}
+              <Text style={[styles.filterHeading, { color: palette.text }]}>Postcode</Text>
+              <AppTextInput
+                accessibilityLabel="Filter listings by postcode"
+                autoCapitalize="characters"
+                value={postcodeQuery}
+                onChangeText={setPostcodeQuery}
+                onFocus={() =>
+                  setTimeout(() => filterScrollRef.current?.scrollToEnd({ animated: true }), 180)
+                }
+                returnKeyType="done"
+                onSubmitEditing={() => Keyboard.dismiss()}
+                placeholder="e.g. LE4 5AT"
+                placeholderTextColor={palette.muted}
+                style={[
+                  styles.postcodeInput,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    color: palette.text,
+                  },
+                ]}
+              />
+              {(postcodeSuggestions.length > 0 || postcodeSuggestionsLoading) && (
+                <View
+                  accessibilityLabel="UK postcode suggestions"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: palette.border,
+                    borderRadius: 10,
+                    overflow: 'hidden',
+                    marginTop: 6,
+                  }}
+                >
+                  {postcodeSuggestions.map((suggestion) => (
+                    <TouchableOpacity
+                      key={suggestion.id}
+                      accessibilityRole="button"
+                      onPress={() => {
+                        setPostcodeQuery(suggestion.postcode || suggestion.label);
+                        Keyboard.dismiss();
+                      }}
+                      style={{ padding: 11, borderBottomWidth: 1, borderColor: palette.border }}
+                    >
+                      <Text style={{ color: palette.text }}>{suggestion.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  {postcodeSuggestionsLoading && (
+                    <ActivityIndicator style={{ padding: 10 }} color={palette.primary} />
+                  )}
+                </View>
+              )}
+            </ScrollView>
+            <TouchableOpacity
+              onPress={onApply}
+              style={[styles.applyButton, { backgroundColor: palette.primary }]}
+            >
+              <Text style={styles.applyText}>
+                Show {resultCount} {resultCount === 1 ? 'result' : 'results'}
+              </Text>
             </TouchableOpacity>
           </View>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={[styles.sheetBody, { paddingBottom: safeAreaBottom + 84 }]}
-          >
-            <Text style={[styles.filterHeading, { color: palette.text }]}>Sort by</Text>
-            {choices(
-              ['Best match', 'Highest rated', 'Nearest first', 'Most reviewed'],
-              sortBy,
-              setSortBy,
-            )}
-            <Text style={[styles.filterHeading, { color: palette.text }]}>Price range</Text>
-            {choices(['Any', '£', '££', '£££', '££££'], price, setPrice, true)}
-            <Text style={[styles.filterHeading, { color: palette.text }]}>Rating</Text>
-            {choices(['Any', '4.0+', '4.5+', '4.8+'], rating, setRating, true)}
-            <Text style={[styles.filterHeading, { color: palette.text }]}>Service</Text>
-            {choices(['Any service', ...serviceOptions], service, setService)}
-            {serviceOptions.length === 0 ? (
-              <Text style={[styles.filterNote, { color: palette.text2 }]}>
-                No businesses have published service details yet.
-              </Text>
-            ) : null}
-            <Text style={[styles.filterHeading, { color: palette.text }]}>Availability & area</Text>
-            {choices(['Any time', 'Open now'], openNow ? 'Open now' : 'Any time', (value) =>
-              setOpenNow(value === 'Open now'),
-            )}
-            {choices(['Any area', 'In my area'], nearbyOnly ? 'In my area' : 'Any area', (value) =>
-              setNearbyOnly(value === 'In my area'),
-            )}
-            <Text style={[styles.filterHeading, { color: palette.text }]}>City</Text>
-            {choices(['Any city', ...cities], selectedCity, setSelectedCity)}
-            <Text style={[styles.filterHeading, { color: palette.text }]}>Postcode</Text>
-            <AppTextInput
-              accessibilityLabel="Filter listings by postcode"
-              autoCapitalize="characters"
-              value={postcodeQuery}
-              onChangeText={setPostcodeQuery}
-              returnKeyType="done"
-              onSubmitEditing={() => Keyboard.dismiss()}
-              placeholder="e.g. LE4 5AT"
-              placeholderTextColor={palette.muted}
-              style={[
-                styles.postcodeInput,
-                {
-                  backgroundColor: palette.surface,
-                  borderColor: palette.border,
-                  color: palette.text,
-                },
-              ]}
-            />
-          </ScrollView>
-          <TouchableOpacity
-            onPress={onApply}
-            style={[styles.applyButton, { backgroundColor: palette.primary }]}
-          >
-            <Text style={styles.applyText}>
-              Show {resultCount} {resultCount === 1 ? 'result' : 'results'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -663,6 +700,7 @@ const styles = StyleSheet.create({
   },
   floatingFilterText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(15,23,42,.38)' },
+  keyboardAvoiding: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
     width: '100%',
     maxWidth: 600,
@@ -672,7 +710,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingBottom: 24,
   },
-  sheetKeyboard: { maxHeight: '58%' },
   sheetHeader: {
     height: 60,
     paddingHorizontal: 16,

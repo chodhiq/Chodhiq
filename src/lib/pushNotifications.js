@@ -18,7 +18,7 @@ async function registrationDeadline(promise) {
       new Promise((_, reject) => {
         timer = setTimeout(
           () => reject(pushError('PUSH_TIMEOUT', 'Push registration timed out')),
-          10000,
+          15000,
         );
       }),
     ]);
@@ -67,6 +67,13 @@ export async function registerPushToken(userId, vibration = true) {
   } catch (/** @type {any} */ error) {
     if (/firebase|default firebaseapp|fcm|sender.?id/i.test(String(error?.message || '')))
       throw pushError('PUSH_CLIENT_CONFIG_MISSING', 'Android push client configuration missing');
+    if (
+      /unknownhostexception|unable to resolve host|fetch failed|network request failed|enetunreach|econn|dns/i.test(
+        String(error?.message || error),
+      )
+    ) {
+      throw pushError('PUSH_NETWORK_UNAVAILABLE', 'Could not reach Expo push services');
+    }
     throw error;
   }
   const { data, error } = await registrationDeadline(

@@ -17,17 +17,20 @@ function loadGoogleSignIn(googleSignin, env = {}) {
   )(googleSignin, { env });
 }
 
-test('Google account selection is cleared before each Android sign-in', async () => {
+test('Google sign-in clears the previous account so the user chooses on each attempt', async () => {
   const calls = [];
-  const google = loadGoogleSignIn({
-    configure: () => calls.push('configure'),
-    hasPlayServices: async () => calls.push('play-services'),
-    signOut: async () => calls.push('sign-out'),
-    signIn: async () => {
-      calls.push('sign-in');
-      return { type: 'success', data: { idToken: 'test-token' } };
+  const google = loadGoogleSignIn(
+    {
+      configure: () => calls.push('configure'),
+      hasPlayServices: async () => calls.push('play-services'),
+      signOut: async () => calls.push('sign-out'),
+      signIn: async () => {
+        calls.push('sign-in');
+        return { type: 'success', data: { idToken: 'test-token' } };
+      },
     },
-  }, { EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-web.apps.googleusercontent.com' });
+    { EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-web.apps.googleusercontent.com' },
+  );
 
   assert.equal(await google.getNativeGoogleIdToken(), 'test-token');
   assert.equal(await google.getNativeGoogleIdToken(), 'test-token');
@@ -45,14 +48,17 @@ test('Google account selection is cleared before each Android sign-in', async ()
 test('clearing Google state does not revoke the user grant', async () => {
   let signedOut = false;
   let revoked = false;
-  const google = loadGoogleSignIn({
-    signOut: async () => {
-      signedOut = true;
+  const google = loadGoogleSignIn(
+    {
+      signOut: async () => {
+        signedOut = true;
+      },
+      revokeAccess: async () => {
+        revoked = true;
+      },
     },
-    revokeAccess: async () => {
-      revoked = true;
-    },
-  }, { EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-web.apps.googleusercontent.com' });
+    { EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-web.apps.googleusercontent.com' },
+  );
 
   await google.signOutNativeGoogleAccount();
   assert.equal(signedOut, true);
@@ -60,14 +66,36 @@ test('clearing Google state does not revoke the user grant', async () => {
 });
 
 test('a cancelled Google selection does not return an identity token', async () => {
-  const google = loadGoogleSignIn({
-    configure() {},
-    hasPlayServices: async () => {},
-    signOut: async () => {},
-    signIn: async () => ({ type: 'cancelled' }),
-  }, { EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-web.apps.googleusercontent.com' });
+  const google = loadGoogleSignIn(
+    {
+      configure() {},
+      hasPlayServices: async () => {},
+      signOut: async () => {},
+      signIn: async () => ({ type: 'cancelled' }),
+    },
+    { EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-web.apps.googleusercontent.com' },
+  );
 
   await assert.rejects(google.getNativeGoogleIdToken(), /Google sign-in was cancelled/);
+});
+
+test('Android OAuth developer errors explain the package, signing key, and web client setup', async () => {
+  const google = loadGoogleSignIn(
+    {
+      configure() {},
+      hasPlayServices: async () => {},
+      signOut: async () => {},
+      signIn: async () => {
+        throw Object.assign(new Error('DEVELOPER_ERROR'), { code: 'DEVELOPER_ERROR' });
+      },
+    },
+    { EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-web.apps.googleusercontent.com' },
+  );
+
+  await assert.rejects(
+    google.getNativeGoogleIdToken(),
+    /Android OAuth client for com\.chodhiq\.app using this APK signing SHA-1/,
+  );
 });
 
 test('missing Google web client ID fails with actionable build configuration guidance', async () => {

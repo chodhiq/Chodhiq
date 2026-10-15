@@ -202,6 +202,7 @@ export default function CommunityScreen({ navigation, route }) {
   const [engagement, setEngagement] = useState({ counts: {}, saves: [] });
   const [commentsPost, setCommentsPost] = useState(null);
   const [comments, setComments] = useState([]);
+  const [commentAuthors, setCommentAuthors] = useState({});
   const [commentBody, setCommentBody] = useState('');
   const [commentBusy, setCommentBusy] = useState(false);
   const [reportingPostId, setReportingPostId] = useState(null);
@@ -264,11 +265,39 @@ export default function CommunityScreen({ navigation, route }) {
             resolveCommunityImages(generalResult.error ? [] : generalResult.data || []),
           ]);
           if (request !== loadSequence.current) return;
-        const merged = mergeCommunityPage(loadedPosts.current, resolvedPosts, page === 1);
+          const visibleAuthors = [
+            ...new Set(
+              [...resolvedPosts, ...resolvedGeneral].map((post) => post.author_id).filter(Boolean),
+            ),
+          ];
+          const authorProfiles = await Promise.all(
+            visibleAuthors.map(async (authorId) => {
+              try {
+                const { data: author } = await supabase.rpc('get_community_member_profile', {
+                  target_author: authorId,
+                });
+                const row = Array.isArray(author) ? author[0] : author;
+                return [authorId, row?.display_name || null];
+              } catch {
+                return [authorId, null];
+              }
+            }),
+          );
+          if (request !== loadSequence.current) return;
+          const authorNames = new Map(authorProfiles);
+          const namedPosts = resolvedPosts.map((post) => ({
+            ...post,
+            author_name: authorNames.get(post.author_id) || post.author_name || 'Community member',
+          }));
+          const namedGeneral = resolvedGeneral.map((post) => ({
+            ...post,
+            author_name: authorNames.get(post.author_id) || post.author_name || 'Community member',
+          }));
+          const merged = mergeCommunityPage(loadedPosts.current, namedPosts, page === 1);
           loadedPosts.current = merged;
           setPosts(merged);
           setHasMore((data || []).length === 30);
-          setGeneralPosts(resolvedGeneral);
+          setGeneralPosts(namedGeneral);
           setEngagement((current) => ({
             counts: countResult.error
               ? current.counts
@@ -603,6 +632,7 @@ export default function CommunityScreen({ navigation, route }) {
   const openComments = async (post) => {
     setCommentsPost(post);
     setComments([]);
+    setCommentAuthors({});
     if (!supabase)
       return Alert.alert(
         'Comments unavailable',
@@ -616,7 +646,23 @@ export default function CommunityScreen({ navigation, route }) {
         .order('created_at')
         .limit(100);
       if (error) Alert.alert('Comments unavailable', error.message);
-      else setComments(data || []);
+      else {
+        const rows = data || [];
+        setComments(rows);
+        const authorIds = [...new Set(rows.map((row) => row.author_id).filter(Boolean))];
+        const profiles = await Promise.all(
+          authorIds.map(async (authorId) => {
+            const { data: profile, error: profileError } = await supabase.rpc(
+              'get_community_member_profile',
+              { target_author: authorId },
+            );
+            if (profileError) return [authorId, null];
+            const author = Array.isArray(profile) ? profile[0] : profile;
+            return [authorId, author || null];
+          }),
+        );
+        setCommentAuthors(Object.fromEntries(profiles));
+      }
     }
   };
   const submitComment = async () => {
@@ -634,6 +680,11 @@ export default function CommunityScreen({ navigation, route }) {
         .single();
       if (error) throw error;
       setComments((current) => [...current, data]);
+      const { data: profile } = await supabase.rpc('get_community_member_profile', {
+        target_author: session.user.id,
+      });
+      const author = Array.isArray(profile) ? profile[0] : profile;
+      if (author) setCommentAuthors((current) => ({ ...current, [session.user.id]: author }));
       setCommentBody('');
       await loadPosts();
     } catch (error) {
@@ -836,7 +887,11 @@ export default function CommunityScreen({ navigation, route }) {
           <>
             <SpaceAccentBar style={styles.topBar} accent={palette.primary}>
               <Image
-                source={require('../../assets/chodhiq-official-logo.png')}
+                source={
+                  palette.dark
+                    ? require('../../assets/chodhiq-logo-white.png')
+                    : require('../../assets/chodhiq-logo-black.png')
+                }
                 resizeMode="contain"
                 accessibilityLabel="ChodhiQ"
                 style={styles.brandLogo}
@@ -1384,6 +1439,24 @@ export default function CommunityScreen({ navigation, route }) {
                   key={item.id}
                   style={[styles.commentRow, { borderBottomColor: palette.border }]}
                 >
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {commentAuthors[item.author_id]?.avatar_url ? (
+                      <Image
+                        source={{ uri: commentAuthors[item.author_id].avatar_url }}
+                        style={{ width: 28, height: 28, borderRadius: 14 }}
+                      />
+                    ) : null}
+                    <Text style={{ color: palette.text, fontSize: 12, fontWeight: '700' }}>
+                      {commentAuthors[item.author_id]?.display_name || 'Unknown user'}
+                    </Text>
+                  </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ color: palette.text, fontSize: 13, flex: 1 }}>{item.body}</Text>
                     <TouchableOpacity

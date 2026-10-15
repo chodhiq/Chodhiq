@@ -64,11 +64,23 @@ const sanitizeContext = (context) =>
  */
 export const captureError = (error, context = {}) => {
   const safeContext = sanitizeContext(context);
-  Sentry.captureException(error, {
+  const isError = error instanceof Error;
+  const errorMessage =
+    typeof error === 'string'
+      ? error
+      : typeof error?.message === 'string'
+        ? error.message
+        : 'A structured error was returned without a message.';
+  const normalizedError = isError ? error : new Error(redact(errorMessage));
+  if (!isError && error?.code) normalizedError.name = redact(error.code).slice(0, 100);
+  Sentry.captureException(normalizedError, {
     contexts: { app: safeContext },
+    ...(error?.code && !isError
+      ? { tags: { structured_error_code: redact(error.code).slice(0, 100) } }
+      : {}),
     level: context.level || 'error',
   });
-  if (__DEV__) console.error('[Sentry]', redact(error?.message), safeContext);
+  if (__DEV__) console.error('[Sentry]', redact(errorMessage), safeContext);
 };
 
 /**

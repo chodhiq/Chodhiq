@@ -55,7 +55,12 @@ function mapProvider(row) {
 export async function loadMarketplace({ onCached } = {}) {
   const cached = await loadLocalMarketplace();
   onCached?.(cached);
-  if (!isSupabaseConfigured) return cached;
+  if (!isSupabaseConfigured)
+    return {
+      ...cached,
+      reviews: null,
+      reviewsError: 'Reviews need an internet connection. Check your connection and retry.',
+    };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
@@ -156,12 +161,17 @@ export async function loadMarketplace({ onCached } = {}) {
           review_replies: replies.has(row.id) ? [{ body: replies.get(row.id) }] : [],
         }),
       ),
+      reviewsError: null,
       offline: false,
       lastUpdatedAt,
     };
   } catch (error) {
     console.warn('Marketplace sync failed; using the local cache.', error.message);
-    return cached;
+    return {
+      ...cached,
+      reviews: null,
+      reviewsError: 'Reviews could not be loaded. Check your connection and retry.',
+    };
   } finally {
     clearTimeout(timeout);
   }

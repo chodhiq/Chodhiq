@@ -7,12 +7,16 @@ export function useMarketplaceState(retryPendingOperations) {
   const [categories, setCategories] = useState(DEMO_MODE ? mockCategories : []);
   const [providers, setProviders] = useState(DEMO_MODE ? mockProviders : []);
   const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState(null);
   const [offline, setOffline] = useState(true);
   const [marketplaceLoading, setMarketplaceLoading] = useState(true);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
 
   const refreshMarketplace = useCallback(async () => {
     setMarketplaceLoading(true);
+    setReviewsLoading(true);
+    setReviewsError(null);
     try {
       const marketplace = await loadMarketplace({
         onCached: (cached) => {
@@ -27,7 +31,8 @@ export function useMarketplaceState(retryPendingOperations) {
       });
       setCategories(marketplace.categories);
       setProviders(marketplace.providers);
-      if (marketplace.reviews) setReviews(marketplace.reviews);
+      if (marketplace.reviews !== null) setReviews(marketplace.reviews || []);
+      setReviewsError(marketplace.reviewsError || null);
       setOffline(marketplace.offline);
       setLastUpdatedAt(marketplace.lastUpdatedAt || null);
       // Keep discovery responsive while any queued writes retry in the background.
@@ -35,6 +40,7 @@ export function useMarketplaceState(retryPendingOperations) {
       return marketplace;
     } finally {
       setMarketplaceLoading(false);
+      setReviewsLoading(false);
     }
   }, [retryPendingOperations]);
 
@@ -43,6 +49,8 @@ export function useMarketplaceState(retryPendingOperations) {
     providers,
     reviews,
     setReviews,
+    reviewsLoading,
+    reviewsError,
     offline,
     lastUpdatedAt,
     marketplaceLoading,

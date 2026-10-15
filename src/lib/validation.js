@@ -7,12 +7,26 @@
 import {
   cleanEmail,
   cleanPassword,
+  cleanNewPassword,
+  isValidNewPassword,
+  PASSWORD_MIN_LENGTH,
+  NEW_PASSWORD_MIN_LENGTH,
   cleanText,
   requireUuid,
   validateHttpsUrl,
 } from '../../packages/validation/index.js';
 
-export { cleanEmail, cleanPassword, cleanText, requireUuid, validateHttpsUrl };
+export {
+  cleanEmail,
+  cleanPassword,
+  cleanNewPassword,
+  isValidNewPassword,
+  cleanText,
+  requireUuid,
+  validateHttpsUrl,
+  PASSWORD_MIN_LENGTH,
+  NEW_PASSWORD_MIN_LENGTH,
+};
 
 /**
  * @param {unknown} value

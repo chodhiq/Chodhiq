@@ -75,7 +75,7 @@ function AppContent() {
         }}
       >
         <Image
-          source={require('./assets/chodhiq-full-logo-transparent.png')}
+          source={require('./assets/chodhiq-logo-black.png')}
           style={{ width: 180, height: 64 }}
           resizeMode="contain"
         />

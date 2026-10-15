@@ -19,6 +19,7 @@ export function useCommunicationPreferences(userId) {
   const [retry, setRetry] = useState(0);
   const retryPreferencesSync = useCallback(() => setRetry((value) => value + 1), []);
   const syncQueue = useRef(Promise.resolve());
+  const lastSyncRequest = useRef({ key: '', at: 0 });
 
   useEffect(() => {
     AsyncStorage.getItem(PREFERENCES_KEY)
@@ -48,6 +49,10 @@ export function useCommunicationPreferences(userId) {
     if (!ready || !userId) return undefined;
     let active = true;
     const sync = () => {
+      const key = `${userId}:${preferences.push}:${preferences.vibration}:${retry}`;
+      const now = Date.now();
+      if (lastSyncRequest.current.key === key && now - lastSyncRequest.current.at < 15000) return;
+      lastSyncRequest.current = { key, at: now };
       // Serialize rapid toggles so an older request cannot overwrite the latest choice.
       syncQueue.current = syncQueue.current
         .catch(() => {})
@@ -59,7 +64,7 @@ export function useCommunicationPreferences(userId) {
               preferences.push
                 ? registerPushToken(userId, preferences.vibration)
                 : clearPushToken(userId),
-            10000,
+            20000,
             'Notification settings sync timed out.',
             'PUSH_TIMEOUT',
           );
@@ -77,7 +82,14 @@ export function useCommunicationPreferences(userId) {
           if (active) {
             setPermissionDenied(error?.code === 'PUSH_PERMISSION_DENIED');
             setPreferencesError(pushRegistrationErrorMessage(error));
-            captureError(error, { operation: 'syncCommunicationPreferences' });
+            const transientNetworkFailure =
+              error?.code === 'PUSH_TIMEOUT' ||
+              error?.code === 'PUSH_NETWORK_UNAVAILABLE' ||
+              /unknownhostexception|unable to resolve host|fetch failed|network request failed|enetunreach|econn|dns|timed out/i.test(
+                String(error?.message || error),
+              );
+            if (!transientNetworkFailure)
+              captureError(error, { operation: 'syncCommunicationPreferences' });
           }
         })
         .finally(() => {

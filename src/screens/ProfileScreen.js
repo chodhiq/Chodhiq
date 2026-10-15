@@ -1,12 +1,11 @@
 import { MotionScrollView as ScrollView } from '../components/Motion';
 import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import React, { useCallback, useMemo, useRef } from 'react';
-import { Alert, Image, Linking, Platform, StyleSheet, Switch, View } from 'react-native';
+import { Image, Linking, Platform, StyleSheet, Switch, View } from 'react-native';
 import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
-import * as Clipboard from 'expo-clipboard';
 import {
   BadgeCheck,
   Building2,
@@ -79,15 +78,6 @@ export default function ProfileScreen({ navigation }) {
     await signOut();
     navigation.navigate('Welcome');
   };
-  const copyUserId = async () => {
-    try {
-      await Clipboard.setStringAsync(session.user.id);
-      Alert.alert('ID copied', 'Your ChodhiQ user ID is ready to share with support.');
-    } catch (error) {
-      Alert.alert('Could not copy ID', error.message || 'Please try again.');
-    }
-  };
-
   if (!session)
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
@@ -190,38 +180,29 @@ export default function ProfileScreen({ navigation }) {
         </FadeInView>
 
         <FadeInView
-          delay={35}
-          style={[
-            styles.menuCard,
-            styles.userIdCard,
-            { backgroundColor: palette.surface, borderColor: palette.border },
-          ]}
-        >
-          <Text style={{ color: palette.text2, fontSize: 11, fontWeight: '800' }}>
-            YOUR CHODHIQ USER ID
-          </Text>
-          <Text selectable style={{ color: palette.text, fontSize: 12, marginTop: 7 }}>
-            {session.user.id}
-          </Text>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Copy your ChodhiQ user ID"
-            onPress={copyUserId}
-            style={{ alignSelf: 'flex-start', paddingTop: 10 }}
-          >
-            <Text style={{ color: palette.primary, fontWeight: '800' }}>Copy ID</Text>
-          </TouchableOpacity>
-        </FadeInView>
-
-        <FadeInView
           delay={70}
           style={[styles.stats, { backgroundColor: palette.surface, borderColor: palette.border }]}
         >
-          <Stat value={savedIds.length} label="Saved" palette={palette} />
+          <Stat
+            value={savedIds.length}
+            label="Saved"
+            palette={palette}
+            onPress={() => navigation.navigate('Saved')}
+          />
           <View style={[styles.divider, { backgroundColor: palette.border }]} />
-          <Stat value={reviews.length} label="Reviews" palette={palette} />
+          <Stat
+            value={reviews.length}
+            label="Reviews"
+            palette={palette}
+            onPress={() => navigation.navigate('Reviews')}
+          />
           <View style={[styles.divider, { backgroundColor: palette.border }]} />
-          <Stat value={bookings.length} label="Bookings" palette={palette} />
+          <Stat
+            value={bookings.length}
+            label="Bookings"
+            palette={palette}
+            onPress={() => navigation.navigate('Bookings')}
+          />
         </FadeInView>
 
         <FadeInView delay={170}>
@@ -390,12 +371,17 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
-function Stat({ value, label, palette }) {
+function Stat({ value, label, palette, onPress }) {
   return (
-    <View style={styles.stat}>
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}`}
+      onPress={onPress}
+      style={styles.stat}
+    >
       <Text style={[styles.statValue, { color: palette.text }]}>{value}</Text>
       <Text style={[styles.statLabel, { color: palette.text2 }]}>{label}</Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 function Benefit({ Icon, text, palette }) {
@@ -606,7 +592,6 @@ const styles = StyleSheet.create({
   paletteName: { flex: 1, fontSize: 9, fontWeight: '800' },
   check: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   menuCard: { borderRadius: radius.lg, borderWidth: 1, overflow: 'hidden' },
-  userIdCard: { padding: spacing.md },
   menuRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: 12 },
   preferenceHint: { fontSize: 12, minHeight: 34, lineHeight: 17 },
   menuIcon: {

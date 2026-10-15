@@ -36,10 +36,14 @@ export function HomeHeader({
   onSearch,
   onProfile,
 }) {
-  const logo = require('../../assets/chodhiq-official-logo.png');
+  const isDark = palette.dark;
+  const logo = isDark
+    ? require('../../assets/chodhiq-logo-white.png')
+    : require('../../assets/chodhiq-logo-black.png');
+  const headerText = palette.text;
   const city = String(location || '').trim();
   return (
-    <View style={[s.header, { backgroundColor: palette.dark ? palette.bg : '#101817' }]}>
+    <View style={[s.header, { backgroundColor: palette.bg }]}>
       <View style={s.top}>
         <Image
           resizeMethod="resize"
@@ -52,10 +56,11 @@ export function HomeHeader({
           <IconButton
             onPress={onNotifications}
             label={`Open notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
+            style={{ backgroundColor: palette.surfaceAlt }}
           >
-            <Bell size={20} color="#FFFFFF" />
+            <Bell size={20} color={headerText} />
             {unreadCount > 0 && (
-              <View style={s.notificationBadge}>
+              <View style={[s.notificationBadge, { borderColor: palette.bg }]}>
                 <Text style={s.notificationBadgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
               </View>
             )}
@@ -64,7 +69,7 @@ export function HomeHeader({
             accessibilityRole="button"
             accessibilityLabel="Open profile"
             onPress={onProfile}
-            style={s.avatarButton}
+            style={[s.avatarButton, { borderColor: palette.border }]}
           >
             {profile?.avatarUri ? (
               <Image
@@ -73,11 +78,11 @@ export function HomeHeader({
                 style={s.profileAvatar}
               />
             ) : (
-              <View style={s.profileAvatarFallback}>
+              <View style={[s.profileAvatarFallback, { backgroundColor: palette.surfaceAlt }]}>
                 {profile?.name && profile.name !== 'Guest' ? (
                   <Text style={s.avatarText}>{profile.name.trim().slice(0, 1).toUpperCase()}</Text>
                 ) : (
-                  <UserRound size={19} color="#FFFFFF" />
+                  <UserRound size={19} color={headerText} />
                 )}
               </View>
             )}
@@ -91,21 +96,24 @@ export function HomeHeader({
           style={s.locationInline}
           onPress={onLocation}
         >
-          <MapPin size={18} color="#FFFFFF" fill="#FFFFFF" />
-          <Text numberOfLines={1} style={s.headerLocationText}>
+          <MapPin size={18} color={headerText} fill={headerText} />
+          <Text numberOfLines={1} style={[s.headerLocationText, { color: headerText }]}>
             {city || 'Choose your area'}
           </Text>
-          <Icons.ChevronDown size={16} color="#FFFFFF" />
+          <Icons.ChevronDown size={16} color={headerText} />
         </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel="Use current location"
           disabled={currentLocationLoading}
           onPress={onCurrentLocation}
-          style={s.headerCurrentLocation}
+          style={[
+            s.headerCurrentLocation,
+            { borderColor: palette.primary, backgroundColor: palette.primaryTint },
+          ]}
         >
-          <LocateFixed size={15} color="#FFFFFF" />
-          <Text numberOfLines={1} style={s.headerCurrentLocationText}>
+          <LocateFixed size={15} color={palette.primary} />
+          <Text numberOfLines={1} style={[s.headerCurrentLocationText, { color: palette.primary }]}>
             {currentLocationLoading ? 'Finding you…' : 'Use current location'}
           </Text>
         </TouchableOpacity>
@@ -114,13 +122,13 @@ export function HomeHeader({
     </View>
   );
 }
-function IconButton({ onPress, children, label }) {
+function IconButton({ onPress, children, label, style }) {
   return (
     <TouchableOpacity
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={s.iconButton}
+      style={[s.iconButton, style]}
     >
       {children}
     </TouchableOpacity>

@@ -12,8 +12,12 @@ test('text normalization removes controls and normalizes whitespace', () => {
 test('email and password validation enforce account boundaries', () => {
   assert.equal(validation.cleanEmail(' PERSON@Example.COM '), 'person@example.com');
   assert.throws(() => validation.cleanEmail('not-an-email'), /valid email/);
-  assert.throws(() => validation.cleanPassword('short'), /between 10 and 128/);
+  assert.throws(() => validation.cleanPassword('1234567'), /between 8 and 128/);
+  assert.equal(validation.cleanPassword('12345678'), '12345678');
   assert.equal(validation.cleanPassword('long-enough-password'), 'long-enough-password');
+  assert.equal(validation.cleanNewPassword('Long passphrase 27'), 'Long passphrase 27');
+  assert.throws(() => validation.cleanNewPassword('short7'), /between 12 and 128/);
+  assert.throws(() => validation.cleanNewPassword('longpasswordonly'), /letter and one number/);
 });
 
 test('external websites are restricted to credential-free HTTPS URLs', () => {

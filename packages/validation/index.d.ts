@@ -3,6 +3,10 @@ export type UploadLike = { size: number; type: string };
 export declare function cleanText(value: unknown, options?: TextOptions): string;
 export declare function cleanEmail(value: unknown): string;
 export declare function cleanPassword(value: unknown): string;
+export declare function cleanNewPassword(value: unknown): string;
+export declare function isValidNewPassword(value: unknown): boolean;
+export declare const PASSWORD_MIN_LENGTH: number;
+export declare const NEW_PASSWORD_MIN_LENGTH: number;
 export declare function requireUuid(value: unknown, field?: string): string;
 export declare function validateHttpsUrl(value: unknown, field?: string): string;
 export declare function validateText(

@@ -35,6 +35,22 @@
         "EXPO_PUBLIC_ENABLE_GOOGLE_ADS": "false"
       }
     },
+    "beta-play": {
+      "channel": "beta-play",
+      "environment": "production",
+      "distribution": "store",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_DEMO_MODE": "false",
+        "EXPO_PUBLIC_ENABLE_GOOGLE_MAPS": "false",
+        "EXPO_PUBLIC_ENABLE_PAYMENTS": "false",
+        "EXPO_PUBLIC_ENABLE_CUSTOM_ADS": "true",
+        "EXPO_PUBLIC_ENABLE_GOOGLE_ADS": "false"
+      }
+    },
     "beta-apk": {
       "channel": "beta-internal",
       "environment": "production",

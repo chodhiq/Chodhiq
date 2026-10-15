@@ -3,8 +3,8 @@ name: Publish approved legal pages
 on:
   workflow_dispatch:
     inputs:
-      publish_marked_drafts:
-        description: Publish the current pages with visible draft and review markers
+      approve_publication:
+        description: I have reviewed these pages and approve publication
         type: boolean
         required: true
         default: false
@@ -22,7 +22,7 @@ jobs:
   deploy:
     if: >-
       github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
-      inputs.publish_marked_drafts
+      inputs.approve_publication
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -31,10 +31,10 @@ jobs:
       - name: Check out the approved branch
         uses: actions/checkout@v4
 
-      - name: Confirm marked drafts are present
+      - name: Verify policy pages
         run: |
-          if ! grep -Eiq 'private beta draft|do not publish before review|review required|review draft' site-static/*.html; then
-            echo "Expected visible draft/review markers in this explicitly approved draft publication."
+          if grep -Eiq 'private beta draft|do not publish before review|review required|review draft|not approved for publication' site-static/*.html; then
+            echo "Remove internal draft and review markers before publication."
             exit 1
           fi
           test -f site-static/index.html

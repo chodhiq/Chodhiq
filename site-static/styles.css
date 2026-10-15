@@ -8,9 +8,6 @@
   --paper: #ffffff;
   --canvas: #f4f7fa;
   --line: #e3eaf0;
-  --review-ink: #704300;
-  --review-paper: #fff5de;
-  --review-line: #f0c979;
   --shadow: 0 22px 60px rgb(24 44 66 / 9%);
   font-family:
     Inter,
@@ -207,59 +204,10 @@ a:focus-visible {
   padding-left: 1.35rem;
 }
 
-.draft-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  margin: 1.4rem 0 0.8rem !important;
-  padding: 0.75rem 1rem;
-  border: 1px solid #f1d59b;
-  border-radius: 0.8rem;
-  color: #704300 !important;
-  background: #fff9eb;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.draft-icon {
-  display: grid;
-  width: 1.35rem;
-  aspect-ratio: 1;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 50%;
-  color: white;
-  background: #a86600;
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
 .document-meta {
   margin-top: 0.5rem !important;
   color: var(--muted) !important;
   font-size: 0.9rem;
-}
-
-.review {
-  margin-block: 1.5rem;
-  padding: 1.1rem 1.25rem;
-  border: 1px solid var(--review-line);
-  border-left: 4px solid #d58a15;
-  border-radius: 0.85rem;
-  color: var(--review-ink);
-  background: var(--review-paper);
-}
-
-.review h2 {
-  margin: 0 0 0.45rem;
-  color: var(--review-ink);
-  font-size: 0.86rem;
-  letter-spacing: 0.09em;
-}
-
-.review p {
-  margin: 0.45rem 0;
-  color: #624b29;
 }
 
 .site-footer {
@@ -317,29 +265,6 @@ a:focus-visible {
   max-width: 38rem;
   color: #4c5d71;
   font-size: clamp(1rem, 2vw, 1.15rem);
-}
-
-.hero-note {
-  display: flex;
-  max-width: 43rem;
-  align-items: flex-start;
-  gap: 0.85rem;
-  margin-top: 2rem;
-  padding: 1rem 1.1rem;
-  border: 1px solid #f1d59b;
-  border-radius: 0.9rem;
-  background: rgb(255 249 235 / 88%);
-}
-
-.hero-note strong {
-  display: block;
-  color: var(--review-ink);
-}
-
-.hero-note p {
-  margin: 0.15rem 0 0;
-  color: #6f5a38;
-  font-size: 0.9rem;
 }
 
 .doc-grid {

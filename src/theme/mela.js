@@ -2,40 +2,32 @@ import { Platform } from 'react-native';
 
 const accents = { primary: '#F4A125', secondary: '#0E6B5C', accent: '#C5392B' };
 export const melaColors = {
-  light: {
-    ...accents,
-    background: '#FBF4E8',
-    surface: '#FFFFFF',
-    textPrimary: '#2A2118',
-    textSecondary: '#6B5D4F',
-    border: '#E8DCC8',
-  },
   dark: {
     ...accents,
-    background: '#1C1310',
-    surface: '#2A1F1A',
-    textPrimary: '#F4ECE0',
-    textSecondary: '#C2B2A0',
-    border: '#3A2B23',
+    background: '#080A09',
+    surface: '#111513',
+    textPrimary: '#F3F6F4',
+    textSecondary: '#A1ABA5',
+    border: '#29312D',
   },
 };
 
-export function getMelaPalette(isDark) {
-  const colors = melaColors[isDark ? 'dark' : 'light'];
+export function getMelaPalette() {
+  const colors = melaColors.dark;
   return {
     ...colors,
-    dark: isDark,
+    dark: true,
     bg: colors.background,
     text: colors.textPrimary,
     text2: colors.textSecondary,
     muted: colors.textSecondary,
-    surfaceAlt: isDark ? '#342720' : '#F5EBD9',
-    primarySoft: isDark ? '#49301A' : '#FFF0D6',
+    surfaceAlt: '#191E1B',
+    primarySoft: '#302A18',
     // Marigold requires dark foreground text for readable action labels.
     onPrimary: '#2A2118',
-    coral: isDark ? '#FF9184' : colors.accent,
+    coral: '#FF9184',
     saffron: colors.primary,
-    actionText: isDark ? colors.primary : colors.secondary,
+    actionText: colors.primary,
   };
 }
 

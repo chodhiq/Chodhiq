@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-7_pICZxP.js";import{ErrorState as t}from"./ui-U4gbAgsF.js";var n=e();function r({reset:e}){return(0,n.jsx)(`main`,{className:`route-error`,children:(0,n.jsx)(t,{message:`This page could not load. Your session and the other dashboard pages are still available.`,retry:e})})}export{r as default};

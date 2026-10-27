@@ -50,6 +50,9 @@ Deno.serve(async (request) => {
   if (callerError || !caller) return json(origin, { error: 'Session expired' }, 401);
   if (caller.app_metadata?.role !== 'admin')
     return json(origin, { error: 'Administrator access required' }, 403);
+  const adminLevel = caller.app_metadata?.admin_level ?? 'super_admin';
+  if (!['super_admin', 'moderator'].includes(adminLevel))
+    return json(origin, { error: 'Your administrator level cannot suspend or reactivate users' }, 403);
 
   const admin = createClient(url, service, {
     auth: { autoRefreshToken: false, persistSession: false },

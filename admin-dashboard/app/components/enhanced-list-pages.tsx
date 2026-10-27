@@ -7,18 +7,37 @@ import type { PaymentListRow, ProviderListRow, UserListRow } from "../../lib/dat
 import { cleanSearch, range, useAdmin } from "../../lib/admin";
 import { runBoundedBulk, safeErrorDiagnostic, type MutationResult } from "../../lib/operations";
 import { supabase } from "../../lib/supabase";
-import { AdminShell } from "./admin-shell";
+import { sendNotification } from "../../lib/notify-user";
+import { useDebouncedValue } from "../../lib/use-debounced-value";
+import { useCounts, type CountDef } from "../../lib/use-counts";
 import { EmptyState, LoadError, Page, Pager, Search, Skeleton, Status, exportCsv } from "./ui";
 
 const datedFilename = (name: string) => `chodhiq-${name}-${new Date().toISOString().slice(0, 10)}.csv`;
+const PROVIDER_COUNTS = [
+  { key: 'all', table: 'providers' },
+  { key: 'verified', table: 'providers', filters: { verification_status: 'verified' } },
+  { key: 'pending', table: 'providers', filters: { verification_status: 'pending' } },
+  { key: 'suspended', table: 'providers', filters: { verification_status: 'suspended' } },
+] as const satisfies readonly CountDef[];
+const USER_COUNTS = [
+  { key: 'all', table: 'profiles' },
+  { key: 'suspended', table: 'user_moderation_status', filters: { status: 'suspended' } },
+] as const satisfies readonly CountDef[];
+const PAYMENT_COUNTS = [
+  { key: 'total', table: 'payment_records' },
+  { key: 'paid', table: 'payment_records', filters: { status: 'paid' } },
+  { key: 'failed', table: 'payment_records', filters: { status: 'failed' } },
+] as const satisfies readonly CountDef[];
 
 export function ProvidersOperationsPage() {
   const admin = useAdmin();
+  const { show: showCount } = useCounts(PROVIDER_COUNTS);
   const [rows, setRows] = useState<ProviderListRow[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
@@ -26,15 +45,15 @@ export function ProvidersOperationsPage() {
   const load = useCallback(async () => {
     const activeRequest = ++requestId.current;
     setLoading(true); setError("");
-    let request = supabase.from("providers").select("id,business_name,base_city,verification_status,sponsored_rank,categories(name)", { count: "exact" }).order("created_at", { ascending: false }).range(...range(page));
-    const search = cleanSearch(query);
+    let request = supabase.from("providers").select("id,owner_id,business_name,base_city,verification_status,sponsored_rank,categories(name)", { count: "exact" }).order("created_at", { ascending: false }).range(...range(page));
+    const search = cleanSearch(debouncedQuery);
     if (search) request = request.or(`business_name.ilike.%${search}%,base_city.ilike.%${search}%`);
     const result = await request;
     if (activeRequest !== requestId.current) return;
     if (result.error) setError("Provider records are unavailable. Refresh and retry.");
     else { setRows((result.data ?? []) as unknown as ProviderListRow[]); setTotal(result.count ?? 0); }
     setLoading(false);
-  }, [page, query]);
+  }, [page, debouncedQuery]);
   useEffect(() => { void load(); return () => { requestId.current += 1; }; }, [load]);
 
   async function suspendSelected() {
@@ -43,6 +62,10 @@ export function ProvidersOperationsPage() {
     if (!await admin.confirmAction({ title: "Suspend selected providers", message: `Remove ${names.length} providers from marketplace visibility?`, requiredText: "SUSPEND", confirmLabel: "Suspend providers" })) return;
     setProcessing(true);
     const summary = await runBoundedBulk(selected, id => admin.act("provider_bulk_suspended", "provider", id, () => supabase.from("providers").update({ verification_status: "suspended", is_verified: false }).eq("id", id), { bulk: true, reason: "Administrator bulk moderation" }));
+    for (const row of rows.filter(item => selected.includes(item.id) && !summary.failed.includes(item.id) && item.owner_id)) {
+      try { await sendNotification({ audience: 'user', userId: row.owner_id!, title: 'Your provider profile was suspended', body: 'Your provider profile was suspended and is hidden from the marketplace. Contact support if you need help.' }); }
+      catch { admin.notify('Provider status updated, but an owner notification could not be sent.', 'error'); }
+    }
     setSelected(summary.failed);
     admin.notify(summary.message, summary.failed.length ? "error" : "success");
     await load();
@@ -50,20 +73,22 @@ export function ProvidersOperationsPage() {
   }
 
   const csvRows = rows.map(row => ({ id: row.id, business_name: row.business_name, category: row.categories?.name, city: row.base_city, sponsored_rank: row.sponsored_rank, status: row.verification_status }));
-  return <AdminShell title="Providers"><Page title="Provider directory" note="Search, export the current page, bulk-moderate, or open a provider dossier.">
+  return <Page title="Provider directory" note="Search, export the current page, bulk-moderate, or open a provider dossier." stats={[{label:'All providers',value:showCount('all')},{label:'Verified',value:showCount('verified'),tone:'green'},{label:'Pending',value:showCount('pending'),tone:'amber'},{label:'Suspended',value:showCount('suspended'),tone:'purple'}]}>
     <Search id="provider-search" label="Search providers" value={query} onChange={value => { setQuery(value); setPage(0); }} />
     <div className="toolbar"><button className="danger" disabled={!selected.length || processing} onClick={suspendSelected}>{processing ? "Suspending…" : `Suspend selected (${selected.length})`}</button><button className="export" disabled={!rows.length} onClick={() => exportCsv(datedFilename("providers-current-page"), csvRows)}>Export current page CSV</button></div>
-    {loading ? <Skeleton rows={7} /> : error ? <LoadError message={error} retry={load} /> : !rows.length ? <EmptyState title={query ? "No providers match your search." : "No providers are available."} actionLabel={query ? "Clear search" : undefined} onAction={query ? () => setQuery("") : undefined} /> : <section className="panel table"><table><thead><tr><th><input className="bulk-check" aria-label="Select all providers on this page" type="checkbox" checked={selected.length === rows.length} onChange={event => setSelected(event.target.checked ? rows.map(row => row.id) : [])} /></th><th>Business</th><th>Category</th><th>City</th><th>Sponsored rank</th><th>Status</th><th className="sticky-action">Details</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td><input className="bulk-check" aria-label={`Select ${row.business_name}`} type="checkbox" checked={selected.includes(row.id)} onChange={event => setSelected(current => event.target.checked ? [...current, row.id] : current.filter(id => id !== row.id))} /></td><td><b>{row.business_name}</b></td><td>{row.categories?.name || "—"}</td><td>{row.base_city || "—"}</td><td>{row.sponsored_rank ?? 0}</td><td><Status value={row.verification_status} /></td><td className="sticky-action"><Link href={`/providers/${row.id}`}>Open dossier</Link></td></tr>)}</tbody></table><Pager page={page} total={total} setPage={setPage} /></section>}
-  </Page></AdminShell>;
+    {loading ? <Skeleton rows={7} /> : error ? <LoadError message={error} retry={load} /> : !rows.length ? <EmptyState title={query ? "No providers match your search." : "No providers are available."} actionLabel={query ? "Clear search" : undefined} onAction={query ? () => setQuery("") : undefined} /> : <section className="panel table"><table><thead><tr><th><input className="bulk-check" aria-label="Select all providers on this page" type="checkbox" checked={selected.length === rows.length} onChange={event => setSelected(event.target.checked ? rows.map(row => row.id) : [])} /></th><th>Business</th><th>Category</th><th>City</th><th>Sponsored rank</th><th>Status</th><th className="sticky-action">Actions</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td><input className="bulk-check" aria-label={`Select ${row.business_name}`} type="checkbox" checked={selected.includes(row.id)} onChange={event => setSelected(current => event.target.checked ? [...current, row.id] : current.filter(id => id !== row.id))} /></td><td><b>{row.business_name}</b></td><td>{row.categories?.name || "—"}</td><td>{row.base_city || "—"}</td><td>{row.sponsored_rank ?? 0}</td><td><Status value={row.verification_status} /></td><td className="sticky-action"><Link href={`/providers/${row.id}`}>Open dossier</Link>{row.owner_id && <> · <Link href={`/notifications?to=${encodeURIComponent(row.owner_id)}`}>Notify</Link></>}</td></tr>)}</tbody></table><Pager page={page} total={total} setPage={setPage} /></section>}
+  </Page>;
 }
 
 export function UsersOperationsPage() {
   const admin = useAdmin();
+  const { show: showCount } = useCounts(USER_COUNTS);
   const [rows, setRows] = useState<UserListRow[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [query, setQuery] = useState(() => typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("user") || "");
+  const debouncedQuery = useDebouncedValue(query);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -73,7 +98,7 @@ export function UsersOperationsPage() {
     const activeRequest = ++requestId.current;
     setLoading(true); setError("");
     let request = supabase.from("profiles").select("id,full_name,city,created_at", { count: "exact" }).order("created_at", { ascending: false }).range(...range(page));
-    const search = cleanSearch(query);
+    const search = cleanSearch(debouncedQuery);
     if (/^[0-9a-f-]{36}$/i.test(search)) request = request.eq("id", search);
     else if (search) request = request.or(`full_name.ilike.%${search}%,city.ilike.%${search}%`);
     const result = await request;
@@ -94,7 +119,7 @@ export function UsersOperationsPage() {
       }
     }
     setLoading(false);
-  }, [page, query]);
+  }, [page, debouncedQuery]);
   useEffect(() => { void load(); return () => { requestId.current += 1; }; }, [load]);
 
   async function control(ids: string[], action: "suspend" | "reactivate") {
@@ -109,6 +134,10 @@ export function UsersOperationsPage() {
       if (response.error || response.data?.error) return { ok: false, code: response.data?.code === "partial_failure" ? "partial_failure" : "mutation_failed", userMessage: response.data?.message || "User state could not be updated.", diagnostic: safeErrorDiagnostic(response.error || response.data?.error), correlationId } satisfies MutationResult<undefined>;
       return { ok: true, data: undefined, correlationId } satisfies MutationResult<undefined>;
     });
+    for (const userId of ids.filter(id => !summary.failed.includes(id))) {
+      try { await sendNotification({ audience: 'user', userId, title: action === 'suspend' ? 'Your account has been suspended' : 'Your account is active again', body: action === 'suspend' ? `Your ChodhiQ account was suspended. Reason: ${trimmedReason.slice(0, 400)}` : 'Your ChodhiQ account has been reactivated. You can sign in and use the marketplace again.' }); }
+      catch { admin.notify('Saved, but a user notification could not be sent.', 'error'); }
+    }
     setSelected(summary.failed);
     admin.notify(`${summary.message}${summary.failed.length ? " Failed accounts remain selected; refresh their state before retrying." : ""}`, summary.failed.length ? "error" : "success");
     await load();
@@ -117,15 +146,16 @@ export function UsersOperationsPage() {
   }
 
   const csvRows = rows.map(row => ({ id: row.id, name: row.full_name, city: row.city, joined: row.created_at, status: row.user_moderation_status?.[0]?.status || "active" }));
-  return <AdminShell title="Users"><Page title="User management" note="Suspend or reactivate users through the trusted admin function.">
+  return <Page title="User management" note="Suspend or reactivate users through the trusted admin function." stats={[{label:'Total users',value:showCount('all')},{label:'Suspended',value:showCount('suspended'),tone:'amber'}]}>
     <Search id="user-search" label="Search users" value={query} onChange={value => { setQuery(value); setPage(0); }} />
     <label className="field" htmlFor="user-control-reason"><span>Moderation reason or reactivation note</span><input id="user-control-reason" value={reason} minLength={8} maxLength={500} onChange={event => setReason(event.target.value)} aria-describedby="user-control-help" /><small id="user-control-help">Required for both suspension and reactivation; 8–500 characters.</small></label>
     <div className="toolbar"><button className="danger" disabled={!selected.length || processing} onClick={() => control(selected, "suspend")}>{processing ? "Processing…" : `Suspend selected (${selected.length})`}</button><button disabled={!selected.length || processing} onClick={() => control(selected, "reactivate")}>Reactivate selected</button><button className="export" disabled={!rows.length} onClick={() => exportCsv(datedFilename("users-current-page"), csvRows)}>Export current page CSV</button></div>
-    {loading ? <Skeleton rows={7} /> : error ? <LoadError message={error} retry={load} /> : !rows.length ? <EmptyState title={query ? "No users match your search." : "No user records are available."} actionLabel={query ? "Clear search" : undefined} onAction={query ? () => setQuery("") : undefined} /> : <section className="panel table"><table><thead><tr><th><input className="bulk-check" aria-label="Select all users on this page" type="checkbox" checked={selected.length === rows.length} onChange={event => setSelected(event.target.checked ? rows.map(row => row.id) : [])} /></th><th>User</th><th>City</th><th>Joined</th><th>Status</th><th className="sticky-action">Control</th></tr></thead><tbody>{rows.map(row => { const status = row.user_moderation_status?.[0]?.status || "active"; const self = row.id === admin.session?.user.id; return <tr key={row.id}><td><input className="bulk-check" aria-label={`Select ${row.full_name || row.id}`} type="checkbox" disabled={self} checked={selected.includes(row.id)} onChange={event => setSelected(current => event.target.checked ? [...current, row.id] : current.filter(id => id !== row.id))} /></td><td>{row.full_name || row.id.slice(0, 8)}{self ? " (you)" : ""}</td><td>{row.city || "—"}</td><td>{new Date(row.created_at).toLocaleDateString("en-GB", { timeZone: "Europe/London" })}</td><td><Status value={status} /></td><td className="sticky-action"><button className={status === "active" ? "danger" : ""} disabled={self || processing} onClick={() => control([row.id], status === "suspended" ? "reactivate" : "suspend")}>{status === "suspended" ? "Reactivate" : "Suspend"}</button></td></tr>; })}</tbody></table><Pager page={page} total={total} setPage={setPage} /></section>}
-  </Page></AdminShell>;
+    {loading ? <Skeleton rows={7} /> : error ? <LoadError message={error} retry={load} /> : !rows.length ? <EmptyState title={query ? "No users match your search." : "No user records are available."} actionLabel={query ? "Clear search" : undefined} onAction={query ? () => setQuery("") : undefined} /> : <section className="panel table"><table><thead><tr><th><input className="bulk-check" aria-label="Select all users on this page" type="checkbox" checked={selected.length === rows.length} onChange={event => setSelected(event.target.checked ? rows.map(row => row.id) : [])} /></th><th>User</th><th>City</th><th>Joined</th><th>Status</th><th className="sticky-action">Control</th></tr></thead><tbody>{rows.map(row => { const status = row.user_moderation_status?.[0]?.status || "active"; const self = row.id === admin.session?.user.id; return <tr key={row.id}><td><input className="bulk-check" aria-label={`Select ${row.full_name || row.id}`} type="checkbox" disabled={self} checked={selected.includes(row.id)} onChange={event => setSelected(current => event.target.checked ? [...current, row.id] : current.filter(id => id !== row.id))} /></td><td>{row.full_name || row.id.slice(0, 8)}{self ? " (you)" : ""}</td><td>{row.city || "—"}</td><td>{new Date(row.created_at).toLocaleDateString("en-GB", { timeZone: "Europe/London" })}</td><td><Status value={status} /></td><td className="sticky-action"><Link href={`/notifications?to=${encodeURIComponent(row.id)}`}>Notify</Link> <button className={status === "active" ? "danger" : ""} disabled={self || processing} onClick={() => control([row.id], status === "suspended" ? "reactivate" : "suspend")}>{status === "suspended" ? "Reactivate" : "Suspend"}</button></td></tr>; })}</tbody></table><Pager page={page} total={total} setPage={setPage} /></section>}
+  </Page>;
 }
 
 export function PaymentsOperationsPage() {
+  const { show } = useCounts(PAYMENT_COUNTS);
   const [rows, setRows] = useState<PaymentListRow[]>([]);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
@@ -143,5 +173,5 @@ export function PaymentsOperationsPage() {
   }, [page]);
   useEffect(() => { void load(); return () => { requestId.current += 1; }; }, [load]);
   const csvRows = rows.map(row => ({ id: row.id, provider: row.providers?.business_name, transaction_id: row.transaction_id, amount_pence: row.amount_pence, currency: row.currency, status: row.status, created_at: row.created_at }));
-  return <AdminShell title="Payments"><Page title="Payment records" note="Read-only payment ledger. Exports contain only the current page."><div className="toolbar"><button className="export" disabled={!rows.length} onClick={() => exportCsv(datedFilename("payments-current-page"), csvRows)}>Export current page CSV</button></div>{loading ? <Skeleton rows={7} /> : error ? <LoadError message={error} retry={load} /> : !rows.length ? <EmptyState title="No payment records are available." /> : <section className="panel table"><table><thead><tr><th>Provider</th><th>Transaction</th><th>Amount</th><th>Status</th><th>Created</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td>{row.providers?.business_name || row.provider_id.slice(0, 8)}</td><td>{row.transaction_id || "—"}</td><td>{new Intl.NumberFormat("en-GB", { style: "currency", currency: String(row.currency || "gbp").toUpperCase() }).format(row.amount_pence / 100)}</td><td><Status value={row.status} /></td><td>{new Date(row.created_at).toLocaleDateString("en-GB", { timeZone: "Europe/London" })}</td></tr>)}</tbody></table><Pager page={page} total={total} setPage={setPage} /></section>}</Page></AdminShell>;
+  return <Page title="Payment records" note="Read-only payment ledger. Exports contain only the current page." stats={[{label:'Total payments',value:show('total')},{label:'Paid',value:show('paid'),tone:'green'},{label:'Failed',value:show('failed'),tone:'amber'}]}><div className="toolbar"><button className="export" disabled={!rows.length} onClick={() => exportCsv(datedFilename("payments-current-page"), csvRows)}>Export current page CSV</button></div>{loading ? <Skeleton rows={7} /> : error ? <LoadError message={error} retry={load} /> : !rows.length ? <EmptyState title="No payment records are available." /> : <section className="panel table"><table><thead><tr><th>Provider</th><th>Transaction</th><th>Amount</th><th>Status</th><th>Created</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td>{row.providers?.business_name || row.provider_id.slice(0, 8)}</td><td>{row.transaction_id || "—"}</td><td>{new Intl.NumberFormat("en-GB", { style: "currency", currency: String(row.currency || "gbp").toUpperCase() }).format(row.amount_pence / 100)}</td><td><Status value={row.status} /></td><td>{new Date(row.created_at).toLocaleDateString("en-GB", { timeZone: "Europe/London" })}</td></tr>)}</tbody></table><Pager page={page} total={total} setPage={setPage} /></section>}</Page>;
 }

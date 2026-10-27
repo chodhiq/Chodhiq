@@ -6,17 +6,32 @@ import type { ReportRow, ReportStatus } from '../../lib/database.types';
 import { cleanSearch, range, useAdmin } from '../../lib/admin';
 import { runBoundedBulk } from '../../lib/operations';
 import { supabase } from '../../lib/supabase';
-import { AdminShell } from './admin-shell';
+import { sendNotification } from '../../lib/notify-user';
+import { useDebouncedValue } from '../../lib/use-debounced-value';
+import { useCounts, type CountDef } from '../../lib/use-counts';
 import { EmptyState, LoadError, Page, Pager, Search, Skeleton, Status } from './ui';
+
+const COMMUNITY_REPORT_COUNTS = [
+  { key: 'open', table: 'community_post_reports', filters: { status: 'open' } },
+  { key: 'reviewing', table: 'community_post_reports', filters: { status: 'reviewing' } },
+  { key: 'resolved', table: 'community_post_reports', filters: { status: 'resolved' } },
+] as const satisfies readonly CountDef[];
+const PROVIDER_REPORT_COUNTS = [
+  { key: 'open', table: 'provider_reports', filters: { status: 'open' } },
+  { key: 'reviewing', table: 'provider_reports', filters: { status: 'reviewing' } },
+  { key: 'resolved', table: 'provider_reports', filters: { status: 'resolved' } },
+] as const satisfies readonly CountDef[];
 
 export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
   const admin = useAdmin();
+  const { show } = useCounts(kind === 'provider' ? PROVIDER_REPORT_COUNTS : COMMUNITY_REPORT_COUNTS);
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState<ReportStatus>('open');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [resolutionNote, setResolutionNote] = useState('');
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -39,7 +54,7 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
       .eq('status', status)
       .order('created_at', { ascending: false })
       .range(...range(page));
-    const cleaned = cleanSearch(search);
+    const cleaned = cleanSearch(debouncedSearch);
     if (cleaned) request = request.ilike('reason', `%${cleaned}%`);
     const result = await request;
     if (activeRequest !== requestId.current) return;
@@ -49,7 +64,7 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
       setTotal(result.count ?? 0);
     }
     setLoading(false);
-  }, [kind, page, search, status, table]);
+  }, [kind, page, debouncedSearch, status, table]);
   useEffect(() => {
     let active = true;
     const run = async () => {
@@ -112,6 +127,10 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
       },
     );
     if (result.ok) {
+      if (kind === 'provider' && next === 'resolved' && report.reporter_id) {
+        try { await sendNotification({ audience: 'user', userId: report.reporter_id, title: 'Your report was reviewed', body: 'The ChodhiQ team has reviewed your report and taken action where appropriate. Thank you for helping keep the community safe.' }); }
+        catch { admin.notify('Report resolved, but the reporter notification could not be sent.', 'error'); }
+      }
       setResolutionNote('');
       await load();
     }
@@ -185,13 +204,15 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
     setProcessing(false);
   }
 
-  const title = kind === 'provider' ? 'Provider reports' : 'Community reports';
   return (
-    <AdminShell title={title}>
+    
       <Page
         title={kind === 'provider' ? 'Provider-report queue' : 'Reported community content'}
         note="Realtime moderation with server-validated transitions and audited decisions."
+        stats={[{label:'Open',value:show('open'),tone:'amber'},{label:'Reviewing',value:show('reviewing'),tone:'purple'},{label:'Resolved',value:show('resolved'),tone:'green'}]}
       >
+        <div className="report-workbench">
+          <section className="report-filter-panel" aria-label="Report filters">
         <div className="pills" aria-label="Report status filter">
           {(['open', 'reviewing', 'resolved', 'dismissed'] as ReportStatus[]).map((value) => (
             <button
@@ -217,6 +238,8 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
             setPage(0);
           }}
         />
+          </section>
+          <section className="report-decision-panel" aria-label="Moderation decision note">
         <label className="field" htmlFor={`${kind}-resolution-note`}>
           <span>Resolution or moderation note</span>
           <textarea
@@ -228,10 +251,17 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
           />
           <small>Required for destructive decisions and dismissals.</small>
         </label>
-        <div className="toolbar">
-          <button disabled={!selected.length || processing} onClick={bulkDismiss}>
-            {processing ? 'Processing…' : `Dismiss selected (${selected.length})`}
-          </button>
+        {selected.length > 0 ? (
+          <div className="report-bulk-actions" role="status">
+            <span>{selected.length} reports selected</span>
+            <button disabled={processing} onClick={bulkDismiss}>
+              {processing ? 'Processing…' : `Dismiss selected (${selected.length})`}
+            </button>
+          </div>
+        ) : (
+          <p className="report-selection-hint">Select reports below to enable bulk dismissal.</p>
+        )}
+          </section>
         </div>
         {loading ? (
           <Skeleton rows={6} />
@@ -354,6 +384,6 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
           </section>
         )}
       </Page>
-    </AdminShell>
+    
   );
 }

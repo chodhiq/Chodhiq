@@ -9,9 +9,12 @@ import Svg, { Circle } from 'react-native-svg';
 import {
   Bookmark,
   Check,
+  Clock3,
+  Flag,
   MessageCircle,
   MoreHorizontal,
   Share2,
+  Star,
   Store,
   ThumbsUp,
 } from 'lucide-react-native';
@@ -155,7 +158,11 @@ function Upvote({ liked, count, onPress, palette, disabled }) {
           void Haptics.selectionAsync().catch(() => {});
         onPress?.();
       }}
-      style={styles.action}
+      style={[
+        styles.action,
+        styles.actionButton,
+        { backgroundColor: liked ? palette.primarySoft : palette.surface },
+      ]}
     >
       <Animated.View style={[styles.voteIcon, { transform: [{ scale: pop }] }]}>
         <Animated.View
@@ -233,6 +240,8 @@ export default function PostCard({
   const [imageOpen, setImageOpen] = useState(false);
   const [imageRatio, setImageRatio] = useState(1);
   const variant = postVariant(post);
+  const TypeIcon =
+    variant === 'provider_offer' || variant === 'marketplace' ? Store : typeIcon(post.post_type);
   const provider = post.providers || providers.find((item) => item.id === post.provider_id);
   const counts = engagement.counts[post.id] || {};
   const liked = !!session && !!counts.is_liked;
@@ -270,13 +279,7 @@ export default function PostCard({
         {
           backgroundColor: palette.surface,
           borderColor: palette.border,
-          borderLeftWidth: variant === 'marketplace' ? 1 : 3,
-          borderLeftColor:
-            variant === 'provider_offer'
-              ? palette.primary
-              : variant === 'discussion'
-                ? palette.secondary
-                : palette.border,
+          borderLeftWidth: 1,
         },
       ]}
     >
@@ -319,7 +322,10 @@ export default function PostCard({
             accessibilityRole="button"
             accessibilityLabel={`View ${name} profile`}
             onPress={onAuthor}
-            style={[styles.avatar, { backgroundColor: palette.primarySoft }]}
+            style={[
+              styles.avatar,
+              { backgroundColor: palette.primarySoft, borderColor: palette.primaryTint },
+            ]}
           >
             <Text style={{ color: palette.text, fontWeight: '600' }}>{name[0]}</Text>
           </TouchableOpacity>
@@ -343,10 +349,17 @@ export default function PostCard({
                 </Text>
               )}
             </View>
-            <Text style={{ color: palette.text2, fontSize: 11 }}>
-              {relativeDate(post.created_at)}
-              {post.region_key ? ` · ${REGION_LABELS[post.region_key] || post.region_key}` : ''}
-            </Text>
+            <View style={styles.metaRow}>
+              <Clock3 size={11} color={palette.text2} />
+              <Text style={{ color: palette.text2, fontSize: 11 }}>
+                {relativeDate(post.created_at)}
+              </Text>
+              {post.region_key ? (
+                <Text style={{ color: palette.text2, fontSize: 11 }}>
+                  · {REGION_LABELS[post.region_key] || post.region_key}
+                </Text>
+              ) : null}
+            </View>
           </View>
           {variant === 'provider_offer' && <OfferRing post={post} palette={palette} />}
           <TouchableOpacity
@@ -383,13 +396,16 @@ export default function PostCard({
         ) : (
           <Text style={[styles.body, { color: palette.text }]}>{post.body}</Text>
         )}
-        <Text style={[styles.type, { color: palette.actionText }]}>
-          {variant === 'provider_offer'
-            ? 'Provider offer'
-            : variant === 'marketplace'
-              ? 'For sale'
-              : typeLabel(post.post_type)}
-        </Text>
+        <View style={[styles.type, { backgroundColor: palette.primaryTint }]}>
+          <TypeIcon size={13} color={palette.actionText} />
+          <Text style={{ color: palette.actionText, fontSize: 10, fontWeight: '800' }}>
+            {variant === 'provider_offer'
+              ? 'Provider offer'
+              : variant === 'marketplace'
+                ? 'For sale'
+                : typeLabel(post.post_type)}
+          </Text>
+        </View>
         {provider && (
           <TouchableOpacity
             accessibilityRole="button"
@@ -411,7 +427,7 @@ export default function PostCard({
           Photo unavailable. Refresh the feed to retry.
         </Text>
       )}
-      <View style={[styles.actions, { borderTopColor: palette.border }]}>
+      <View style={styles.actions}>
         <Upvote
           disabled={!!counts.is_updating}
           liked={liked}
@@ -425,7 +441,7 @@ export default function PostCard({
           accessibilityRole="button"
           accessibilityLabel={`Comments, ${Number(counts.comment_count || 0)}`}
           onPress={onComment}
-          style={styles.action}
+          style={[styles.action, styles.actionButton, { backgroundColor: palette.surface }]}
         >
           <MessageCircle size={20} color={palette.text2} />
           <Text style={{ color: palette.text2, fontSize: 12 }}>
@@ -438,7 +454,11 @@ export default function PostCard({
           accessibilityLabel={saved ? 'Remove saved post' : 'Save post'}
           accessibilityState={{ selected: saved }}
           onPress={onSave}
-          style={styles.action}
+          style={[
+            styles.action,
+            styles.actionButton,
+            { backgroundColor: saved ? palette.primarySoft : palette.surface },
+          ]}
         >
           <Bookmark
             size={20}
@@ -450,7 +470,7 @@ export default function PostCard({
           accessibilityRole="button"
           accessibilityLabel="Share post"
           onPress={onShare}
-          style={styles.action}
+          style={[styles.action, styles.actionButton, { backgroundColor: palette.surface }]}
         >
           <Share2 size={20} color={palette.text2} />
         </TouchableOpacity>
@@ -467,6 +487,16 @@ function typeLabel(type) {
       recommendation: 'Recommendation',
       complaint: 'Concern',
     }[type] || 'Discussion'
+  );
+}
+function typeIcon(type) {
+  return (
+    {
+      discussion: MessageCircle,
+      experience: Star,
+      recommendation: ThumbsUp,
+      complaint: Flag,
+    }[type] || MessageCircle
   );
 }
 function relativeDate(value) {
@@ -486,22 +516,33 @@ const styles = StyleSheet.create({
     marginHorizontal: 18,
     marginTop: 12,
     borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: 22,
     overflow: 'hidden',
   },
-  content: { padding: 14 },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  content: { padding: 17 },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
   },
   nameRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   newBadge: { fontSize: 10, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 8 },
-  body: { fontSize: 14, lineHeight: 23, marginTop: 10, flexShrink: 1 },
-  type: { fontSize: 11, marginTop: 9 },
+  body: { fontSize: 15, lineHeight: 23, marginTop: 15, flexShrink: 1 },
+  type: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 11,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 11,
+  },
   image: { width: '100%' },
   saleChip: {
     position: 'absolute',
@@ -536,10 +577,11 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    borderTopWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    gap: 7,
+    marginHorizontal: 10,
+    marginBottom: 10,
+    padding: 6,
+    borderRadius: 16,
   },
   action: {
     minWidth: 44,
@@ -549,6 +591,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
+  actionButton: { borderRadius: 13 },
   voteIcon: { width: 22, height: 22 },
   voteFill: {
     position: 'absolute',

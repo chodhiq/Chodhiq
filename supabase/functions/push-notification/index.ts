@@ -9,6 +9,7 @@ interface NotificationRow {
   type?: string;
   entity_type?: string;
   entity_id?: string;
+  actor_name?: string;
 }
 interface WebhookPayload {
   type: 'INSERT';
@@ -43,7 +44,7 @@ Deno.serve(async (request) => {
     );
   const { data: notification, error: notificationError } = await admin
     .from('notifications')
-    .select('id,user_id,title,body,type,entity_type,entity_id')
+    .select('id,user_id,title,body,type,entity_type,entity_id,actor_name')
     .eq('id', payload.record.id)
     .eq('user_id', payload.record.user_id)
     .maybeSingle();
@@ -102,6 +103,7 @@ Deno.serve(async (request) => {
           type: notification.type,
           entityType: notification.entity_type,
           entityId: notification.entity_id,
+          actorName: notification.actor_name,
         },
       }),
     });

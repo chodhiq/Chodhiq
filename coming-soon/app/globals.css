@@ -90,13 +90,6 @@ svg {
   height: 100%;
   object-fit: contain;
 }
-.logo-white {
-  filter: brightness(0) invert(1);
-}
-.logo .logo-colour {
-  filter: none;
-  clip-path: inset(0 0 0 72%);
-}
 .hero {
   min-height: 630px;
   background: #071715;

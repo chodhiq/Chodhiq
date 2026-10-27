@@ -1,0 +1,1 @@
+import{t as e}from"./server-BkklVSmi.js";var t=e(()=>{throw Error(`Unexpectedly client reference export 'Page' is called on server`)},`86dafb769406`,`Page`),n=e(()=>{throw Error(`Unexpectedly client reference export 'Skeleton' is called on server`)},`86dafb769406`,`Skeleton`);export{n,t};

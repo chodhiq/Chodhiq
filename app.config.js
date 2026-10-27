@@ -8,7 +8,7 @@ const brandName = process.env.EXPO_PUBLIC_BRAND_NAME || base.name;
 const googleAdsEnabled = process.env.EXPO_PUBLIC_ENABLE_GOOGLE_ADS === 'true';
 const googleMapsEnabled = process.env.EXPO_PUBLIC_ENABLE_GOOGLE_MAPS === 'true';
 const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY || '';
-const easProjectId = '1ace485e-57df-4d2a-ad23-8e51f9286e75';
+const easProjectId = 'fae32079-52b9-4db9-9f21-7b8c032afea3';
 const productionBuild =
   process.env.EAS_BUILD === 'true' &&
   (process.env.EAS_BUILD_PROFILE === 'beta-play' ||
@@ -179,7 +179,7 @@ const plugins = base.plugins.map((plugin) => {
 
 module.exports = {
   ...base,
-  owner: 'dom789',
+  owner: 'dominic2s-team',
   name: brandName,
   slug: process.env.EXPO_APP_SLUG || base.slug,
   scheme: process.env.EXPO_APP_SCHEME || base.scheme,
@@ -220,8 +220,7 @@ module.exports = {
         ]
       : []),
     // The native Mobile Ads package registers an Android ContentProvider even
-    // when ad delivery is disabled. Keep a valid (test) app ID in the manifest
-    // so Android can start; feature flags still prevent ads from being shown.
+    // when ad delivery is disabled. Keep a valid app ID in the manifest so Android can start.
     googleMobileAdsPlugin,
   ],
   extra: {

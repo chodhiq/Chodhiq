@@ -32,7 +32,7 @@ function resolveBuildConfig(profile, overrides = {}) {
         EAS_BUILD_PROFILE: profile,
         EXPO_PUBLIC_SUPABASE_URL: 'https://gfjhvsajwjrrlylgrkhf.supabase.co',
         EXPO_PUBLIC_SUPABASE_ANON_KEY: 'public-key-fixture',
-        EXPO_PUBLIC_EAS_PROJECT_ID: 'project-fixture',
+        EXPO_PUBLIC_EAS_PROJECT_ID: '3b5b77f3-c89e-4d20-af90-a249a5e8b75c',
         EXPO_PUBLIC_RELEASE_COMMIT: 'commit-fixture',
         EXPO_PUBLIC_SUPPORT_EMAIL: 'chodhiq@gmail.com',
         EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-test.apps.googleusercontent.com',
@@ -48,9 +48,9 @@ function resolveBuildConfig(profile, overrides = {}) {
 test('direct-install beta can build without pretending legal drafts are published', () => {
   const config = resolveBuildConfig('beta-apk');
   assert.equal(config.android.package, 'com.chodhiq.app');
-  assert.equal(config.owner, 'dom789');
-  assert.equal(config.extra.eas.projectId, '1ace485e-57df-4d2a-ad23-8e51f9286e75');
-  assert.equal(config.updates.url, 'https://u.expo.dev/1ace485e-57df-4d2a-ad23-8e51f9286e75');
+  assert.equal(config.owner, 'kevin1002s-team');
+  assert.equal(config.extra.eas.projectId, '3b5b77f3-c89e-4d20-af90-a249a5e8b75c');
+  assert.equal(config.updates.url, 'https://u.expo.dev/3b5b77f3-c89e-4d20-af90-a249a5e8b75c');
   for (const profile of ['beta-play', 'beta', 'production', 'production-apk']) {
     assert.throws(() => resolveBuildConfig(profile), /EXPO_PUBLIC_TERMS_URL/);
   }
@@ -157,6 +157,50 @@ test('production app config omits Sentry when source-map upload credentials are 
     false,
   );
   assert.equal(JSON.parse(read('eas.json')).build.preview.environment, 'preview');
+});
+
+test('Android ads startup metadata is retained while ad delivery remains feature-gated', () => {
+  const disabled = resolveBuildConfig('beta-apk', {
+    EXPO_PUBLIC_ENABLE_GOOGLE_ADS: 'false',
+  });
+  const enabled = resolveBuildConfig('production', {
+    EXPO_PUBLIC_TERMS_URL: 'https://chodhiq.app/terms',
+    EXPO_PUBLIC_PRIVACY_URL: 'https://chodhiq.app/privacy',
+    EXPO_PUBLIC_DELETE_ACCOUNT_URL: 'https://chodhiq.app/delete-account',
+    EXPO_PUBLIC_ENABLE_GOOGLE_ADS: 'true',
+    GOOGLE_MOBILE_ADS_ANDROID_APP_ID: 'ca-app-pub-1234567890123456~1234567890',
+    GOOGLE_MOBILE_ADS_IOS_APP_ID: 'ca-app-pub-1234567890123456~1234567890',
+    EXPO_PUBLIC_GOOGLE_ADS_ANDROID_BANNER_ID: 'ca-app-pub-1234567890123456/123456789012',
+    EXPO_PUBLIC_GOOGLE_ADS_IOS_BANNER_ID: 'ca-app-pub-1234567890123456/123456789013',
+  });
+  const hasAdsPlugin = (config) =>
+    config.plugins.some((plugin) =>
+      Array.isArray(plugin) ? plugin[0] === 'react-native-google-mobile-ads' : false,
+    );
+  assert.equal(hasAdsPlugin(disabled), true);
+  assert.equal(hasAdsPlugin(enabled), true);
+  assert.match(read('src/components/GoogleBanner.native.js'), /!features\.googleAds/);
+});
+
+test('Android launcher and Play Store icons share the centered foreground artwork', () => {
+  const app = JSON.parse(read('app.base.json')).expo;
+  const assetPipeline = read('workspace-scripts/process-brand-assets.ps1');
+  const icon = readFileSync(
+    new URL('../../store-assets/chodhiq-play-icon-512.png', import.meta.url),
+  );
+  assert.equal(
+    app.android.adaptiveIcon.foregroundImage,
+    './assets/chodhiq-adaptive-foreground.png',
+  );
+  assert.match(
+    assetPipeline,
+    /Copy-Item \$appIconForegroundSource \$adaptiveForegroundDestination/,
+  );
+  assert.match(assetPipeline, /Export-PlayStoreIcon \$appIconForegroundSource/);
+  assert.deepEqual(icon.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  assert.equal(icon.readUInt32BE(16), 512);
+  assert.equal(icon.readUInt32BE(20), 512);
+  assert.ok(icon.length < 1024 * 1024);
 });
 
 test('legal links only accept public credential-free HTTPS destinations', () => {

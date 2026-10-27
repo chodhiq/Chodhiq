@@ -65,20 +65,20 @@ function Export-SquareIcon {
   } finally { $image.Dispose() }
 }
 
-function Export-Wordmark {
-  param([string]$Source, [string]$Destination, [int]$MaximumWidth)
+function Export-PlayStoreIcon {
+  param([string]$Source, [string]$Destination, [int]$Size)
   $image = [System.Drawing.Bitmap]::FromFile($Source)
   try {
-    $bounds = Get-PaddedBounds $image 0.04
-    $width = [Math]::Min($MaximumWidth, $bounds.Width)
-    $height = [Math]::Round($bounds.Height * $width / $bounds.Width)
-    $canvas = New-Object System.Drawing.Bitmap $width, $height
+    $canvas = New-Object System.Drawing.Bitmap $Size, $Size
     try {
       $graphics = [System.Drawing.Graphics]::FromImage($canvas)
       try {
         Set-HighQualityDrawing $graphics
-        $graphics.Clear([System.Drawing.Color]::White)
-        $graphics.DrawImage($image, (New-Object System.Drawing.Rectangle 0, 0, $width, $height), $bounds, [System.Drawing.GraphicsUnit]::Pixel)
+        $graphics.Clear([System.Drawing.Color]::FromArgb(8, 10, 9))
+        $drawSize = [Math]::Round($Size * 1.6)
+        $offset = [Math]::Round(($Size - $drawSize) / 2)
+        $destinationRectangle = New-Object System.Drawing.Rectangle $offset, $offset, $drawSize, $drawSize
+        $graphics.DrawImage($image, $destinationRectangle)
       } finally { $graphics.Dispose() }
       $canvas.Save($Destination, [System.Drawing.Imaging.ImageFormat]::Png)
     } finally { $canvas.Dispose() }
@@ -86,14 +86,40 @@ function Export-Wordmark {
 }
 
 $iconSource = Join-Path $sourceRoot 'chodhiq-app-icon-original.png'
-$wordmarkSource = Join-Path $sourceRoot 'chodhiq-company-logo-original.jpeg'
+$faviconSource = Join-Path $sourceRoot 'chodhiq-favicon.png'
+$appIconForegroundSource = Join-Path $sourceRoot 'chodhiq-app-icon-foreground.png'
+$adaptiveForegroundDestination = Join-Path $workspaceRoot 'assets\chodhiq-adaptive-foreground.png'
+$transparentIconDestination = Join-Path $workspaceRoot 'assets\chodhiq-app-icon-transparent.png'
+$lightWordmarkSource = Join-Path $sourceRoot 'chodhiq-logo-light-mode.png'
+$darkWordmarkSource = Join-Path $sourceRoot 'chodhiq-logo-dark-mode.png'
 
 Export-SquareIcon $iconSource (Join-Path $workspaceRoot 'assets\chodhiq-app-icon-v2.png') 1024
 Export-SquareIcon $iconSource (Join-Path $workspaceRoot 'assets\chodhiq-app-icon.png') 1024
-Export-Wordmark $wordmarkSource (Join-Path $workspaceRoot 'assets\chodhiq-full-logo.png') 1600
+Export-PlayStoreIcon $appIconForegroundSource (Join-Path $workspaceRoot 'store-assets\chodhiq-play-icon-512.png') 512
+Copy-Item $faviconSource (Join-Path $workspaceRoot 'assets\chodhiq-app-favicon.png') -Force
+Copy-Item $appIconForegroundSource $adaptiveForegroundDestination -Force
+Copy-Item $appIconForegroundSource $transparentIconDestination -Force
+
+Copy-Item $lightWordmarkSource (Join-Path $workspaceRoot 'assets\chodhiq-logo-black.png') -Force
+Copy-Item $darkWordmarkSource (Join-Path $workspaceRoot 'assets\chodhiq-logo-white.png') -Force
+Copy-Item $lightWordmarkSource (Join-Path $workspaceRoot 'assets\chodhiq-full-logo.png') -Force
+Copy-Item $lightWordmarkSource (Join-Path $workspaceRoot 'assets\chodhiq-full-logo-transparent.png') -Force
+Copy-Item $darkWordmarkSource (Join-Path $workspaceRoot 'assets\chodhiq-full-logo-white-transparent.png') -Force
+Copy-Item $darkWordmarkSource (Join-Path $workspaceRoot 'assets\chodhiq-official-logo.png') -Force
+Copy-Item $lightWordmarkSource (Join-Path $workspaceRoot 'site-static\chodhiq-logo-black.png') -Force
+Copy-Item $lightWordmarkSource (Join-Path $workspaceRoot 'site-static\brand\chodhiq-logo-black.png') -Force
+Copy-Item $darkWordmarkSource (Join-Path $workspaceRoot 'site-static\chodhiq-logo-white.png') -Force
+Copy-Item $faviconSource (Join-Path $workspaceRoot 'site-static\favicon.png') -Force
+Copy-Item $darkWordmarkSource (Join-Path $workspaceRoot 'project-docs\ui-references\chodhiq-official-logo.png') -Force
+
+$comingSoonPublic = Join-Path $workspaceRoot 'coming-soon\public'
+Copy-Item $lightWordmarkSource (Join-Path $comingSoonPublic 'chodhiq-logo.png') -Force
+Copy-Item $darkWordmarkSource (Join-Path $comingSoonPublic 'chodhiq-logo-transparent.png') -Force
+Copy-Item $faviconSource (Join-Path $comingSoonPublic 'favicon.png') -Force
 
 foreach ($dashboard in @('business-dashboard', 'admin-dashboard')) {
   $publicRoot = Join-Path $workspaceRoot "$dashboard\public"
-  Export-SquareIcon $iconSource (Join-Path $publicRoot 'favicon.png') 512
-  Export-Wordmark $wordmarkSource (Join-Path $publicRoot 'chodhiq-logo.png') 1200
+  Copy-Item $faviconSource (Join-Path $publicRoot 'favicon.png') -Force
+  Copy-Item $lightWordmarkSource (Join-Path $publicRoot 'chodhiq-logo.png') -Force
+  Copy-Item $darkWordmarkSource (Join-Path $publicRoot 'chodhiq-logo-dark.png') -Force
 }

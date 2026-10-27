@@ -159,7 +159,7 @@ export default function SavedScreen({ navigation }) {
               <Text
                 style={[
                   styles.tabText,
-                  { color: tab === item ? palette.background : palette.text2 },
+                  { color: tab === item ? palette.onPrimary : palette.text2 },
                 ]}
               >
                 {item[0].toUpperCase() + item.slice(1)}

@@ -4,10 +4,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from './admin-link';
 import { CommunityComments } from './community-comments';
 import { cleanSearch } from '../../lib/admin';
-import { AdminShell } from './admin-shell';
 import { EmptyState, LoadError, Page, Pager, Skeleton, Status } from './ui';
 import { range, useAdmin } from '../../lib/admin';
 import { supabase } from '../../lib/supabase';
+import { useCounts, type CountDef } from '../../lib/use-counts';
+
+const COMMUNITY_COUNTS = [
+  { key: 'posts', table: 'community_posts' },
+  { key: 'reported', table: 'community_post_reports', filters: { status: 'open' } },
+  { key: 'removed', table: 'community_posts', filters: { status: 'removed' } },
+] as const satisfies readonly CountDef[];
 
 type Row = {
   id: string;
@@ -31,6 +37,7 @@ type Row = {
 
 export function CommunityPage() {
   const admin = useAdmin();
+  const { show } = useCounts(COMMUNITY_COUNTS);
   const [rows, setRows] = useState<Row[]>([]),
     [page, setPage] = useState(0),
     [total, setTotal] = useState(0);
@@ -184,10 +191,11 @@ export function CommunityPage() {
     }
   }
   return (
-    <AdminShell title="Community">
+    
       <Page
         title="Live community feed"
         note="Watch community activity as it happens and remove content using audited administrator controls."
+        stats={[{label:'Posts',value:show('posts')},{label:'Open reports',value:show('reported'),tone:'amber'},{label:'Removed',value:show('removed')}]}
       >
         <div className="community-live-toolbar">
           <span className={live ? 'live-indicator on' : 'live-indicator'}>
@@ -326,7 +334,7 @@ export function CommunityPage() {
           </section>
         )}
       </Page>
-    </AdminShell>
+    
   );
 }
 
@@ -391,10 +399,11 @@ export function ActivityPage() {
     </table>
   );
   return (
-    <AdminShell title="Activity">
+    
       <Page
         title="Marketplace activity"
         note="Read-only quote request and booking demand visibility."
+        stats={[{label:'Total requests',value:counts[0]+counts[1]},{label:'Quotes',value:counts[0],tone:'purple'},{label:'Bookings',value:counts[1],tone:'green'}]}
       >
         <div className="columns activity-grid">
           <section className="panel table">
@@ -409,7 +418,7 @@ export function ActivityPage() {
           </section>
         </div>
       </Page>
-    </AdminShell>
+    
   );
 }
 
@@ -439,7 +448,7 @@ export function SubscriptionsPage() {
     });
   }, [admin]);
   return (
-    <AdminShell title="Subscriptions">
+    
       <Page title="Subscriptions" note="Read-only entitlement state and provider upgrade requests.">
         <div className="columns">
           <section className="panel table">
@@ -477,6 +486,6 @@ export function SubscriptionsPage() {
           </section>
         </div>
       </Page>
-    </AdminShell>
+    
   );
 }

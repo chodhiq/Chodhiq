@@ -13,12 +13,36 @@ import {
   type ReactNode,
 } from 'react';
 import { isSupabaseConfigured, supabase } from '../../lib/supabase';
-import { useAdmin, useAdminActions, useAdminAuth } from '../../lib/admin';
+import { cleanSearch, useAdmin, useAdminActions, useAdminAuth } from '../../lib/admin';
 import { signInErrorMessage, withAuthTimeout } from '../../lib/auth-operations';
 import { brand } from '../../lib/brand';
+import ThemeControls from '../theme-controls';
+import { Toast } from './ui';
+import { AdminTitleContext } from './admin-page-title';
+import { useCounts, type CountDef } from '../../lib/use-counts';
+import { can, type Permission } from '../../lib/permissions';
 
 const monetisationEnabled =
   process.env.NEXT_PUBLIC_ENABLE_MONETISATION?.trim().toLowerCase() === 'true';
+
+const ALERT_COUNTS = [
+  { key: 'applications', table: 'business_applications', filters: { status: 'pending' } },
+  { key: 'verification', table: 'verification_requests', filters: { status: 'pending' } },
+  { key: 'communityReports', table: 'community_post_reports', filters: { status: 'open' } },
+  { key: 'providerReports', table: 'provider_reports', filters: { status: 'open' } },
+] as const satisfies readonly CountDef[];
+const NAV_PERMISSION: Record<string, Permission> = {
+  '/applications': 'applications.review', '/providers': 'providers.suspend', '/users': 'users.suspend',
+  '/categories': 'categories.manage', '/reviews': 'reviews.moderate', '/verification': 'applications.review', '/community': 'community.moderate', '/community/privileges': 'community.privileges',
+  '/moderation/community': 'reports.resolve', '/moderation/providers': 'reports.resolve', '/reports/community': 'reports.resolve', '/reports/providers': 'reports.resolve', '/notifications': 'notifications.send',
+  '/campaigns': 'campaigns.manage', '/payments': 'payments.view', '/subscriptions': 'payments.view',
+  '/analytics': 'analytics.view', '/admins': 'admins.manage', '/audit': 'audit.view',
+};
+
+export function NavBadge({ value }: { value: number | string | null | undefined }) {
+  if (!value || value === '…' || value === '—' || value === 0) return null;
+  return <span className="nav-badge" aria-label={`${value} waiting`}>{value}</span>;
+}
 
 const navGroups = [
   {
@@ -67,6 +91,31 @@ const navGroups = [
   },
 ];
 
+const routeTitles: Record<string, string> = {
+  '/': 'Dashboard',
+  '/applications': 'Business applications',
+  '/providers': 'Providers',
+  '/verification': 'Verification',
+  '/activity': 'Bookings & quotes',
+  '/demand': 'Demand',
+  '/users': 'Users',
+  '/categories': 'Categories',
+  '/reviews': 'Review moderation',
+  '/community': 'Community',
+  '/community/privileges': 'Community privileges',
+  '/moderation/community': 'Community reports',
+  '/moderation/providers': 'Provider reports',
+  '/reports/community': 'Community reports',
+  '/reports/providers': 'Provider reports',
+  '/campaigns': 'Advertising campaigns',
+  '/notifications': 'Notifications',
+  '/analytics': 'Analytics',
+  '/payments': 'Payments',
+  '/subscriptions': 'Subscriptions',
+  '/admins': 'Admin roles',
+  '/audit': 'Audit log',
+};
+
 function NavIcon({ index }: { index: number }) {
   const paths = [
     'M4 11l8-7 8 7v9h-5v-6H9v6H4z',
@@ -92,7 +141,8 @@ function GlobalSearch() {
   const requestId = useRef(0);
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (query.trim().length < 2) {
+    const value = cleanSearch(query);
+    if (value.length < 2) {
       setResults([]);
       setLoading(false);
       setError('');
@@ -102,7 +152,6 @@ function GlobalSearch() {
     const timer = setTimeout(async () => {
       setLoading(true);
       setError('');
-      const value = query.trim().replace(/[,%_()]/g, ' ');
       const [providers, users, posts] = await Promise.all([
         supabase
           .from('providers')
@@ -165,6 +214,16 @@ function GlobalSearch() {
     };
     document.addEventListener('pointerdown', close);
     return () => document.removeEventListener('pointerdown', close);
+  }, []);
+  useEffect(() => {
+    const openSearch = (event: globalThis.KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        document.getElementById('global-admin-search')?.focus();
+      }
+    };
+    document.addEventListener('keydown', openSearch);
+    return () => document.removeEventListener('keydown', openSearch);
   }, []);
   function close() {
     setQuery('');
@@ -246,6 +305,24 @@ function GlobalSearch() {
       )}
     </div>
   );
+}
+
+function AdminAlerts({ counts }: { counts: Record<string, number | null> }) {
+  const root = useRef<HTMLDetailsElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    const close = (event: globalThis.KeyboardEvent) => { if (event.key === 'Escape') { root.current?.removeAttribute('open'); setExpanded(false); } };
+    const outside = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) { root.current?.removeAttribute('open'); setExpanded(false); } };
+    document.addEventListener('keydown', close);
+    document.addEventListener('pointerdown', outside);
+    return () => { document.removeEventListener('keydown', close); document.removeEventListener('pointerdown', outside); };
+  }, []);
+  const total = Object.values(counts).reduce<number>((sum, count) => sum + (count ?? 0), 0);
+  const entries = [
+    ['/applications', 'Business applications', counts.applications], ['/verification', 'Verification', counts.verification],
+    ['/moderation/community', 'Community reports', counts.communityReports], ['/moderation/providers', 'Provider reports', counts.providerReports],
+  ] as const;
+  return <details className="admin-alerts" ref={root} onToggle={event => setExpanded(event.currentTarget.open)}><summary aria-label={`Admin alerts, ${total} waiting`} aria-haspopup="true" aria-expanded={expanded}>♧<NavBadge value={total} /></summary><div className="admin-alerts-menu" role="menu"><b>Waiting for review</b>{entries.map(([href, label, value]) => <Link key={href} role="menuitem" href={href} onClick={() => root.current?.removeAttribute('open')}><span>{label}</span><NavBadge value={value} /></Link>)}</div></details>;
 }
 
 function ConfirmationModal() {
@@ -392,10 +469,14 @@ export function AdminGate({ children }: { children: ReactNode }) {
   return children;
 }
 
-export function AdminShell({ title, children }: { title: string; children: ReactNode }) {
+export function AdminFrame({ children }: { children: ReactNode }) {
   const admin = useAdmin();
+  const { counts: alertCounts, refresh: refreshAlerts } = useCounts(ALERT_COUNTS);
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [title, setTitle] = useState('Dashboard');
+  const [progress, setProgress] = useState(false);
+  const progressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [today] = useState(() =>
     new Intl.DateTimeFormat('en-GB', {
       weekday: 'long',
@@ -405,19 +486,61 @@ export function AdminShell({ title, children }: { title: string; children: React
       timeZone: 'Europe/London',
     }).format(new Date()),
   );
+  const currentPermission = path.startsWith('/providers/') ? NAV_PERMISSION['/providers'] : NAV_PERMISSION[path];
+  useEffect(() => { const timer = window.setInterval(() => { if (!document.hidden) void refreshAlerts(); }, 30_000); return () => window.clearInterval(timer); }, [refreshAlerts]);
+  useEffect(() => {
+    const start = () => {
+      if (progressTimer.current) clearTimeout(progressTimer.current);
+      progressTimer.current = setTimeout(() => setProgress(true), 150);
+    };
+    const stop = () => {
+      if (progressTimer.current) clearTimeout(progressTimer.current);
+      progressTimer.current = null;
+      setProgress(false);
+    };
+    window.addEventListener('admin:navigation-start', start);
+    window.addEventListener('admin:navigation-cancel', stop);
+    stop();
+    return () => {
+      window.removeEventListener('admin:navigation-start', start);
+      window.removeEventListener('admin:navigation-cancel', stop);
+      if (progressTimer.current) clearTimeout(progressTimer.current);
+    };
+  }, [path]);
+  useEffect(() => setTitle(routeTitles[path] || (path.startsWith('/providers/') ? 'Provider dossier' : 'Admin operations')), [path]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      document.querySelector<HTMLElement>('.page-identity h1')?.focus({ preventScroll: true });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [path]);
   if (!admin.session) return null;
   let iconIndex = 0;
   return (
+    <AdminTitleContext.Provider value={setTitle}>
+    <a className="skip-link" href="#main-content">Skip to main content</a>
     <main className={`shell ${mobileOpen ? 'nav-open' : ''}`}>
+      {progress && <div className="route-progress" role="progressbar" aria-label="Loading page" />}
       <aside className="admin-sidebar">
         <div className="sidebar-brand">
-          <span>
-            <Image src={brand.logoPath} alt="" width={42} height={42} />
+          <span className="admin-wordmark" role="img" aria-label={`${brand.name} logo`}>
+            <Image
+              className="brand-wordmark-light"
+              src="/chodhiq-logo.png"
+              alt=""
+              width={865}
+              height={288}
+              unoptimized
+            />
+            <Image
+              className="brand-wordmark-dark"
+              src="/chodhiq-logo-dark.png"
+              alt=""
+              width={865}
+              height={288}
+              unoptimized
+            />
           </span>
-          <div>
-            <strong>{brand.name}</strong>
-            <small>ADMIN</small>
-          </div>
           <button
             className="sidebar-close"
             aria-label="Close navigation"
@@ -431,7 +554,7 @@ export function AdminShell({ title, children }: { title: string; children: React
             {navGroups.map((group) => (
               <section className="nav-group" key={group.label}>
                 <h2>{group.label}</h2>
-                {group.items.map(([href, label]) => {
+                {group.items.filter(([href]) => { const permission = NAV_PERMISSION[href]; return !permission || can(admin.adminLevel, permission); }).map(([href, label]) => {
                   const current = iconIndex++;
                   return (
                     <Link
@@ -454,6 +577,10 @@ export function AdminShell({ title, children }: { title: string; children: React
                         <NavIcon index={current} />
                       </i>
                       <span>{label}</span>
+                      {href === '/applications' && <NavBadge value={alertCounts.applications} />}
+                      {href === '/verification' && <NavBadge value={alertCounts.verification} />}
+                      {href === '/moderation/community' && <NavBadge value={alertCounts.communityReports} />}
+                      {href === '/moderation/providers' && <NavBadge value={alertCounts.providerReports} />}
                     </Link>
                   );
                 })}
@@ -466,6 +593,7 @@ export function AdminShell({ title, children }: { title: string; children: React
             <b>PROTECTED SESSION</b>
             <p>Every privileged action is recorded.</p>
           </div>
+          <div className="sidebar-appearance"><ThemeControls /></div>
           <button className="account" onClick={() => supabase.auth.signOut()}>
             <span>{(admin.session.user.email || 'AD').slice(0, 2).toUpperCase()}</span>
             <div>
@@ -483,7 +611,7 @@ export function AdminShell({ title, children }: { title: string; children: React
           onClick={() => setMobileOpen(false)}
         />
       )}
-      <section className="workspace">
+      <section className="workspace" id="main-content" tabIndex={-1}>
         <header className="topbar">
           <button
             className="menu-toggle"
@@ -496,30 +624,33 @@ export function AdminShell({ title, children }: { title: string; children: React
           </button>
           <div className="page-identity">
             <p>{today || `${brand.name} administration`}</p>
-            <h1>{title}</h1>
+            <h1 tabIndex={-1} aria-live="polite">{title}</h1>
           </div>
           <GlobalSearch />
-          <div className="admin-badge">
-            <span>AD</span>
-            <div>
-              <b>Administrator</b>
-              <small>Secure workspace</small>
+          <AdminAlerts counts={alertCounts} />
+          <details className="account-menu">
+            <summary className="admin-badge">
+              <span>AD</span>
+              <div>
+                <b>Administrator</b>
+                <small>Secure workspace</small>
+              </div>
+            </summary>
+            <div className="account-menu-panel">
+              <ThemeControls />
+              <button onClick={() => supabase.auth.signOut()}>Sign out securely</button>
             </div>
-          </div>
+          </details>
         </header>
-        {children}
+          <div className="route-view" key={path} data-route={path}>
+            {currentPermission && !can(admin.adminLevel, currentPermission) ? <section className="panel" role="alert"><h2>Administrator role required</h2><p>Your admin level does not include this page.</p></section> : children}
+          </div>
       </section>
-      {admin.toast && (
-        <div
-          className={`toast ${admin.toast.type}`}
-          role={admin.toast.type === 'error' ? 'alert' : 'status'}
-        >
-          <b>{admin.toast.type === 'error' ? '!' : '✓'}</b>
-          {admin.toast.message}
-        </div>
-      )}
+      {admin.toast && <Toast message={admin.toast.message} tone={admin.toast.type} />}
+
       <ConfirmationModal />
     </main>
+    </AdminTitleContext.Provider>
   );
 }
 
@@ -586,11 +717,12 @@ function Login() {
       <section className="admin-login-brand" aria-label="ChodhiQ administration">
         <Image
           className="admin-login-art"
-          src="/admin-login-side.png"
-          alt="ChodhiQ administration: control the platform and protect the community"
           fill
           priority
-          sizes="(max-width: 820px) 100vw, 52vw"
+          unoptimized
+          sizes="(max-width: 820px) 100vw, 55vw"
+          src="/admin-login-side.png"
+          alt="ChodhiQ administration: control the platform and protect the community"
         />
       </section>
       <section className="auth-card admin-login-card">

@@ -255,37 +255,21 @@ export default function HomeScreen({ navigation }) {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.categoryHorizontal,
-            { backgroundColor: palette.surface, borderBottomColor: palette.border },
-          ]}
+          style={{ backgroundColor: palette.background }}
+          contentContainerStyle={styles.categoryHorizontal}
         >
-          <HomeCategory
-            key="all-categories"
-            palette={palette}
-            category={{ id: 'all', name: 'All', icon: 'grid' }}
-            active={!selectedCategoryId}
-            index={0}
-            onPress={() => setSelectedCategoryId(null)}
-          />
-          {categories.slice(0, 8).map((category, index) => (
+          {categories.slice(0, 3).map((category) => (
             <HomeCategory
               key={category.id}
               palette={palette}
               category={category}
               active={selectedCategoryId === category.id}
-              index={index + 1}
               onPress={() =>
                 setSelectedCategoryId((current) => (current === category.id ? null : category.id))
               }
             />
           ))}
-          <HomeCategory
-            palette={palette}
-            more
-            index={4}
-            onPress={() => navigation.navigate('Categories')}
-          />
+          <HomeCategory palette={palette} more onPress={() => navigation.navigate('Categories')} />
         </ScrollView>
 
         <View style={styles.sectionInset}>
@@ -489,10 +473,11 @@ const styles = StyleSheet.create({
   categoryHorizontal: {
     marginHorizontal: -18,
     paddingHorizontal: 16,
-    paddingTop: 2,
-    paddingBottom: 2,
-    backgroundColor: '#FFFFFF',
-    gap: 5,
+    paddingVertical: 5,
+    flexGrow: 1,
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    gap: 8,
   },
   sectionInset: { width: '100%' },
   horizontal: { paddingRight: spacing.md, paddingBottom: 4 },

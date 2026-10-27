@@ -4,3 +4,41 @@ html,body,.workspace{background:var(--cream)!important;color:var(--ink)!importan
 .theme-toggle{position:fixed;z-index:100;right:18px;bottom:18px;display:flex;align-items:center;gap:8px;height:40px;padding:5px 6px 5px 11px;border:1px solid var(--line);border-radius:999px;background:color-mix(in srgb,var(--surface) 95%,transparent);color:var(--ink);box-shadow:0 10px 28px var(--shadow);backdrop-filter:blur(16px);font-size:12px;font-weight:750;cursor:pointer}.theme-toggle>i{position:relative;width:30px;height:18px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}.theme-toggle>i:after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--muted);transition:transform .2s ease,background .2s ease}.theme-toggle[aria-checked="true"]>i:after{transform:translateX(12px);background:var(--green)}
 @media(max-width:700px){.theme-toggle{right:10px;bottom:76px}.sidebar nav{justify-content:flex-start!important;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}.sidebar nav::-webkit-scrollbar{display:none}.sidebar nav button,.sidebar nav button:nth-child(n+6){display:grid!important;flex:0 0 72px}}
 @media(prefers-reduced-motion:reduce){.theme-toggle>i:after{transition:none}}
+.brand-wordmark {
+  position: relative;
+  display: block;
+  line-height: 0;
+}
+.brand-wordmark img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.brand-wordmark-dark {
+  display: none !important;
+}
+html[data-theme="dark"] .brand-wordmark-light {
+  display: none !important;
+}
+html[data-theme="dark"] .brand-wordmark-dark {
+  display: block !important;
+}
+.business-brand-lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.business-brand-wordmark {
+  width: 170px;
+}
+.business-brand-lockup .brand-wordmark-light {
+  display: none !important;
+}
+.business-brand-lockup .brand-wordmark-dark {
+  display: block !important;
+}
+.business-loading-wordmark {
+  width: 180px;
+  margin-inline: auto;
+}

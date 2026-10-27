@@ -9,17 +9,17 @@ This pack is an engineering and operational brief for qualified UK legal review.
 
 | Area | Proposed position | Approval/evidence |
 | --- | --- | --- |
-| Controller identity | The legal entity operating ChodhiQ must be named with registered address and company number. | UNASSIGNED |
-| Support/privacy contact | One monitored email and postal contact for rights requests and complaints. | UNASSIGNED |
-| Lawful bases | Contract for account/workflow delivery; legitimate interests where documented; consent for optional advertising and push communications. | UNAPPROVED |
-| Children | Service intended for adults/business operators; counsel to set and approve the minimum age and enforcement wording. | UNAPPROVED |
+| Controller identity | ChodhiQ is the startup/trading name and operates virtually from India. Founder asked that their personal name not be published on the public beta pages. There is no physical office address. Review legal controller identity and any UK representative requirements before wider launch; do not invent an address. | BETA PAGES IDENTIFY CHODHIQ AND EMAIL CONTACT; WIDER-LAUNCH REVIEW OPEN |
+| Support/privacy contact | `support@chodhiq.co.uk` for support/moderation/appeals; `office@chodhiq.co.uk` for privacy/deletion; `contact@chodhiq.co.uk` for general enquiries; `business@chodhiq.co.uk` for business/client communications. Aliases forward to verified Gmail. Support monitoring is daily; acknowledgement target 3 working days; appeals within 30 days with 30-day decision target. | CONFIGURED AND LISTED ON STATIC BETA SITE |
+| Lawful bases | Beta drafts describe account/service delivery, security, moderation, and optional processing. Confirm basis by purpose against deployed behavior before wider launch. | REVIEW OPEN |
+| Children | Founder confirmed 18+ beta; public Privacy and Terms pages state 18+. Verify app age controls and store audience disclosures against release. | BETA AGE POSITION RECORDED; IMPLEMENTATION CHECK OPEN |
 | Provider listings | Publish only with recorded consent and verified current details; separate ownership verification from publication consent. | UNAPPROVED |
 | User content | Users retain ownership and grant only the licence needed to host, moderate and display submitted content. | UNAPPROVED |
 | Moderation | Prohibit unlawful, abusive, deceptive, infringing and privacy-invasive content; permit proportionate removal and appeals. | UNAPPROVED |
-| Payments | Stripe processes payment details; ChodhiQ records identifiers and entitlement state, not card data. | UNAPPROVED |
-| Retention | Approve concrete periods for accounts, claims, verification documents, quotes/bookings, audit records, telemetry and backups. | UNAPPROVED |
-| International transfers | Identify Supabase, Stripe, Expo, Cloudflare, monitoring and advertising regions/safeguards. | UNAPPROVED |
-| Account deletion | Define verification, statutory exceptions, response time and backup-expiry treatment. | UNAPPROVED |
+| Payments | ChodhiQ payments and provider subscriptions are stated as disabled in the beta pages. Confirm against the released beta profile before enabling any payment feature. | BETA POSITION RECORDED |
+| Retention | Public Privacy page states deletion within 14 days after account-deletion request and no routine Supabase database backups. Record-specific active-use periods and actual cleanup evidence need wider-launch review. | BETA COMMITMENT RECORDED; OPERATIONAL VERIFICATION OPEN |
+| International transfers | Public Privacy page names beta-play services including Supabase (Mumbai region), Google sign-in, Expo/FCM, OpenStreetMap, postcodes.io, Cloudflare confirmation hosting, and Sentry; supplier roles, access, and transfer safeguards need confirmation. | BETA SUPPLIER DISCLOSURE RECORDED; REVIEW OPEN |
+| Account deletion | Public page gives in-app/email routes and a 14-day deletion commitment, with limited legal retention exceptions. Verify hosted deletion, device cleanup, and supplier behavior against this commitment. | BETA POSITION RECORDED; OPERATIONAL VERIFICATION OPEN |
 
 ## Terms checklist
 

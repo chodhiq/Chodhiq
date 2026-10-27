@@ -2,8 +2,8 @@
 import Link from './components/admin-link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { AdminShell } from './components/admin-shell';
-import { Page, Skeleton, Status } from './components/ui';
+import { Button, HeroBanner, Page, Panel, Skeleton, StatCard, Status } from './components/ui';
+import { cachedQuery, readCachedQuery } from '../lib/query-cache';
 const metrics = [
   {
     label: 'Pending applications',
@@ -35,6 +35,35 @@ type Application = {
   city: string;
   review_due_at: string;
 };
+type DashboardSnapshot = {
+  counts: Array<number | null>;
+  applications: Application[];
+  applicationError: boolean;
+};
+const DASHBOARD_CACHE_KEY = 'admin:dashboard';
+
+async function loadDashboardSnapshot(): Promise<DashboardSnapshot> {
+  const results = await Promise.all(
+    metrics.map((metric) => {
+      let query = supabase.from(metric.table).select('*', { count: 'exact', head: true });
+      if ('field' in metric) query = query.eq(metric.field, metric.value);
+      return query;
+    }),
+  );
+  const queue = await supabase
+    .from('business_applications')
+    .select('id,business_name,status,city,review_due_at')
+    .eq('status', 'pending')
+    .order('review_due_at')
+    .limit(5);
+  if (results.some((result) => result.error) || queue.error)
+    throw new Error('Dashboard data unavailable');
+  return {
+    counts: results.map((result) => result.count ?? 0),
+    applications: queue.data || [],
+    applicationError: false,
+  };
+}
 const shortcuts = [
   [
     '/applications',
@@ -54,32 +83,24 @@ const shortcuts = [
   ['/audit', 'Audit history', 'Review privileged actions and their recorded reasons.'],
 ];
 export default function Overview() {
-  const [counts, setCounts] = useState<Array<number | null>>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [applicationError, setApplicationError] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const cached = readCachedQuery<DashboardSnapshot>(DASHBOARD_CACHE_KEY);
+  const [counts, setCounts] = useState<Array<number | null>>(cached?.counts ?? []);
+  const [applications, setApplications] = useState<Application[]>(cached?.applications ?? []);
+  const [applicationError, setApplicationError] = useState(cached?.applicationError ?? false);
+  const [loading, setLoading] = useState(!cached);
   const requestId = useRef(0);
-  const load = useCallback(async (quiet = false) => {
+  const load = useCallback(async (force = false, quiet = false) => {
     const request = ++requestId.current;
-    if (!quiet) setLoading(true);
+    if (!quiet && !readCachedQuery(DASHBOARD_CACHE_KEY)) setLoading(true);
     try {
-      const results = await Promise.all(
-        metrics.map((metric) => {
-          let query = supabase.from(metric.table).select('*', { count: 'exact', head: true });
-          if ('field' in metric) query = query.eq(metric.field, metric.value);
-          return query;
-        }),
-      );
-      const queue = await supabase
-        .from('business_applications')
-        .select('id,business_name,status,city,review_due_at')
-        .eq('status', 'pending')
-        .order('review_due_at')
-        .limit(5);
+      const snapshot = await cachedQuery(DASHBOARD_CACHE_KEY, loadDashboardSnapshot, {
+        force,
+        staleTime: 30_000,
+      });
       if (request !== requestId.current) return;
-      setCounts(results.map((result) => (result.error ? null : (result.count ?? 0))));
-      setApplicationError(Boolean(queue.error));
-      setApplications(queue.data || []);
+      setCounts(snapshot.counts);
+      setApplicationError(snapshot.applicationError);
+      setApplications(snapshot.applications);
     } catch {
       if (request === requestId.current) {
         setCounts(metrics.map(() => null));
@@ -90,9 +111,9 @@ export default function Overview() {
     }
   }, []);
   useEffect(() => {
-    const start = window.setTimeout(() => void load(), 0);
+    const start = window.setTimeout(() => void load(false, false), 0);
     const refresh = () => {
-      if (document.visibilityState === 'visible') void load(true);
+      if (document.visibilityState === 'visible') void load(true, true);
     };
     const timer = window.setInterval(refresh, 30000);
     window.addEventListener('focus', refresh);
@@ -104,47 +125,39 @@ export default function Overview() {
     };
   }, [load]);
   return (
-    <AdminShell title="Dashboard">
       <Page
-        title="Operations overview"
-        note="Review new businesses, protect the community and manage daily marketplace operations."
+        className="dashboard-page"
+        title="Admin control center"
+        note="A clear view of marketplace health, reviews and the work that needs attention."
       >
-        <div className="community-live-toolbar">
-          <span>Updates every 30 seconds</span>
-          <button onClick={() => void load()} disabled={loading}>
-            Refresh overview
-          </button>
-        </div>
+        <HeroBanner
+          eyebrow="Admin control center"
+          title="Everything important, in one place."
+          description="Review new businesses, support providers and keep the community safe."
+          action={<><span className="dashboard-sync"><i aria-hidden="true" /><span><small>DATA SYNC</small><b>Refreshes every 30 seconds</b></span></span><Button variant="outline" className="dashboard-refresh" onClick={() => void load(true, !readCachedQuery(DASHBOARD_CACHE_KEY))} disabled={loading}><span aria-hidden="true">↻</span> {loading ? 'Refreshing…' : 'Refresh now'}</Button></>}
+        />
         {loading ? (
-          <Skeleton rows={4} />
+          <Skeleton rows={1} />
         ) : (
-          <div className="metrics">
+          <div className="metrics dashboard-metrics">
             {metrics.map((metric, index) => (
-              <Link className="metric metric-link" href={metric.href} key={metric.label}>
-                <span>{metric.label}</span>
-                <strong>{counts[index] === null ? 'Unavailable' : (counts[index] ?? 0)}</strong>
-                <small>{counts[index] === null ? 'Open section to retry' : 'Open records ->'}</small>
-              </Link>
+              <StatCard key={metric.label} icon={['A', '✓', 'B', '!'][index]} label={metric.label} value={counts[index] === null ? 'Unavailable' : (counts[index] ?? 0)} href={metric.href} tone={(['teal', 'green', 'purple', 'amber'] as const)[index]} />
             ))}
           </div>
         )}
-        <section className="panel application-preview">
-          <div className="section-heading">
-            <div>
-              <h3>Applications awaiting review</h3>
-              <p>Applicants appear here before they become approved providers.</p>
-            </div>
-            <Link href="/applications">View review queue &rarr;</Link>
-          </div>
+        <Panel className="application-preview dashboard-review" eyebrow="Priority queue" title="Applications awaiting review" description="Applicants appear here before they become approved providers." action={<Link className="dashboard-view-all" href="/applications">View application queue <span aria-hidden="true">→</span></Link>}>
           {applicationError ? (
             <p role="alert">
               Applications could not be loaded. <button onClick={() => void load()}>Retry</button>
             </p>
           ) : !applications.length && !loading ? (
-            <p>No pending applications.</p>
+            <div className="dashboard-empty">
+              <span aria-hidden="true">✓</span>
+              <div><b>You’re all caught up</b><p>There are no pending applications right now.</p></div>
+            </div>
           ) : (
             applications.map((row) => (
-              <Link className="application-preview-row" key={row.id} href="/applications">
+              <Link className="application-preview-row dashboard-application-row" key={row.id} href="/applications">
                 <div>
                   <b>{row.business_name}</b>
                   <small>
@@ -159,17 +172,18 @@ export default function Overview() {
               </Link>
             ))
           )}
-        </section>
+        </Panel>
         <div className="quick operation-shortcuts">
-          {shortcuts.map(([href, title, description]) => (
-            <Link href={href} key={href}>
+          <div className="dashboard-shortcuts-heading"><div><span className="dashboard-section-label">QUICK ACCESS</span><h3>Go to a workspace</h3></div><p>Common admin tasks, one click away</p></div>
+          {shortcuts.map(([href, title, description], index) => (
+            <Link className="dashboard-shortcut" href={href} key={href}>
+              <i aria-hidden="true">{['01', '02', '03', '04', '05', '06', '07', '08'][index]}</i>
               <b>{title}</b>
               <small>{description}</small>
-              <span aria-hidden="true">&rarr;</span>
+              <span className="dashboard-shortcut-arrow" aria-hidden="true">↗</span>
             </Link>
           ))}
         </div>
       </Page>
-    </AdminShell>
   );
 }

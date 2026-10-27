@@ -35,10 +35,10 @@ Provider verification means that specified evidence has been reviewed; it is not
 
 **Keywords (under 100 bytes; validate in App Store Connect):** local,business,services,quotes,bookings,reviews,Malayalee,Kerala,UK,community
 
-**Support URL:** `{{PUBLIC_BASE_URL}}/support`  
-**Marketing URL:** `{{PUBLIC_BASE_URL}}`  
-**Privacy Policy URL:** `{{PUBLIC_BASE_URL}}/privacy`  
-**Privacy Choices URL:** `{{PUBLIC_BASE_URL}}/delete-account`
+**Support URL:** `https://chodhiq.co.uk/`  
+**Marketing URL:** `https://chodhiq.co.uk/`  
+**Privacy Policy URL:** `https://chodhiq.co.uk/privacy.html`  
+**Privacy Choices URL:** `https://chodhiq.co.uk/delete-account.html`
 
 **Review notes:**
 
@@ -57,13 +57,13 @@ Provider verification means that specified evidence has been reviewed; it is not
 
 **App category:** Lifestyle
 
-**Contact email:** `chodhiq@gmail.com`
+**Contact email:** `support@chodhiq.co.uk`
 
-**Website:** `{{PUBLIC_BASE_URL}}`
+**Website:** `https://chodhiq.co.uk/`
 
-**Privacy policy:** `{{PUBLIC_BASE_URL}}/privacy`
+**Privacy policy:** `https://chodhiq.co.uk/privacy.html`
 
-**Account deletion URL:** `{{PUBLIC_BASE_URL}}/delete-account`
+**Account deletion URL:** `https://chodhiq.co.uk/delete-account.html`
 
 ## Copy verification
 

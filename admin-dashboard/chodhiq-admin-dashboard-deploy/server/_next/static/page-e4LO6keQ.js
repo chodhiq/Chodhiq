@@ -1,0 +1,1 @@
+import{t as e}from"./framework~index~page~page~page~page~page~layout~loading~page~page~not-found~page~page~page~~c4r9f0j9-q1xVjzbe.js";import{t}from"./report-queue-Dwx9FgRL.js";var n=e();function r(){return(0,n.jsx)(t,{kind:`community`})}export{r as default};

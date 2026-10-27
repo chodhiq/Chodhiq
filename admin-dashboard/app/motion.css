@@ -1,0 +1,171 @@
+@theme {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+}
+
+:root {
+  --surface-raised: var(--surface-2);
+  --text-muted: var(--muted);
+  --accent: var(--teal);
+  --success: var(--green);
+  --warning: var(--amber);
+  --danger: var(--red);
+  --focus-ring: color-mix(in srgb, var(--teal) 35%, transparent);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(.2,.8,.2,1);
+  --ease-in-out: cubic-bezier(.65,0,.35,1);
+}
+
+.route-view { animation: admin-route-in 240ms var(--ease-out) both; }
+.page { animation: none; }
+.metrics > *, .table tbody tr { animation: admin-page-in var(--dur-base) var(--ease-out) both; }
+.metrics > :nth-child(2), .table tbody tr:nth-child(2) { animation-delay: 28ms; }
+.metrics > :nth-child(3), .table tbody tr:nth-child(3) { animation-delay: 52ms; }
+.metrics > :nth-child(4), .table tbody tr:nth-child(4) { animation-delay: 76ms; }
+.metrics > :nth-child(n+5), .table tbody tr:nth-child(n+7) { animation: none; }
+.nav-group a { transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease; }
+@keyframes admin-page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes admin-route-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto; animation: none !important; transition: none !important; }
+}
+
+/* Shared polish for every operations route. These properties animate only
+   opacity and transform so navigation stays light on slower devices. */
+.workspace { min-height: 100dvh; }
+.route-view { width: 100%; min-width: 0; }
+.page { width: 100%; min-width: 0; }
+.page > :not(.head) { animation: none; }
+.head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 0 0 18px; border-bottom: 1px solid color-mix(in srgb, var(--border) 78%, transparent); }
+.head > div { min-width: 0; }
+.head h2 { margin: 0; font-size: clamp(24px, 2.2vw, 32px) !important; font-weight: 780 !important; letter-spacing: -.04em !important; }
+.head p { max-width: 72ch; }
+.panel, .metric, .table { contain: layout style; }
+.panel.table { display: block; }
+.panel, .table, .metric { border-radius: 14px !important; box-shadow: 0 8px 24px var(--shadow) !important; }
+.panel h3 { letter-spacing: -.025em; }
+.panel > h3:first-child { margin-top: 0; }
+.panel + .panel, .table + .table { margin-top: 16px; }
+.table { overflow-x: auto; overscroll-behavior-x: contain; }
+.table table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.table tbody tr:hover { background: color-mix(in srgb, var(--accent) 4%, var(--surface)); }
+.toolbar { align-items: center; }
+.toolbar button, .primary, .route-search, .field input, .field select, .field textarea { transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+button:not(:disabled):hover, .toolbar a:hover { filter: brightness(1.025); }
+.empty-state, .load-error { max-width: 100%; }
+.pagination { gap: 12px; }
+@media (max-width: 900px) {
+  .activity-grid, .verify, .columns, .campaign-operations-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .page { min-height: calc(100dvh - 68px); }
+}
+@media (max-width: 520px) {
+  .head { gap: 10px; }
+  .head h2 { font-size: clamp(21px, 6vw, 26px) !important; }
+  .panel { padding: 15px !important; }
+  .toolbar { gap: 8px; }
+  .toolbar > * { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-view { animation: none !important; }
+}
+
+.account-menu { position: relative; }
+.account-menu > summary { list-style: none; cursor: pointer; }
+.account-menu > summary::-webkit-details-marker { display: none; }
+.account-menu-panel { position: absolute; z-index: 120; right: 0; bottom: calc(100% + 8px); width: min(280px, calc(100vw - 32px)); display: grid; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); box-shadow: 0 12px 32px var(--shadow); }
+.account-menu-panel > button { min-height: 44px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); color: var(--text); cursor: pointer; }
+.theme-choice { display: grid; gap: 6px; color: var(--text-muted); font-size: 12px; }
+.theme-choice select { min-height: 42px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
+.sidebar-appearance { display: none; }
+.environment-badge { align-self: center; padding: 8px 10px; border: 1px solid var(--warning); border-radius: 8px; background: color-mix(in srgb, var(--warning) 12%, var(--surface)); color: var(--text); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+.environment-badge[data-environment="production"] { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, var(--surface)); }
+.route-progress { width: 100%; }
+.skip-link { position: fixed; z-index: 10000; top: 8px; left: 8px; transform: translateY(-160%); padding: 12px 16px; border-radius: 8px; background: var(--surface); color: var(--text); box-shadow: 0 4px 18px var(--shadow); }
+.skip-link:focus { transform: translateY(0); }
+@media (pointer: coarse) {
+  button, select, input[type="checkbox"], .nav-group a, .toolbar a { min-height: 44px; }
+}
+@media (max-width: 760px) {
+  .sidebar-appearance { display: block; padding: 0 14px 10px; }
+  .topbar .account-menu { display: none; }
+}
+
+.nav-badge { margin-left: auto; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: var(--teal); color: #fff; font-size: 12px; font-weight: 700; text-align: center; }
+.admin-alerts { position: relative; margin-inline: 10px; }
+.admin-alerts > summary { position: relative; cursor: pointer; list-style: none; font-size: 22px; }
+.admin-alerts > summary::-webkit-details-marker { display: none; }
+.admin-alerts > summary .nav-badge { position: absolute; top: -8px; right: -12px; }
+.admin-alerts-menu { position: absolute; z-index: 200; right: 0; top: calc(100% + 10px); width: min(320px, calc(100vw - 24px)); display: grid; gap: 8px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: 0 12px 32px var(--shadow); }
+.admin-alerts-menu a { display: flex; gap: 12px; align-items: center; padding: 9px; color: var(--text); text-decoration: none; }
+
+/* Keep loading and search updates steady without animating individual rows. */
+.skeleton > i {
+  display: block;
+  height: 54px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 37%, var(--surface) 63%);
+  background-size: 200% 100%;
+  animation: admin-shimmer 1.3s linear infinite;
+}
+@keyframes admin-shimmer { to { background-position: -200% 0; } }
+.dashboard-stat, .panel.table tbody tr, .nav-group a { transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease; }
+.dashboard-stat:hover { transform: translateY(-2px); }
+.dashboard-stat:active { transform: translateY(0); }
+.panel.table tbody tr { content-visibility: auto; contain-intrinsic-size: auto 56px; }
+.page .metrics { min-height: 154px; }
+.metrics > *, .table tbody tr { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton > i, .dashboard-stat { animation: none !important; transition: none !important; transform: none !important; }
+}
+
+.account-menu[open] > .account-menu-panel,
+.admin-alerts[open] > .admin-alerts-menu {
+  animation: admin-popover-in 180ms var(--ease-out) both;
+  transform-origin: top right;
+}
+.modal-backdrop {
+  animation: admin-overlay-in 180ms ease-out both;
+}
+.confirm-modal {
+  animation: admin-dialog-in 220ms var(--ease-out) both;
+}
+.toast {
+  animation: admin-toast-in 240ms var(--ease-out) both;
+}
+@keyframes admin-popover-in {
+  from { opacity: 0; transform: translateY(-5px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes admin-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes admin-dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes admin-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-view,
+  .account-menu[open] > .account-menu-panel,
+  .admin-alerts[open] > .admin-alerts-menu,
+  .modal-backdrop,
+  .confirm-modal,
+  .toast {
+    animation: none !important;
+  }
+}

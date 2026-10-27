@@ -2,10 +2,10 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from '../../components/admin-link';
-import { AdminShell } from '../../components/admin-shell';
 import { EmptyState, LoadError, Page, Pager, Skeleton } from '../../components/ui';
 import { cleanSearch, range, useAdmin } from '../../../lib/admin';
 import { supabase } from '../../../lib/supabase';
+import { sendNotification } from '../../../lib/notify-user';
 
 type Space = {
   id: string;
@@ -27,6 +27,7 @@ type Member = {
   can_post: boolean;
   can_comment: boolean;
   updated_at: string | null;
+  restricted_until?: string | null;
 };
 const blank = {
   slug: '',
@@ -68,8 +69,13 @@ export default function CommunityPrivileges() {
   const [canPost, setCanPost] = useState(true);
   const [canComment, setCanComment] = useState(true);
   const [memberReason, setMemberReason] = useState('');
+  const [restrictedUntil, setRestrictedUntil] = useState('');
+  const [restrictedOnly, setRestrictedOnly] = useState(false);
+  const [privilegeHistory, setPrivilegeHistory] = useState<Array<{id:string;created_at:string;details:Record<string,unknown>}>>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const memberRequest = useRef(0);
   const active = spaces.find((s) => s.id === selected);
+  const shownMembers = restrictedOnly ? members.filter(item => !item.can_post || !item.can_comment) : members;
   const load = useCallback(async () => {
     if (!admin.isAdmin) {
       setLoading(false);
@@ -103,7 +109,18 @@ export default function CommunityPrivileges() {
       setError('Memberships could not be loaded.');
       return;
     }
-    const ids = (rows.data || []).map((m) => m.user_id as string);
+    let membersOnPage = rows.data || [];
+    let memberCount = rows.count || 0;
+    if (restrictedOnly) {
+      const restricted = await supabase.from('community_member_permissions').select('user_id', { count: 'exact' }).eq('space_id', selected).or('can_post.eq.false,can_comment.eq.false').order('user_id').range(...range(page));
+      if (restricted.error) { setError('Restricted members could not be loaded.'); return; }
+      memberCount = restricted.count || 0;
+      const restrictedIds = (restricted.data || []).map(row => row.user_id);
+      const memberships = restrictedIds.length ? await supabase.from('community_memberships').select('user_id,role').eq('space_id', selected).in('user_id', restrictedIds) : { data: [], error: null };
+      if (memberships.error) { setError('Restricted memberships could not be loaded.'); return; }
+      membersOnPage = memberships.data || [];
+    }
+    const ids = membersOnPage.map((m) => m.user_id as string);
     const [profiles, permissions] = ids.length
       ? await Promise.all([
           supabase.from('profiles').select('id,full_name').in('id', ids),
@@ -122,9 +139,9 @@ export default function CommunityPrivileges() {
       setError('Member privileges could not be loaded.');
       return;
     }
-    setTotal(rows.count || 0);
+    setTotal(memberCount);
     setMembers(
-      (rows.data || []).map((row) => {
+      membersOnPage.map((row) => {
         const permission = permissions.data?.find((p) => p.user_id === row.user_id);
         return {
           ...row,
@@ -132,10 +149,11 @@ export default function CommunityPrivileges() {
           can_post: permission?.can_post ?? true,
           can_comment: permission?.can_comment ?? true,
           updated_at: permission?.updated_at || null,
+          restricted_until: permission?.restricted_until || null,
         } as Member;
       }),
     );
-  }, [selected, page, admin.isAdmin]);
+  }, [selected, page, admin.isAdmin, restrictedOnly]);
   useEffect(() => {
     setMembers([]);
     void loadMembers();
@@ -180,7 +198,11 @@ export default function CommunityPrivileges() {
     setRole(row.role || 'member');
     setCanPost(row.can_post);
     setCanComment(row.can_comment);
+    setRestrictedUntil(row.restricted_until ? new Date(row.restricted_until).toISOString().slice(0,16) : '');
     setMemberReason('');
+    setPrivilegeHistory([]);
+    setHistoryLoading(true);
+    void supabase.from('admin_audit_log').select('id,created_at,details').eq('action','community_member_privileges').contains('details',{user_id:row.user_id}).order('created_at',{ascending:false}).limit(20).then(result=>{ if(result.error) setError('Privilege history could not be loaded.'); else setPrivilegeHistory((result.data||[]) as typeof privilegeHistory); setHistoryLoading(false); });
   };
   const choosePerson = async (person: Person) => {
     const request = ++memberRequest.current;
@@ -193,7 +215,7 @@ export default function CommunityPrivileges() {
         .maybeSingle(),
       supabase
         .from('community_member_permissions')
-        .select('can_post,can_comment,updated_at')
+        .select('can_post,can_comment,updated_at,restricted_until')
         .eq('space_id', selected)
         .eq('user_id', person.id)
         .maybeSingle(),
@@ -210,6 +232,7 @@ export default function CommunityPrivileges() {
       can_post: permission.data?.can_post ?? true,
       can_comment: permission.data?.can_comment ?? true,
       updated_at: permission.data?.updated_at || null,
+      restricted_until: permission.data?.restricted_until || null,
     });
     setPeople([]);
     setQuery('');
@@ -274,10 +297,14 @@ export default function CommunityPrivileges() {
             expected_role: member.role || null,
             expected_permission_update: member.updated_at,
             decision_note: memberReason.trim(),
+            restricted_until: restrictedUntil ? new Date(restrictedUntil).toISOString() : null,
           }),
         { server_audited: true },
       );
       if (result.ok) {
+        const actionBody = !canPost || !canComment ? `Your privileges in ${active?.name || 'this community'} were restricted${memberReason.trim() ? `. Reason: ${memberReason.trim()}` : '.'}${restrictedUntil ? ` This restriction ends ${new Date(restrictedUntil).toLocaleString('en-GB', { timeZone: 'Europe/London' })}.` : ''}` : `Your privileges in ${active?.name || 'this community'} were updated.`;
+        try { await sendNotification({ audience: 'user', userId: member.user_id, title: 'Your community privileges were updated', body: actionBody }); }
+        catch { admin.notify('Privileges saved, but the member notification could not be sent.', 'error'); }
         setMember(null);
         await loadMembers();
         setError('');
@@ -287,7 +314,7 @@ export default function CommunityPrivileges() {
     }
   }
   return (
-    <AdminShell title="Community privileges">
+    
       <Page
         title="Community privileges"
         note="Manage spaces and participation. Owner and moderator roles apply only within a community; dashboard access remains limited to platform administrators."
@@ -438,6 +465,7 @@ export default function CommunityPrivileges() {
                     limited to those roles. Individual restrictions take precedence. Assign a
                     replacement before removing the last owner.
                   </p>
+                  <button type="button" className={restrictedOnly ? 'on' : ''} aria-pressed={restrictedOnly} onClick={() => setRestrictedOnly(value => !value)}>Restricted members</button>
                   <label className="field">
                     Find a user to add or manage
                     <input
@@ -453,7 +481,7 @@ export default function CommunityPrivileges() {
                       {p.full_name || 'Unnamed member'} · {p.city || 'No city'} · {p.id.slice(0, 8)}
                     </button>
                   ))}
-                  {members.length ? (
+                  {shownMembers.length ? (
                     <div style={{ overflowX: 'auto' }}>
                       <table>
                         <thead>
@@ -466,7 +494,7 @@ export default function CommunityPrivileges() {
                           </tr>
                         </thead>
                         <tbody>
-                          {members.map((m) => (
+                          {shownMembers.map((m) => (
                             <tr key={m.user_id}>
                               <td>
                                 {m.name}
@@ -528,6 +556,7 @@ export default function CommunityPrivileges() {
                         onChange={(e) => setCanComment(e.target.checked)}
                       />
                     </label>
+                    <label className="field"><span>Restricted until (optional)</span><input type="datetime-local" value={restrictedUntil} disabled={busy} onChange={event => setRestrictedUntil(event.target.value)} /><small>Leave blank for an ongoing restriction. Expired restrictions automatically stop blocking contributions.</small></label>
                     <label className="field">
                       Reason for privilege change
                       <textarea
@@ -544,6 +573,7 @@ export default function CommunityPrivileges() {
                     >
                       Save privileges
                     </button>
+                    <section className="panel"><h4>Privilege history</h4>{historyLoading ? <Skeleton rows={2} /> : privilegeHistory.length ? privilegeHistory.map(entry => <article key={entry.id}><b>{String(entry.details?.new_role || 'Privileges updated')}</b><p>{String(entry.details?.reason || 'No reason recorded')} · {new Date(entry.created_at).toLocaleString('en-GB',{timeZone:'Europe/London'})}</p><small>Posting {String(entry.details?.can_post)} · Comments {String(entry.details?.can_comment)}</small></article>) : <EmptyState title="No privilege history found" detail="Audited changes for this member will appear here." />}</section>
                     {member.role && (
                       <button
                         className="danger"
@@ -563,6 +593,6 @@ export default function CommunityPrivileges() {
           </>
         )}
       </Page>
-    </AdminShell>
+    
   );
 }

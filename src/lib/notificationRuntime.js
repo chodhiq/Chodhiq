@@ -4,8 +4,18 @@ export const isExpoGo =
   Constants.executionEnvironment === 'storeClient' || Constants.appOwnership === 'expo';
 
 export function getNotificationsModule() {
-  if (isExpoGo) return null;
-  return require('expo-notifications');
+  if (isExpoGo || typeof require !== 'function') return null;
+
+  try {
+    const Notifications = require('expo-notifications');
+    if (!Notifications || typeof Notifications.setNotificationHandler !== 'function') return null;
+    return Notifications;
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('Native notifications unavailable in this runtime:', error?.message || error);
+    }
+    return null;
+  }
 }
 
 export function configureNotificationHandler() {

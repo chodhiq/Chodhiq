@@ -2,9 +2,21 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { cleanSearch, range, useAdmin } from '../../lib/admin';
+import { can } from '../../lib/permissions';
 import { supabase } from '../../lib/supabase';
-import { AdminShell } from './admin-shell';
 import { EmptyState, LoadError, Page, Pager, Search, Skeleton, Status } from './ui';
+import { useCounts, type CountDef } from '../../lib/use-counts';
+const REVIEW_COUNTS = [
+  { key: 'total', table: 'reviews' },
+  { key: 'published', table: 'reviews', filters: { moderation_status: 'published' } },
+  { key: 'removed', table: 'reviews', filters: { moderation_status: 'removed' } },
+] as const satisfies readonly CountDef[];
+const LEAD_COUNTS = [
+  { key: 'total', table: 'quote_requests' },
+  { key: 'new', table: 'quote_requests', filters: { status: 'sent' } },
+  { key: 'delivered', table: 'provider_lead_deliveries', filters: { status: 'sent' } },
+] as const satisfies readonly CountDef[];
+import { useDebouncedValue } from '../../lib/use-debounced-value';
 
 interface ReviewReplyRow {
   id: string;
@@ -35,12 +47,15 @@ interface DemandRow {
 
 export function ReviewsPage() {
   const admin = useAdmin();
+  const canModerateReviews = can(admin.adminLevel, 'reviews.moderate');
+  const { show } = useCounts(REVIEW_COUNTS);
   const [rows, setRows] = useState<ReviewRow[]>([]);
   const [page, setPage] = useState(0),
     [total, setTotal] = useState(0);
   const [query, setQuery] = useState(''),
     [loading, setLoading] = useState(true),
     [error, setError] = useState('');
+  const debouncedQuery = useDebouncedValue(query);
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -52,7 +67,7 @@ export function ReviewsPage() {
       )
       .order('created_at', { ascending: false })
       .range(...range(page));
-    const search = cleanSearch(query);
+    const search = cleanSearch(debouncedQuery);
     if (search) request = request.ilike('comment', `%${search}%`);
     const result = await request;
     if (result.error) setError('Reviews are unavailable.');
@@ -61,7 +76,7 @@ export function ReviewsPage() {
       setTotal(result.count ?? 0);
     }
     setLoading(false);
-  }, [page, query]);
+  }, [page, debouncedQuery]);
   useEffect(() => {
     let active = true;
     const run = async () => {
@@ -74,6 +89,7 @@ export function ReviewsPage() {
     };
   }, [load]);
   async function moderate(row: ReviewRow) {
+    if (!canModerateReviews) return;
     const next = row.moderation_status === 'removed' ? 'published' : 'removed';
     if (
       next === 'removed' &&
@@ -97,6 +113,7 @@ export function ReviewsPage() {
       );
   }
   async function removeReply(review: ReviewRow, reply: ReviewReplyRow) {
+    if (!canModerateReviews) return;
     if (
       !(await admin.confirmAction({
         title: 'Remove abusive owner reply',
@@ -125,10 +142,11 @@ export function ReviewsPage() {
       );
   }
   return (
-    <AdminShell title="Review moderation">
+    
       <Page
         title="Customer reviews"
         note="Search reviews, inspect owner replies, and moderate abusive content."
+        stats={[{label:'Total reviews',value:show('total')},{label:'Published',value:show('published'),tone:'green'},{label:'Removed',value:show('removed'),tone:'amber'}]}
       >
         <Search
           id="review-search"
@@ -161,13 +179,13 @@ export function ReviewsPage() {
                 {row.review_replies?.map((reply) => (
                   <blockquote key={reply.id}>
                     Owner reply: {reply.body}
-                    <button className="danger" onClick={() => void removeReply(row, reply)}>
+                    {canModerateReviews && <button className="danger" onClick={() => void removeReply(row, reply)}>
                       Remove reply
-                    </button>
+                    </button>}
                   </blockquote>
                 ))}
                 <footer>
-                  <button
+                  {canModerateReviews && <button
                     className={row.moderation_status === 'removed' ? '' : 'danger'}
                     disabled={admin.pending.has(
                       `review_${row.moderation_status === 'removed' ? 'published' : 'removed'}:review:${row.id}`,
@@ -175,7 +193,7 @@ export function ReviewsPage() {
                     onClick={() => void moderate(row)}
                   >
                     {row.moderation_status === 'removed' ? 'Restore' : 'Remove review'}
-                  </button>
+                  </button>}
                 </footer>
               </article>
             ))}
@@ -183,12 +201,13 @@ export function ReviewsPage() {
           </section>
         )}
       </Page>
-    </AdminShell>
+    
   );
 }
 
 export function CategoriesPage() {
   const admin = useAdmin();
+  const canManageCategories = can(admin.adminLevel, 'categories.manage');
   const [rows, setRows] = useState<CategoryRow[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState('');
@@ -228,6 +247,7 @@ export function CategoriesPage() {
     );
   }
   async function save(row: CategoryRow | Omit<CategoryRow, 'id'>) {
+    if (!canManageCategories) return;
     if (!row.name.trim() || !row.slug.trim()) {
       admin.notify('Name and slug are required.', 'error');
       return;
@@ -268,6 +288,7 @@ export function CategoriesPage() {
     }
   }
   async function remove(row: CategoryRow) {
+    if (!canManageCategories) return;
     if (
       !(await admin.confirmAction({
         title: 'Delete category',
@@ -287,15 +308,15 @@ export function CategoriesPage() {
       setRows((current) => current.filter((item) => item.id !== row.id));
   }
   return (
-    <AdminShell title="Categories">
-      <Page title="Category management" note="Create, edit, and order marketplace categories.">
+    
+      <Page title="Category management" note="Create, edit, and order marketplace categories." stats={[{label:'Total categories',value:rows.length},{label:'Active',value:rows.filter(row => row.is_active).length,tone:'green'}]}>
         {loading ? (
           <Skeleton />
         ) : error ? (
           <LoadError message={error} retry={load} />
         ) : (
           <>
-            <section className="panel form-grid">
+            {canManageCategories && <section className="panel form-grid">
               <label htmlFor="new-category-name">
                 Name
                 <input
@@ -352,10 +373,10 @@ export function CategoriesPage() {
               <button className="primary" onClick={() => void save(draft)}>
                 Create category
               </button>
-            </section>
+            </section>}
             {!rows.length ? (
               <EmptyState title="No categories are configured." />
-            ) : (
+            ) : canManageCategories ? (
               <section className="panel table">
                 <table>
                   <thead>
@@ -418,25 +439,26 @@ export function CategoriesPage() {
                           />
                         </td>
                         <td>
-                          <button onClick={() => void save(row)}>Save</button>{' '}
+                          {canManageCategories && <><button onClick={() => void save(row)}>Save</button>{' '}
                           <button className="danger" onClick={() => void remove(row)}>
                             Delete
-                          </button>
+                          </button></>}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </section>
-            )}
+            ) : <EmptyState title="You can view categories but do not have permission to edit them." />}
           </>
         )}
       </Page>
-    </AdminShell>
+    
   );
 }
 
 export function DemandPage() {
+  const { show } = useCounts(LEAD_COUNTS);
   const [quotes, setQuotes] = useState<DemandRow[]>([]),
     [bookings, setBookings] = useState<DemandRow[]>([]),
     [loading, setLoading] = useState(true),
@@ -474,10 +496,11 @@ export function DemandPage() {
     };
   }, [load]);
   return (
-    <AdminShell title="Demand">
+    
       <Page
         title="Marketplace demand"
         note="Recent quote requests and bookings; each list shows up to 25 records."
+        stats={[{label:'Total leads',value:show('total')},{label:'New',value:show('new'),tone:'amber'},{label:'Delivered',value:show('delivered'),tone:'green'}]}
       >
         {loading ? (
           <Skeleton />
@@ -514,6 +537,6 @@ export function DemandPage() {
           </div>
         )}
       </Page>
-    </AdminShell>
+    
   );
 }

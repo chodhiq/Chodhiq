@@ -1,16 +1,16 @@
 # ChodhiQ beta terms and conditions
 
-**Status:** Private beta draft for review. Personal details intentionally withheld; not approved for publication.
+**Status:** Working copy aligned to the published beta Terms page; wider-launch review remains open.
 **Version:** 0.1.0-beta
-**Effective date:** `{{EFFECTIVE_DATE}}`
+**Effective date:** 14 October 2026 (published beta page)
 
 ## 1. Who operates ChodhiQ
 
-ChodhiQ is operated by ChodhiQ, an unregistered business run by its founding team, whose contact address is `{{POSTAL_ADDRESS}}` ("ChodhiQ", "we", "us"). These terms explain the conditions for using the ChodhiQ beta app and its provider services. For support or complaints, contact `chodhiq@gmail.com`.
+ChodhiQ is the startup's trading name and operates virtually from India. It has no physical office address. The founder asked that their personal name not appear on the public beta pages. For support or complaints, contact `support@chodhiq.co.uk`.
 
 ## 2. Eligibility and accounts
 
-The beta service is available in the United Kingdom and India.
+The current beta is intended for users in the United Kingdom. The development and operations team is in India and there is also a UK team belonging to the startup. Any expansion to other countries will be assessed and communicated before launch there.
 
 You must be at least 18 to use ChodhiQ. Give accurate account information, protect your login credentials, and tell us promptly if you suspect unauthorised access. Do not share another person's private information without authority. Business users must be authorised to represent the business concerned.
 
@@ -40,7 +40,7 @@ You must not:
 - Publish misleading listings, fabricated reviews, spam, or disguised commercial promotion.
 - Infringe copyright or other rights, upload malware, misuse accounts, or defeat security controls.
 
-Use the in-app reporting tools or contact `chodhiq@gmail.com` to report content or conduct. Our [moderation and complaints policy](./MODERATION_POLICY.md) explains how we review reports and appeals.
+Use the in-app reporting tools or contact `support@chodhiq.co.uk` to report content or conduct. We aim to acknowledge reports within three working days. Our [moderation and complaints policy](./MODERATION_POLICY.md) explains how we review reports and appeals.
 
 ## 6. Content you submit
 
@@ -70,23 +70,24 @@ You may stop using ChodhiQ or request account deletion through the app or the ex
 
 We will exercise reasonable care and skill in providing the service. Beta status does not remove legal obligations or your statutory rights. Nothing in these terms excludes liability that cannot lawfully be excluded, including liability for fraud or death or personal injury caused by negligence.
 
-Any further limitation of liability must be fair, reflect the actual service, and preserve mandatory consumer protections: `{{APPROVED_LIABILITY_WORDING}}`.
+Any limitation of liability must be fair, reflect the actual service, and preserve mandatory consumer protections. These Terms do not exclude liability that cannot lawfully be excluded.
 
 ## 11. Governing law and updates
 
-The applicable governing law and dispute arrangements are `{{GOVERNING_LAW_AND_JURISDICTION}}`. Nothing in this clause removes mandatory rights or access to courts that the law gives you.
+The applicable governing law and dispute arrangements remain to be confirmed before wider launch. Nothing in this clause removes mandatory rights or access to courts that the law gives you.
 
 We may update these terms as the service changes. We will state the effective date, provide appropriate notice of material changes, and seek fresh acceptance where required. Terms for future paid services will be presented before a purchase.
 
 ## 12. Contact
 
-Support and complaints: `chodhiq@gmail.com`.
-Privacy and account-deletion requests: `chodhiq@gmail.com`.
-Postal correspondence: `{{POSTAL_ADDRESS}}`.
+Support, complaints, and moderation reports: `support@chodhiq.co.uk` (monitored daily; acknowledgement target three working days).
+Privacy and account-deletion requests: `office@chodhiq.co.uk`.
+General enquiries: `contact@chodhiq.co.uk`.
+Business and client communications: `business@chodhiq.co.uk`.
+ChodhiQ operates virtually from India and has no physical postal address; email is the contact method.
 
-## Publication gates
+## Wider-launch review notes
 
-- No personal details supplied in conversation are authorised for use in this draft. Insert operator identity and contact details only after fresh release confirmation.
-- Confirm operator structure, postal address, minimum age, effective date, support contacts, governing law, and the approved liability wording.
+- This working copy reflects the currently published beta Terms page. Before wider launch, review the appropriate legal operator identity, governing law, and applicable liability wording. ChodhiQ currently operates virtually and has no physical address; do not add one unless supplied. The founder confirmed an 18+ audience; verify age and store disclosures against the released app.
 - Review moderation rules, reporting and appeal handling, account deletion, and the applicable UK online-safety obligations against the deployed beta.
-- Verify the final signed build, real public URLs, and policy acceptance flow. Review all remaining placeholders before publication.
+- Verify the final signed build, public URLs, and policy acceptance flow. Keep this page consistent with the published static beta site.

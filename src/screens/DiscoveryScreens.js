@@ -28,6 +28,7 @@ import {
 } from 'lucide-react-native';
 import ScreenHeader from '../components/ScreenHeader';
 import ChodhiQMap from '../components/ChodhiQMap';
+import GlassView from '../components/GlassView';
 import { EventCard, OfferCard } from '../components/DiscoveryCards';
 import { events, offers } from '../data/discoveryData';
 import { imageSource } from '../data/assetCatalog';
@@ -256,7 +257,7 @@ export function MapScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
         <View style={styles.mapControls} pointerEvents="box-none">
-          <View style={[styles.mapSearch, { backgroundColor: palette.surface }]}>
+          <GlassView intensity={44} style={[styles.mapSearch, { borderRadius: 16 }]}>
             {route?.name !== 'MapTab' && (
               <TouchableOpacity
                 accessibilityRole="button"
@@ -299,7 +300,7 @@ export function MapScreen({ navigation, route }) {
             >
               <SlidersHorizontal size={18} color={palette.primary} />
             </TouchableOpacity>
-          </View>
+          </GlassView>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -325,14 +326,17 @@ export function MapScreen({ navigation, route }) {
                   <View
                     style={[
                       styles.mapCategoryIcon,
-                      { backgroundColor: active ? '#FFFFFF20' : palette.surfaceAlt },
+                      { backgroundColor: active ? palette.primary : palette.surfaceAlt },
                     ]}
                   >
-                    <Icon size={20} color={active ? '#FFFFFF' : palette.text} />
+                    <Icon size={20} color={active ? palette.onPrimary : palette.text} />
                   </View>
                   <Text
                     numberOfLines={2}
-                    style={[styles.mapCategoryLabel, { color: active ? '#FFFFFF' : palette.text }]}
+                    style={[
+                      styles.mapCategoryLabel,
+                      { color: active ? palette.onPrimary : palette.text },
+                    ]}
                   >
                     {category.name}
                   </Text>

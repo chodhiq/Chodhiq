@@ -105,6 +105,9 @@ test('custom advertising loads only approved in-window inventory and records del
   assert.match(repository, /record_ad_campaign_event/);
   assert.match(home, /recordCampaignEvent\(campaign\.id, 'impression'\)/);
   assert.match(home, /recordCampaignEvent\(campaign\.id, 'click'\)/);
+  assert.match(home, /onViewableItemsChanged=\{onViewableItemsChanged\.current\}/);
+  assert.match(home, /itemVisiblePercentThreshold:\s*50/);
+  assert.match(home, /item\.type === 'campaign'/);
 });
 
 test('provider detail includes guarded review, quote, and booking workflows', async () => {

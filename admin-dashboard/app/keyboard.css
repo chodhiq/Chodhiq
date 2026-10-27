@@ -6,8 +6,4 @@
     scroll-margin-top: 130px;
     scroll-margin-bottom: 30px;
   }
-  body[data-editing='true'] .theme-toggle {
-    visibility: hidden !important;
-    pointer-events: none !important;
-  }
 }

@@ -1,7 +1,12 @@
 export type MutationFailure = "session_expired" | "unauthorized" | "duplicate" | "mutation_failed" | "audit_failed" | "conflict" | "partial_failure";
 export const PAGE_SIZE = 25;
 export const pageRange = (page: number) => [page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1] as const;
-export const cleanSearchValue = (value: string) => value.trim().replace(/[,%_()]/g, " ");
+export const cleanSearchValue = (value: string) =>
+  value
+    .slice(0, 100)
+    .replace(/[^\p{L}\p{N}\s'-]/gu, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
 
 export type MutationResult<T = undefined> =
   | { ok: true; data: T; correlationId: string }

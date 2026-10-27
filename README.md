@@ -50,7 +50,9 @@ Apply `supabase/migrations` in order. Do not substitute historical SQL files und
 
 The push notification webhook requires a server-only `PUSH_WEBHOOK_SECRET`. Authenticated staging cleanup may use `E2E_SUPABASE_SERVICE_ROLE_KEY` only in the test runner's secret environment.
 
-For local Android push testing, keep the Firebase Android client file as the ignored workspace-root `google-services.json` and run `npx expo prebuild --platform android` before Gradle. The app config also accepts the EAS file variables `GOOGLE_SERVICES_JSON` or `GOOGLE_SERVICES_FILE`; never add Firebase service-account credentials to the app.
+For local Android push testing, keep the Firebase Android client file as the ignored workspace-root `google-services.json` and run `npx expo prebuild --platform android` before Gradle. The app config also accepts the EAS file variables `GOOGLE_SERVICES_JSON` or `GOOGLE_SERVICES_FILE`. EAS builds also require a valid FCM v1 service-account credential configured in the matching EAS project's Android credentials; `google-services.json` is only the client config and cannot send pushes. Never add Firebase service-account credentials to the app. If Expo push receipts report `InvalidCredentials`, replace the FCM v1 credential in EAS and test a background notification before release.
+
+The Play Store listing icon is separate from the icon bundled in an app release. After changing brand artwork, run `powershell -ExecutionPolicy Bypass -File workspace-scripts/process-brand-assets.ps1`, then upload `store-assets/chodhiq-play-icon-512.png` in Play Console under Store presence → Main store listing → App icon and publish the listing update.
 
 ## Initial-launch scope
 

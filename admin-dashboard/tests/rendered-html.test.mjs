@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
-import { access, readFile } from 'node:fs/promises';
+import { access, readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
 
 registerHooks({
@@ -75,7 +75,8 @@ test('admin sign-in uses the approved artwork and responsive dashboard breakpoin
     readFile(new URL('../app/components/admin-shell.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/responsive.css', import.meta.url), 'utf8'),
   ]);
-  assert.match(shell, /src="\/admin-login-side\.png"/);
+  assert.match(shell, /<Image[\s\S]*?src="\/admin-login-side\.png"/);
+  assert.match(shell, /fill\s+priority/);
   assert.match(shell, /Authorized access/);
   assert.match(shell, /Access is restricted to authorized/);
   assert.match(responsive, /min-width:\s*821px[\s\S]*max-width:\s*1100px/);
@@ -164,10 +165,10 @@ test('routed operations have one implementation and deterministic hydration mark
     readFile(new URL('../app/components/governance-pages.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../app/components/phase2-pages.tsx', import.meta.url), 'utf8'),
   ]);
-  assert.match(theme, /type Theme = "light" \| "dark"/);
-  assert.match(theme, /useState<Theme>\(savedTheme\)/);
-  assert.match(theme, /role="switch"/);
-  assert.doesNotMatch(theme, /"system"|Matte|Midnight|Warm/);
+  assert.match(theme, /type ThemeChoice = 'system' \| 'light' \| 'dark'/);
+  assert.match(theme, /useState<ThemeChoice>\(storedChoice\)/);
+  assert.match(theme, /<option value="system">System<\/option>/);
+  assert.match(theme, /matchMedia\('\(prefers-color-scheme: dark\)'\)/);
   assert.match(shell, /timeZone:\s*['"]Europe\/London['"]/);
   assert.match(shell, /today \|\| `\$\{brand\.name\} administration`/);
   assert.doesNotMatch(shell, /\{new Date\(\)\.toLocaleDateString/);
@@ -234,7 +235,7 @@ test('phase one regressions stay fixed', async () => {
   assert.equal((css.match(/:root\s*\{/g) || []).length, 1);
   assert.doesNotMatch(css, /Reference dashboard visual system|nth-child\(n\+6\)/);
   assert.match(admin, /ToastType\s*=\s*['"]success['"]\s*\|\s*['"]error['"]/);
-  assert.match(shell, /toast\.type === ['"]error['"]/);
+  assert.match(shell, /admin\.toast && <Toast message=\{admin\.toast\.message\} tone=\{admin\.toast\.type\} \/>/);
   assert.doesNotMatch([shell, operations].join('\n'), /window\.confirm|\bconfirm\(/);
 });
 
@@ -266,4 +267,46 @@ test('community moderation uses live, validated, audited admin controls', async 
   assert.match(sql, /Admins read all community posts/);
   assert.match(sql, /public\.is_admin\(\)/);
   assert.match(sql, /admin_audit_log/);
+});
+
+test('admin navigation keeps the shell mounted and falls back after a stalled transition', async () => {
+  const [link, shell, layout, worker] = await Promise.all([
+    readFile(new URL('../app/components/admin-link.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/components/admin-shell.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../app/layout.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../worker/index.ts', import.meta.url), 'utf8'),
+  ]);
+  assert.match(link, /from 'next\/link'/);
+  assert.match(link, /prefetch=\{props\.prefetch \?\? true\}/);
+  assert.match(link, /5000/);
+  assert.match(shell, /export function AdminFrame/);
+  assert.match(shell, /export function AdminFrame/);
+  assert.doesNotMatch(shell, /AdminShell/);
+  assert.match(layout, /<AdminFrame>\{children\}<\/AdminFrame>/);
+  assert.match(worker, /_next\\\/static/);
+  assert.match(worker, /max-age=31536000, immutable/);
+});
+
+test('HTML uses a nonce CSP, reports violations, and keeps authenticated responses private', async () => {
+  const response = await render('/');
+  const html = await response.text();
+  const csp = response.headers.get('content-security-policy') ?? '';
+  const nonce = csp.match(/'nonce-([^']+)'/)?.[1];
+  assert.ok(nonce, 'script CSP includes a nonce');
+  assert.doesNotMatch(csp, /script-src[^;]*unsafe-inline/);
+  assert.ok(html.includes(`<script nonce="${nonce}"`), 'inline scripts receive the CSP nonce');
+  assert.match(response.headers.get('content-security-policy-report-only') ?? '', /report-to csp/);
+  assert.match(response.headers.get('reporting-endpoints') ?? '', /\/csp-report/);
+  assert.equal(response.headers.get('cross-origin-opener-policy'), 'same-origin');
+  assert.equal(response.headers.get('cross-origin-resource-policy'), 'same-origin');
+  assert.equal(response.headers.get('cache-control'), 'private, no-store');
+  const staticResponse = await render('/_next/static/chunks/nonexistent-hashed-asset.js');
+  assert.equal(staticResponse.headers.get('cache-control'), 'public, max-age=31536000, immutable');
+  const chunks = await readdir(new URL('../dist/client/_next/static/chunks/', import.meta.url));
+  const clientBundle = (await Promise.all(chunks.map((file) =>
+    readFile(new URL(`../dist/client/_next/static/chunks/${file}`, import.meta.url), 'utf8'),
+  ))).join('\n');
+  assert.doesNotMatch(clientBundle, /sb_secret_[A-Za-z0-9_-]{20,}/);
+  assert.doesNotMatch(clientBundle, /SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*['"`][^'"`]+/);
+  assert.doesNotMatch(clientBundle, /gfjhvsajwjrrlylgrkhf/);
 });

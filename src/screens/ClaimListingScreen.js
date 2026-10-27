@@ -30,6 +30,7 @@ import {
   uploadVerificationDocument,
 } from '../data/claimRepository';
 import { radius, spacing } from '../theme/theme';
+import GlassView from '../components/GlassView';
 import useUkPostcodeSuggestions from '../hooks/useUkPostcodeSuggestions';
 
 export default function ClaimListingScreen({ navigation }) {
@@ -162,7 +163,7 @@ export default function ClaimListingScreen({ navigation }) {
             style={[styles.primary, { backgroundColor: palette.primary }]}
             onPress={() => navigation.navigate('Welcome')}
           >
-            <Text style={styles.primaryText}>Sign in</Text>
+            <Text style={[styles.primaryText, { color: palette.onPrimary }]}>Sign in</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -269,14 +270,17 @@ export default function ClaimListingScreen({ navigation }) {
                 onPress={() => setMode('claim')}
               >
                 <Text
-                  style={[styles.tabTitle, { color: mode === 'claim' ? '#fff' : palette.text }]}
+                  style={[
+                    styles.tabTitle,
+                    { color: mode === 'claim' ? palette.onPrimary : palette.text },
+                  ]}
                 >
                   Claim existing
                 </Text>
                 <Text
                   style={[
                     styles.tabHint,
-                    { color: mode === 'claim' ? 'rgba(255,255,255,.8)' : palette.text2 },
+                    { color: mode === 'claim' ? palette.onPrimary : palette.text2, opacity: 0.8 },
                   ]}
                 >
                   My business is listed
@@ -287,14 +291,17 @@ export default function ClaimListingScreen({ navigation }) {
                 onPress={() => setMode('create')}
               >
                 <Text
-                  style={[styles.tabTitle, { color: mode === 'create' ? '#fff' : palette.text }]}
+                  style={[
+                    styles.tabTitle,
+                    { color: mode === 'create' ? palette.onPrimary : palette.text },
+                  ]}
                 >
                   Create new
                 </Text>
                 <Text
                   style={[
                     styles.tabHint,
-                    { color: mode === 'create' ? 'rgba(255,255,255,.8)' : palette.text2 },
+                    { color: mode === 'create' ? palette.onPrimary : palette.text2, opacity: 0.8 },
                   ]}
                 >
                   Add a new business
@@ -303,7 +310,7 @@ export default function ClaimListingScreen({ navigation }) {
             </View>
             {mode === 'claim' ? (
               <>
-                <View style={[styles.search, card]}>
+                <GlassView intensity={44} style={[styles.search, { borderColor: palette.border }]}>
                   <Search size={18} color={palette.muted} />
                   <AppTextInput
                     style={[styles.grow, { color: palette.text }]}
@@ -312,7 +319,7 @@ export default function ClaimListingScreen({ navigation }) {
                     placeholder="Business, city or postcode"
                     placeholderTextColor={palette.muted}
                   />
-                </View>
+                </GlassView>
                 <Text style={{ color: palette.text2, marginVertical: 10 }}>
                   {query.trim()
                     ? matches.length
@@ -409,7 +416,9 @@ export default function ClaimListingScreen({ navigation }) {
                         <Text
                           style={[
                             styles.categoryText,
-                            { color: form.categoryId === item.id ? '#fff' : palette.text },
+                            {
+                              color: form.categoryId === item.id ? palette.onPrimary : palette.text,
+                            },
                           ]}
                         >
                           {item.name}
@@ -423,7 +432,9 @@ export default function ClaimListingScreen({ navigation }) {
                   style={[styles.primary, styles.formButton, { backgroundColor: palette.primary }]}
                   onPress={createNew}
                 >
-                  <Text style={styles.primaryText}>{busy ? 'Creating…' : 'Create workspace'}</Text>
+                  <Text style={[styles.primaryText, { color: palette.onPrimary }]}>
+                    {busy ? 'Creating…' : 'Create workspace'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -451,7 +462,11 @@ export default function ClaimListingScreen({ navigation }) {
                   ]}
                   onPress={() => setDocumentType(value)}
                 >
-                  <Text style={{ color: documentType === value ? '#fff' : palette.text }}>
+                  <Text
+                    style={{
+                      color: documentType === value ? palette.onPrimary : palette.text,
+                    }}
+                  >
                     {label}
                   </Text>
                 </TouchableOpacity>
@@ -488,7 +503,9 @@ export default function ClaimListingScreen({ navigation }) {
               ]}
               onPress={submit}
             >
-              <Text style={styles.primaryText}>{busy ? 'Submitting…' : 'Submit verification'}</Text>
+              <Text style={[styles.primaryText, { color: palette.onPrimary }]}>
+                {busy ? 'Submitting…' : 'Submit verification'}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -603,7 +620,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
   },
-  primaryText: { color: '#fff', fontWeight: '900' },
+  primaryText: { fontWeight: '900' },
   upload: {
     minHeight: 82,
     borderWidth: 1,

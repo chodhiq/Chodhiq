@@ -1,0 +1,1 @@
+import{r as e}from"./framework-2k-VFE-j.js";import{ErrorState as t}from"./ui-CAj2BBG4.js";var n=e();function r({reset:e}){return(0,n.jsx)(`main`,{className:`route-error`,children:(0,n.jsx)(t,{message:`This page could not load. Your session and the other dashboard pages are still available.`,retry:e})})}export{r as default};

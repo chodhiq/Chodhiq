@@ -33,6 +33,27 @@ const paymentsEnabled = process.env.NEXT_PUBLIC_ENABLE_PAYMENTS?.trim().toLowerC
 const freePromotionsEnabled =
   process.env.NEXT_PUBLIC_ENABLE_FREE_PROMOTIONS?.trim().toLowerCase() === 'true';
 
+function BrandWordmark({ className }: { className: string }) {
+  return (
+    <span className={`brand-wordmark ${className}`} role="img" aria-label={`${brand.name} logo`}>
+      <Image
+        className="brand-wordmark-light"
+        src="/chodhiq-logo.png"
+        alt=""
+        width={865}
+        height={288}
+      />
+      <Image
+        className="brand-wordmark-dark"
+        src="/chodhiq-logo-dark.png"
+        alt=""
+        width={865}
+        height={288}
+      />
+    </span>
+  );
+}
+
 function ProviderReviews({
   providerId,
   uid,
@@ -340,14 +361,9 @@ export default function BusinessDashboard() {
   return (
     <main className="app-shell">
       <aside className="sidebar">
-        <div className="brand">
-          <span className="brand-mark">
-            <Image src={brand.logoPath} alt="" width={38} height={38} />
-          </span>
-          <div>
-            <strong>{brand.name}</strong>
-            <small>BUSINESS</small>
-          </div>
+        <div className="brand business-brand-lockup">
+          <BrandWordmark className="business-brand-wordmark" />
+          <small>BUSINESS</small>
         </div>
         <nav aria-label="Business sections">
           {nav.map((n) => (
@@ -592,13 +608,10 @@ function Login() {
   return (
     <main className="auth-page business-login-page">
       <section className="auth-brand business-login-brand">
-        <Image
+        <img
           className="business-login-art"
           src="/business-login-side.png"
           alt="ChodhiQ business dashboard: run your business with confidence"
-          fill
-          priority
-          sizes="(max-width: 820px) 100vw, 50vw"
         />
       </section>
       <section className="auth-card business-login-card">
@@ -704,7 +717,7 @@ function Login() {
         </form>
         <p className="login-security">Your data is encrypted and secure</p>
         <p className="login-support">
-          Need help? <a href={`mailto:${brand.businessEmail}`}>Contact support</a>
+          Need help? <a href={`mailto:${brand.businessEmail}`}>Contact the business team</a>
         </p>
       </section>
     </main>
@@ -848,9 +861,7 @@ function Setup() {
 function Loading({ label }: { label: string }) {
   return (
     <main className="loading">
-      <span className="brand-mark">
-        <Image src={brand.logoPath} alt={`${brand.name} logo`} width={54} height={54} />
-      </span>
+      <BrandWordmark className="business-loading-wordmark" />
       <p>{label}</p>
     </main>
   );

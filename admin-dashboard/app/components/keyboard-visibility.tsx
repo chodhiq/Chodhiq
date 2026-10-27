@@ -1,6 +1,6 @@
 'use client';
 import { useEffect } from 'react';
-import { installKeyboardVisibility } from '../../../packages/web-forms/keyboard-visibility';
+import { installKeyboardVisibility } from '../../lib/keyboard-visibility';
 export default function KeyboardVisibility() {
   useEffect(() => installKeyboardVisibility(), []);
   return null;

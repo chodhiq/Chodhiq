@@ -1,0 +1,477 @@
+/* Route-specific compositions for the operational pages. */
+.page-kicker {
+  display: block;
+  margin: 0 0 7px;
+  color: var(--u);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.page .head > div { flex: 1 1 auto; }
+.page .head .environment-badge { flex: 0 0 auto; }
+.page .toolbar,
+.page .pills,
+.page .feed-navigation,
+.page .feed-filters { margin-block: 16px; }
+.page .pills {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid var(--l);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.page .pills button {
+  min-height: 36px;
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--m);
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: capitalize;
+}
+.page .pills button.on {
+  background: var(--surface) !important;
+  color: var(--u) !important;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+.page .toolbar {
+  padding: 10px 12px;
+  border: 1px solid var(--l);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.page .toolbar button,
+.page .toolbar a { border-radius: 8px; }
+.route-search-field > div { display: flex; align-items: center; gap: 8px; }
+.route-search-field .route-search { flex: 1 1 auto; margin: 0; }
+.route-search-field button {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--l);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--u);
+  cursor: pointer;
+  font-weight: 700;
+}
+.route-search-field button:hover { background: var(--p); }
+.pagination { align-items: center; }
+.pagination > span { color: var(--m); font-size: 11px; }
+.pagination > div { display: flex; align-items: center; gap: 8px; }
+.pagination > div > span[aria-current="page"] { min-width: 86px; color: var(--m); text-align: center; font-size: 11px; }
+.pagination button { min-width: 76px; }
+.empty-state { display: grid; min-height: 150px; align-content: center; justify-items: start; gap: 8px; }
+.empty-state h3, .empty-state p { margin: 0; }
+.empty-state button { min-height: 40px; margin-top: 6px; }
+.load-error { display: grid; justify-items: start; gap: 8px; }
+.load-error p { margin: 0; }
+.load-error button { min-height: 40px; padding-inline: 14px; }
+.page .table { background: var(--surface); }
+.page .table tbody tr { transition: background-color .14s ease; }
+.page .table tbody tr:hover { background: color-mix(in srgb, var(--g) 5%, var(--surface)); }
+.page .table td:first-child b,
+.page .table td:first-child strong { color: var(--i); }
+.page .table td a { color: var(--u); font-weight: 700; text-decoration: none; }
+.page .table td a:hover { text-decoration: underline; }
+
+/* Application review: status tabs, a calm queue surface and clear decisions. */
+.page-route-applications .moderation { display: grid; gap: 14px; padding: 18px; }
+.page-route-applications .moderation > article {
+  padding: 18px;
+  border: 1px solid var(--l);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--surface), color-mix(in srgb, var(--p) 30%, var(--surface)));
+  box-shadow: 0 4px 14px var(--shadow);
+}
+.page-route-applications .moderation > article > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.page-route-applications .moderation .field { margin-top: 14px; }
+.page-route-applications .moderation footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+
+/* Provider and customer directories. */
+.page-route-providers .route-search-field,
+.page-route-users .route-search-field,
+.page-route-payments .route-search-field { max-width: 460px; }
+.page-route-providers .table,
+.page-route-users .table,
+.page-route-payments .table { overflow: auto; }
+.page-route-providers .table th:last-child,
+.page-route-users .table th:last-child { text-align: right; }
+.page-route-providers .table td:last-child,
+.page-route-users .table td:last-child { text-align: right; }
+.page-route-providers .table td:first-of-type b,
+.page-route-users .table td:nth-child(2) { font-weight: 750; }
+
+/* Verification workbench: concise queue list and a stable evidence dossier. */
+.page-route-verification .verify { gap: 16px; }
+.page-route-verification .verify > .panel { border-radius: 15px !important; }
+.page-route-verification .verify .list > button {
+  min-height: 68px;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--l);
+  background: transparent;
+  transition: background-color .16s ease, transform .16s ease;
+}
+.page-route-verification .verify .list > button:hover,
+.page-route-verification .verify .list > button.selected {
+  background: color-mix(in srgb, var(--g) 8%, var(--surface));
+}
+.page-route-verification .verify .list > button.selected { box-shadow: inset 3px 0 var(--g); }
+.page-route-verification .dossier h3 { font-size: 20px; }
+.page-route-verification .document { width: 100%; text-align: left; }
+
+/* Community spaces and reports use readable content cards and filter rails. */
+.page-route-community .feed-navigation { gap: 8px; }
+.page-route-community .feed-navigation a {
+  padding: 8px 12px;
+  border: 1px solid var(--l);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--i);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.page-route-community .feed-navigation a:hover { border-color: var(--g); color: var(--u); }
+.page-route-community .feed-filters {
+  padding: 15px;
+  border: 1px solid var(--l);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+.page-route-community .community-feed-admin > article {
+  padding: 20px;
+  border-radius: 15px !important;
+  box-shadow: 0 5px 18px var(--shadow);
+}
+.page-route-community .post-body { max-width: 78ch; }
+.page-route-moderation-community .moderation,
+.page-route-moderation-providers .moderation,
+.page-route-reports-community .moderation,
+.page-route-reports-providers .moderation { padding: 16px; }
+.page-route-moderation-community .report-workbench,
+.page-route-moderation-providers .report-workbench,
+.page-route-reports-community .report-workbench,
+.page-route-reports-providers .report-workbench {
+  display: grid;
+  grid-template-columns: minmax(300px, .9fr) minmax(340px, 1.1fr);
+  align-items: stretch;
+  gap: 14px;
+  margin: 16px 0;
+}
+.page-route-moderation-community .report-filter-panel,
+.page-route-moderation-providers .report-filter-panel,
+.page-route-reports-community .report-filter-panel,
+.page-route-reports-providers .report-filter-panel,
+.page-route-moderation-community .report-decision-panel,
+.page-route-moderation-providers .report-decision-panel,
+.page-route-reports-community .report-decision-panel,
+.page-route-reports-providers .report-decision-panel {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--l);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.page-route-moderation-community .report-filter-panel .pills,
+.page-route-moderation-providers .report-filter-panel .pills,
+.page-route-reports-community .report-filter-panel .pills,
+.page-route-reports-providers .report-filter-panel .pills { margin: 0 0 14px; }
+.page-route-moderation-community .report-filter-panel .route-search-field,
+.page-route-moderation-providers .report-filter-panel .route-search-field,
+.page-route-reports-community .report-filter-panel .route-search-field,
+.page-route-reports-providers .report-filter-panel .route-search-field { max-width: 100%; }
+.page-route-moderation-community .report-decision-panel .field textarea,
+.page-route-moderation-providers .report-decision-panel .field textarea,
+.page-route-reports-community .report-decision-panel .field textarea,
+.page-route-reports-providers .report-decision-panel .field textarea {
+  width: 100%;
+  min-height: 78px;
+  max-height: 180px;
+  padding: 10px 12px;
+  border: 1px solid var(--l);
+  border-radius: 9px;
+  resize: vertical;
+}
+.page-route-moderation-community .report-selection-hint,
+.page-route-moderation-providers .report-selection-hint,
+.page-route-reports-community .report-selection-hint,
+.page-route-reports-providers .report-selection-hint { margin: 12px 0 0; color: var(--m); font-size: 11px; }
+.page-route-moderation-community .report-bulk-actions,
+.page-route-moderation-providers .report-bulk-actions,
+.page-route-reports-community .report-bulk-actions,
+.page-route-reports-providers .report-bulk-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.page-route-moderation-community .report-bulk-actions > span,
+.page-route-moderation-providers .report-bulk-actions > span,
+.page-route-reports-community .report-bulk-actions > span,
+.page-route-reports-providers .report-bulk-actions > span { color: var(--m); font-size: 11px; }
+.page-route-moderation-community .empty-state,
+.page-route-moderation-providers .empty-state,
+.page-route-reports-community .empty-state,
+.page-route-reports-providers .empty-state { min-height: 112px; padding: 20px; }
+.page-route-moderation-community .moderation > article,
+.page-route-moderation-providers .moderation > article,
+.page-route-reports-community .moderation > article,
+.page-route-reports-providers .moderation > article {
+  padding: 17px;
+  border: 1px solid var(--l);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+/* Activity, demand and analytics emphasize summaries before detail tables. */
+.page-route-activity .activity-grid,
+.page-route-demand .columns { gap: 16px; }
+.page-route-activity .activity-grid > .panel,
+.page-route-demand .columns > .panel { padding: 18px !important; }
+.page-route-activity .activity-grid > .panel > h3,
+.page-route-demand .columns > .panel > h3 { margin: 0 0 14px; font-size: 15px; }
+.page-route-analytics .metrics { align-items: stretch; }
+.page-route-analytics .metric { position: relative; overflow: hidden; }
+.page-route-analytics .metric::after {
+  position: absolute;
+  right: -18px;
+  bottom: -28px;
+  width: 88px;
+  height: 88px;
+  border: 1px solid color-mix(in srgb, var(--g) 22%, transparent);
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+}
+.page-route-analytics .table {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  margin-top: 18px;
+}
+
+/* Forms, campaigns and administrator tools. */
+.page-route-categories .form-grid,
+.page-route-admins .form-grid { gap: 16px; }
+.page-route-categories .form-grid > .panel,
+.page-route-admins .form-grid > .panel { padding: 20px !important; }
+.page-route-categories .form-grid > .panel:first-child,
+.page-route-admins .form-grid > .panel:first-child { border-top: 3px solid var(--g) !important; }
+.page-route-community-privileges .quick { gap: 10px; }
+.page-route-community-privileges .quick a {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 11px !important;
+}
+.page-route-community-privileges .form-grid { gap: 14px; }
+.page-route-community-privileges .form-grid > .field { padding: 3px 0; }
+.page-route-community-privileges .form-grid > .primary { justify-self: start; min-width: 150px; }
+.page-route-campaigns .campaign-operations-grid { gap: 16px; }
+.page-route-campaigns .campaign-operations-grid > .panel { padding: 20px !important; }
+.page-route-campaigns .campaign-operations-grid h3 { margin-top: 0; }
+.page-route-notifications .audit,
+.page-route-audit .audit { padding: 8px 18px !important; }
+.page-route-notifications .audit article,
+.page-route-audit .audit article { padding: 15px 16px; border-left: 2px solid var(--g); }
+
+/* Reviews and provider dossiers. */
+.page-route-reviews .moderation { padding: 18px; }
+.page-route-reviews .moderation > article { padding: 18px; border: 1px solid var(--l); border-radius: 12px; background: var(--surface); }
+.page-route-providers-id .metrics { margin-top: 18px; }
+.page-route-providers-id .columns > .panel { padding: 20px !important; }
+.page-route-providers-id .columns > .panel h3 { margin-top: 0; }
+
+/* Finance placeholders stay deliberate and visually distinct from live ledgers. */
+.page-route-payments .empty,
+.page-route-subscriptions .empty {
+  display: grid;
+  min-height: 180px;
+  place-content: center;
+  border-style: dashed !important;
+  text-align: center;
+  color: var(--m);
+}
+
+@media (max-width: 760px) {
+  .page-route-moderation-community .report-workbench,
+  .page-route-moderation-providers .report-workbench,
+  .page-route-reports-community .report-workbench,
+  .page-route-reports-providers .report-workbench { grid-template-columns: minmax(0, 1fr); }
+  .page .pills { width: 100%; overflow-x: auto; }
+  .page .pills button { flex: 0 0 auto; }
+  .page-route-applications .moderation > article { padding: 14px; }
+  .page-route-community .feed-filters { grid-template-columns: minmax(0, 1fr); }
+  .page-route-verification .verify .list > button { grid-template-columns: 34px minmax(0, 1fr); }
+  .page-route-verification .verify .list .status { grid-column: 2; justify-self: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page .moderation > article,
+  .page .verify .list > button,
+  .page .feed-navigation a { transition: none !important; }
+}
+
+/* Consistent queue rhythm across each workspace, with responsive details. */
+.page-route-applications .moderation > article,
+.page-route-reviews .moderation > article,
+.page-route-moderation-community .moderation > article,
+.page-route-moderation-providers .moderation > article,
+.page-route-reports-community .moderation > article,
+.page-route-reports-providers .moderation > article {
+  transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease;
+}
+.page-route-applications .moderation > article:hover,
+.page-route-reviews .moderation > article:hover,
+.page-route-moderation-community .moderation > article:hover,
+.page-route-moderation-providers .moderation > article:hover,
+.page-route-reports-community .moderation > article:hover,
+.page-route-reports-providers .moderation > article:hover {
+  border-color: var(--teal);
+  box-shadow: 0 8px 20px var(--shadow);
+}
+.page-route-applications .moderation footer button,
+.page-route-reviews .moderation footer button,
+.page-route-moderation-community .moderation footer button,
+.page-route-moderation-providers .moderation footer button,
+.page-route-reports-community .moderation footer button,
+.page-route-reports-providers .moderation footer button { min-width: 116px; }
+.page-route-providers .table,
+.page-route-users .table,
+.page-route-payments .table,
+.page-route-activity .table,
+.page-route-audit .table,
+.page-route-analytics .table,
+.page-route-campaigns .table { max-width: 100%; }
+.page-route-verification .verify .dossier,
+.page-route-activity .activity-grid > .panel,
+.page-route-demand .columns > .panel,
+.page-route-providers-id .columns > .panel { min-width: 0; }
+.page-route-verification .document { transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease; }
+.page-route-verification .document:hover { border-color: var(--teal); transform: translateY(-1px); }
+.page-route-community .community-live-toolbar,
+.page-route-community-privileges .quick,
+.page-route-campaigns .campaign-operations-grid { gap: 14px; }
+.page-route-categories .form-grid > .panel,
+.page-route-admins .form-grid > .panel,
+.page-route-community-privileges .form-grid > .panel { min-width: 0; }
+.page-route-notifications .audit article,
+.page-route-audit .audit article { transition: border-color .16s ease, transform .16s ease; }
+.page-route-notifications .audit article:hover,
+.page-route-audit .audit article:hover { border-color: var(--teal); transform: translateX(2px); }
+.page-route-analytics .metrics .metric,
+.page-route-providers-id .metrics .metric { min-width: 0; }
+.page-route-payments .toolbar,
+.page-route-subscriptions .toolbar { display: flex; align-items: center; gap: 10px; }
+
+/* Batch 1: marketplace intake, directories, verification and bookings. */
+.page-route-applications .moderation { gap: 12px; }
+.page-route-applications .moderation > article { padding: 20px; }
+.page-route-applications .moderation > article h3 { margin: 12px 0 6px; font-size: 17px; }
+.page-route-applications .moderation > article p { max-width: 78ch; }
+.page-route-providers .toolbar,
+.page-route-users .toolbar { justify-content: flex-end; }
+.page-route-providers .route-search-field,
+.page-route-users .route-search-field { margin-block: 0 16px; }
+.page-route-verification .verify { align-items: start; gap: 18px; }
+.page-route-verification .verify .list { padding: 8px 12px; }
+.page-route-verification .verify .dossier { position: sticky; top: 18px; }
+.page-route-activity .activity-grid { align-items: start; gap: 18px; }
+.page-route-activity .activity-grid .panel h3 { padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.page-route-activity .activity-grid .table { margin-top: 10px; }
+
+/* Batch 2: demand, customer records, service catalogue and reviews. */
+.page-route-demand .columns { align-items: start; gap: 18px; }
+.page-route-demand .columns > .panel { min-width: 0; overflow: hidden; }
+.page-route-demand .columns .table { margin-top: 12px; }
+.page-route-users .table td:nth-child(2) { color: var(--text); font-weight: 700; }
+.page-route-categories .form-grid { align-items: start; }
+.page-route-categories .form-grid > .panel { display: grid; align-content: start; gap: 14px; }
+.page-route-categories .form-grid > .panel h3 { margin: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.page-route-reviews .moderation { display: grid; gap: 12px; }
+.page-route-reviews .moderation > article { padding: 20px; }
+.page-route-reviews .moderation > article h3 { margin: 12px 0 6px; }
+.page-route-reviews .moderation > article p { max-width: 82ch; }
+.page-route-reviews .moderation footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; margin-top: 14px; }
+
+/* Batch 3: community feed, permissions and trust queues. */
+.page-route-community .community-feed-admin { display: grid; gap: 14px; }
+.page-route-community .community-feed-admin > article { min-width: 0; padding: 20px; }
+.page-route-community .community-feed-admin > article h3 { margin: 0 0 10px; font-size: 17px; }
+.page-route-community .community-feed-admin > article p { max-width: 82ch; }
+.page-route-community .moderation-reason { max-width: 780px; }
+.page-route-community-privileges .quick { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.page-route-community-privileges .form-grid { align-items: start; }
+.page-route-community-privileges .form-grid > .panel { display: grid; align-content: start; gap: 12px; }
+.page-route-community-privileges .table { margin-top: 16px; }
+.page-route-moderation-community .report-workbench,
+.page-route-moderation-providers .report-workbench,
+.page-route-reports-community .report-workbench,
+.page-route-reports-providers .report-workbench { align-items: start; }
+.page-route-moderation-community .report-decision-panel,
+.page-route-moderation-providers .report-decision-panel,
+.page-route-reports-community .report-decision-panel,
+.page-route-reports-providers .report-decision-panel { position: relative; }
+.page-route-moderation-community .report-workbench .pills,
+.page-route-moderation-providers .report-workbench .pills,
+.page-route-reports-community .report-workbench .pills,
+.page-route-reports-providers .report-workbench .pills { flex-wrap: wrap; }
+
+/* Batch 4: growth, communications and insight pages. */
+.page-route-campaigns .campaign-operations-grid { align-items: start; }
+.page-route-campaigns .campaign-operations-grid > .panel { min-width: 0; }
+.page-route-campaigns .campaign-operations-grid table { min-width: 640px; }
+.page-route-notifications .audit,
+.page-route-audit .audit { display: grid; gap: 10px; }
+.page-route-notifications .audit article,
+.page-route-audit .audit article { border-radius: var(--radius-card); background: var(--surface); }
+.page-route-analytics .metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.page-route-analytics .metric { min-height: 132px; }
+.page-route-analytics .table { margin-top: 16px; }
+
+/* Batch 5: finance, administration and provider detail. */
+.page-route-payments .toolbar,
+.page-route-subscriptions .toolbar { justify-content: flex-end; }
+.page-route-payments .empty,
+.page-route-subscriptions .empty { border: 1px dashed var(--border); border-radius: var(--radius-panel); background: var(--surface); color: var(--muted); }
+.page-route-admins .form-grid { align-items: start; }
+.page-route-admins .form-grid > .panel { display: grid; align-content: start; gap: 12px; }
+.page-route-admins .table,
+.page-route-audit .table { margin-top: 14px; }
+.page-route-providers-id .head { align-items: center; }
+.page-route-providers-id .metrics { gap: 14px; }
+.page-route-providers-id .columns { align-items: start; gap: 16px; }
+.page-route-providers-id .columns > .panel { min-width: 0; }
+
+@media (max-width: 980px) {
+  .page-route-analytics .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .page-route-community-privileges .quick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .page .report-workbench { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .page-route-analytics .metrics,
+  .page-route-community-privileges .quick { grid-template-columns: minmax(0, 1fr); }
+  .page-route-providers-id .head { align-items: flex-start; }
+}
+
+@media (max-width: 760px) {
+  .page-route-applications .moderation footer,
+  .page-route-reviews .moderation footer,
+  .page-route-moderation-community .moderation footer,
+  .page-route-moderation-providers .moderation footer,
+  .page-route-reports-community .moderation footer,
+  .page-route-reports-providers .moderation footer { justify-content: stretch; }
+  .page-route-applications .moderation footer button,
+  .page-route-reviews .moderation footer button,
+  .page-route-moderation-community .moderation footer button,
+  .page-route-moderation-providers .moderation footer button,
+  .page-route-reports-community .moderation footer button,
+  .page-route-reports-providers .moderation footer button { flex: 1 1 140px; }
+  .page-route-community .community-live-toolbar { align-items: flex-start; flex-wrap: wrap; }
+  .page-route-community .community-live-toolbar > b { margin-left: 0; }
+}

@@ -1,5 +1,7 @@
 .env
 .env*.local
+*.jks
+*.keystore
 .expo/
 .npm-cache/
 android/
@@ -19,6 +21,7 @@ tsconfig.tsbuildinfo
 load-test-summary.json
 tmp/
 .git-history-backups/
+.worktrees/
 
 output/
 release-artifacts/

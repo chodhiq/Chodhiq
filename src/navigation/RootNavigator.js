@@ -4,13 +4,12 @@ import { isSafeAppLink } from '../lib/authCallback';
 import useReducedMotion from '../hooks/useMotionPreferences';
 import { withScreenMotion } from '../components/Motion';
 import React, { useEffect, useMemo, useRef } from 'react';
-import { ActivityIndicator, Animated, Easing, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import Text from '../components/AppText';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { getNotificationsModule } from '../lib/notificationRuntime';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Home, Search, Heart, Map, User, Users } from 'lucide-react-native';
 
 import HomeScreen from '../screens/HomeScreen';
 import ExploreScreen from '../screens/ExploreScreen';
@@ -38,11 +37,11 @@ import {
 } from '../screens/AccountScreens';
 import ClaimListingScreen from '../screens/ClaimListingScreen';
 import PrivacyScreen from '../screens/PrivacyScreen';
-import { colors, fonts, radius, shadows } from '../theme/theme';
+import { fonts } from '../theme/theme';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { useAppState } from '../context/AppStateContext';
 import * as ExpoLinking from 'expo-linking';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GlassTabBar from '../components/GlassTabBar';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -55,160 +54,24 @@ const AnimatedSavedScreen = withScreenMotion(SavedScreen);
 const AnimatedProfileScreen = withScreenMotion(ProfileScreen);
 
 function MainTabs() {
-  const { palette } = useChodhiQTheme();
-  const insets = useSafeAreaInsets();
-  const bottomSpace = Math.max(insets.bottom, 10);
   return (
     <Tab.Navigator
+      tabBar={(props) => <GlassTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: true,
-        tabBarHideOnKeyboard: true,
-        tabBarActiveTintColor: palette.primary,
-        tabBarInactiveTintColor: palette.muted,
-        tabBarStyle: {
-          backgroundColor: palette.nav,
-          borderTopWidth: 1,
-          borderTopColor: palette.border,
-          paddingTop: 6,
-          paddingBottom: bottomSpace,
-          height: 56 + bottomSpace,
-          ...shadows.soft,
-        },
-        tabBarItemStyle: { height: 50, flex: 1, minWidth: 0, paddingHorizontal: 0 },
-        tabBarIconStyle: { marginTop: 0 },
-        tabBarLabelStyle: {
-          fontSize: 9,
-          lineHeight: 11,
-          fontFamily: fonts.semibold,
-          marginBottom: 1,
-          letterSpacing: -0.25,
-          textAlign: 'center',
-          includeFontPadding: false,
-          flexShrink: 1,
-        },
       }}
     >
-      <Tab.Screen
-        name="Home"
-        component={AnimatedHomeScreen}
-        options={{
-          tabBarLabel: (props) => <TabLabel title="Home" {...props} />,
-          tabBarIcon: (props) => <TabIcon Icon={Home} {...props} />,
-        }}
-      />
-      <Tab.Screen
-        name="Explore"
-        component={AnimatedExploreScreen}
-        options={{
-          title: 'Search',
-          tabBarLabel: (props) => <TabLabel title="Search" {...props} />,
-          tabBarIcon: (props) => <TabIcon Icon={Search} {...props} />,
-        }}
-      />
-      <Tab.Screen
-        name="MapTab"
-        component={AnimatedMapScreen}
-        options={{
-          title: 'Map',
-          tabBarLabel: (props) => <TabLabel title="Map" {...props} />,
-          tabBarIcon: (props) => <TabIcon Icon={Map} {...props} />,
-        }}
-      />
+      <Tab.Screen name="Home" component={AnimatedHomeScreen} />
+      <Tab.Screen name="Explore" component={AnimatedExploreScreen} options={{ title: 'Search' }} />
+      <Tab.Screen name="MapTab" component={AnimatedMapScreen} options={{ title: 'Map' }} />
       <Tab.Screen
         name="CommunityTab"
         component={AnimatedCommunityScreen}
-        options={{
-          title: 'Community',
-          tabBarLabel: (props) => <TabLabel title="Community" {...props} />,
-          tabBarIcon: (props) => <TabIcon Icon={Users} {...props} />,
-        }}
+        options={{ title: 'Community' }}
       />
-      <Tab.Screen
-        name="Saved"
-        component={AnimatedSavedScreen}
-        options={{
-          tabBarLabel: (props) => <TabLabel title="Saved" {...props} />,
-          tabBarIcon: (props) => <TabIcon Icon={Heart} {...props} />,
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={AnimatedProfileScreen}
-        options={{
-          tabBarLabel: (props) => <TabLabel title="Profile" {...props} />,
-          tabBarIcon: (props) => <TabIcon Icon={User} {...props} />,
-        }}
-      />
+      <Tab.Screen name="Saved" component={AnimatedSavedScreen} />
+      <Tab.Screen name="Profile" component={AnimatedProfileScreen} />
     </Tab.Navigator>
-  );
-}
-
-function TabLabel({ title, color }) {
-  const { width } = useWindowDimensions();
-  return (
-    <Text
-      numberOfLines={1}
-      adjustsFontSizeToFit
-      minimumFontScale={0.68}
-      style={{
-        color,
-        width: '100%',
-        textAlign: 'center',
-        fontSize: width < 390 ? 8 : 9,
-        lineHeight: 11,
-        fontFamily: fonts.semibold,
-        letterSpacing: -0.25,
-        includeFontPadding: false,
-      }}
-    >
-      {title}
-    </Text>
-  );
-}
-
-function TabIcon({ Icon, color, size, focused }) {
-  const reducedMotion = useReducedMotion();
-  const scale = useRef(new Animated.Value(1)).current;
-  const lift = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (reducedMotion) {
-      scale.setValue(1);
-      lift.setValue(0);
-      return undefined;
-    }
-    const animation = Animated.parallel([
-      Animated.timing(scale, {
-        toValue: focused ? motion.tab.scale : 1,
-        duration: motion.tab.duration,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(lift, {
-        toValue: focused ? -2 : 0,
-        duration: motion.tab.duration,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]);
-    animation.start();
-    return () => animation.stop();
-  }, [focused, lift, scale, reducedMotion]);
-  return (
-    <Animated.View
-      style={{
-        width: 42,
-        height: 30,
-        borderRadius: radius.pill,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'transparent',
-        borderWidth: 0,
-        transform: [{ scale }, { translateY: lift }],
-      }}
-    >
-      <Icon color={color} size={focused ? 21 : size} strokeWidth={focused ? 2.7 : 2} />
-    </Animated.View>
   );
 }
 

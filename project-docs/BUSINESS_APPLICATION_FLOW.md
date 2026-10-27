@@ -9,7 +9,7 @@ Implemented and deployed to ChodhiQ Production (`gfjhvsajwjrrlylgrkhf`) on 2026-
 5. Admin dashboard → Business applications → review details and private proof → approve, reject or request changes. Rejection and changes require a reason visible to the applicant.
 6. Approval atomically creates a verified provider, changes the application status and writes an audit record. The applicant can refresh and open the workspace. Rejected applications can be corrected and resubmitted.
 
-`NEXT_PUBLIC_BUSINESS_ENQUIRY_EMAIL` is intentionally unset. Add the user-supplied address to the business dashboard build environment and rebuild when available. Until then the overdue page explains that an enquiry email will be added; it contains no invented contact address.
+`NEXT_PUBLIC_BUSINESS_ENQUIRY_EMAIL` uses `business@chodhiq.co.uk` for applicant questions about overdue reviews. Add it to the business dashboard build environment when deploying so the overdue page can link applicants to the business team.
 
 ## Release sequence
 

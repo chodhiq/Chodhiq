@@ -12,6 +12,7 @@ import {
 } from 'react';
 import { isSupabaseConfigured, supabase } from './supabase';
 import { withAuthTimeout } from './auth-operations';
+import type { AdminLevel } from './permissions';
 import {
   cleanSearchValue,
   PAGE_SIZE,
@@ -49,11 +50,12 @@ type AdminContextValue = {
   ) => Promise<MutationResult<T | undefined>>;
   pending: ReadonlySet<string>;
   isAdmin: boolean;
+  adminLevel: AdminLevel;
 };
 
 type AdminAuthContextValue = Pick<
   AdminContextValue,
-  'session' | 'loading' | 'sessionError' | 'isAdmin'
+  'session' | 'loading' | 'sessionError' | 'isAdmin' | 'adminLevel'
 >;
 type AdminActionsContextValue = Omit<AdminContextValue, keyof AdminAuthContextValue>;
 
@@ -225,6 +227,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       loading,
       sessionError,
       isAdmin: session?.user.app_metadata?.role === 'admin',
+      adminLevel: ((session?.user.app_metadata?.admin_level as AdminLevel | undefined) ?? 'super_admin'),
     }),
     [session, loading, sessionError],
   );

@@ -12,6 +12,7 @@ export type CommunityPostStatus = 'draft' | 'published' | 'removed';
 
 export interface ProviderListRow {
   id: string;
+  owner_id?: string | null;
   business_name: string;
   base_city: string | null;
   verification_status: string;

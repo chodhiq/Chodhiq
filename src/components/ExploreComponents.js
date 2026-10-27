@@ -17,19 +17,20 @@ import {
 import { categoryFallback, imageSource } from '../data/assetCatalog';
 import { shadows } from '../theme/theme';
 import { providerCardLabels } from '../data/categoryMatching';
+import GlassView from './GlassView';
 
-export function ExploreHeader({ onBack }) {
+export function ExploreHeader({ onBack, palette }) {
   return (
     <View style={s.header}>
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityLabel="Back to Home"
         onPress={onBack}
-        style={s.headerBack}
+        style={[s.headerBack, { backgroundColor: palette.surfaceAlt }]}
       >
-        <ArrowLeft size={19} color="#FFFFFF" />
+        <ArrowLeft size={19} color={palette.text} />
       </TouchableOpacity>
-      <Text style={s.title}>Search</Text>
+      <Text style={[s.title, { color: palette.text }]}>Search</Text>
     </View>
   );
 }
@@ -47,7 +48,12 @@ function CircleButton({ palette, onPress, children, label }) {
 }
 export function ExploreSearch({ palette, value, onChange, onFilters }) {
   return (
-    <View style={[s.search, { backgroundColor: palette.elevated, borderColor: palette.border }]}>
+    <View style={[s.search, { borderColor: palette.border }]}>
+      <GlassView
+        pointerEvents="none"
+        intensity={44}
+        style={[StyleSheet.absoluteFill, { borderRadius: 26 }]}
+      />
       <Search size={19} color={palette.text2} />
       <AppTextInput
         accessibilityLabel="Search businesses and services"
@@ -89,10 +95,7 @@ export function SegmentedTabs({ palette, value, onChange }) {
         >
           <Text
             numberOfLines={1}
-            style={[
-              s.tabText,
-              { color: value === tab ? (palette.dark ? '#081B2C' : '#FFFFFF') : palette.text2 },
-            ]}
+            style={[s.tabText, { color: value === tab ? palette.onPrimary : palette.text2 }]}
           >
             {tab}
           </Text>
@@ -210,9 +213,7 @@ export function ExploreEmpty({ palette, onClear }) {
         Try changing your search, category or filters.
       </Text>
       <TouchableOpacity onPress={onClear} style={[s.clear, { backgroundColor: palette.primary }]}>
-        <Text style={{ color: palette.dark ? '#081B2C' : '#FFFFFF', fontWeight: '800' }}>
-          Clear filters
-        </Text>
+        <Text style={{ color: palette.onPrimary, fontWeight: '800' }}>Clear filters</Text>
       </TouchableOpacity>
     </View>
   );
@@ -220,12 +221,8 @@ export function ExploreEmpty({ palette, onClear }) {
 
 const s = StyleSheet.create({
   header: {
-    height: 60,
-    marginHorizontal: -18,
-    marginTop: -12,
-    marginBottom: 16,
-    paddingHorizontal: 18,
-    backgroundColor: '#101817',
+    height: 48,
+    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -238,7 +235,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,.10)',
   },
-  title: { color: '#FFFFFF', fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
+  title: { fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
 
   circleButton: {
     width: 44,
@@ -251,6 +248,7 @@ const s = StyleSheet.create({
   },
 
   search: {
+    position: 'relative',
     height: 52,
     flexDirection: 'row',
     alignItems: 'center',

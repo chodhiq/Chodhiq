@@ -1,37 +1,68 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-type Theme = "light" | "dark";
-const THEME_KEY = "chodhiq-dashboard-theme";
+type ThemeChoice = 'system' | 'light' | 'dark';
+const THEME_KEY = 'chodhiq-dashboard-theme';
 
-function savedTheme(): Theme {
-  if (typeof window === "undefined") return "light";
-  const saved = window.localStorage.getItem(THEME_KEY);
-  if (saved === "light" || saved === "dark") return saved;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+function storedChoice(): ThemeChoice {
+  if (typeof window === 'undefined') return 'system';
+  try {
+    const saved = window.localStorage.getItem(THEME_KEY);
+    if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
+  } catch {
+    // Keep the screenshot-aligned dark palette when browser storage is disabled.
+  }
+  return 'dark';
+}
+
+function applyTheme(choice: ThemeChoice) {
+  const dark = choice === 'dark' || (choice === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
 }
 
 export default function ThemeControls() {
-  const [theme, setTheme] = useState<Theme>(savedTheme);
+  const [choice, setChoice] = useState<ThemeChoice>(storedChoice);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-    window.localStorage.setItem(THEME_KEY, theme);
-  }, [theme]);
+    const sync = (event: Event) => {
+      const next = (event as CustomEvent<ThemeChoice>).detail;
+      if (next === 'system' || next === 'light' || next === 'dark') setChoice(next);
+    };
+    window.addEventListener('chodhiq:theme-choice', sync);
+    return () => window.removeEventListener('chodhiq:theme-choice', sync);
+  }, []);
 
-  const dark = theme === "dark";
+  useEffect(() => {
+    applyTheme(choice);
+    try {
+      window.localStorage.setItem(THEME_KEY, choice);
+    } catch {
+      // Theme selection still applies for this session.
+    }
+  }, [choice]);
+
+  useEffect(() => {
+    if (choice !== 'system') return;
+    const preference = window.matchMedia('(prefers-color-scheme: dark)');
+    const update = () => applyTheme('system');
+    preference.addEventListener('change', update);
+    return () => preference.removeEventListener('change', update);
+  }, [choice]);
 
   return (
-    <button className="theme-toggle" type="button" role="switch" aria-checked={dark}
-      aria-label={`Use ${dark ? "light" : "dark"} appearance`}
-      title={`Switch to ${dark ? "light" : "dark"} mode`}
-      onClick={() => setTheme(dark ? "light" : "dark")}>
-      <span aria-hidden="true">{dark ? "☾" : "☀"}</span>
-      <span>{dark ? "Dark" : "Light"}</span>
-      <i aria-hidden="true" />
-    </button>
+    <label className="theme-choice">
+      <span>Appearance</span>
+      <select aria-label="Appearance" value={choice} onChange={(event) => {
+        const next = event.target.value as ThemeChoice;
+        setChoice(next);
+        window.dispatchEvent(new CustomEvent('chodhiq:theme-choice', { detail: next }));
+      }}>
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </label>
   );
 }
-

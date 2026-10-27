@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from '../components/admin-link';
-import { AdminShell } from '../components/admin-shell';
 import { EmptyState, LoadError, Page, Pager, Skeleton, Status } from '../components/ui';
 import { range, useAdmin } from '../../lib/admin';
 import { supabase } from '../../lib/supabase';
+import { sendNotification } from '../../lib/notify-user';
+import { useCounts, type CountDef } from '../../lib/use-counts';
 
 type Application = {
   id: string;
@@ -21,12 +22,20 @@ type Application = {
   proof_name: string;
   review_note: string | null;
   revision: number;
+  applicant_id: string;
   provider_id: string | null;
   categories: { name: string } | null;
 };
+const APPLICATION_COUNTS = [
+  { key: 'pending', table: 'business_applications', filters: { status: 'pending' } },
+  { key: 'approved', table: 'business_applications', filters: { status: 'approved' } },
+  { key: 'changes', table: 'business_applications', filters: { status: 'changes_requested' } },
+  { key: 'rejected', table: 'business_applications', filters: { status: 'rejected' } },
+] as const satisfies readonly CountDef[];
 export default function Applications() {
   const [now, setNow] = useState(() => Date.now());
   const admin = useAdmin();
+  const { show } = useCounts(APPLICATION_COUNTS);
   const [rows, setRows] = useState<Application[]>([]),
     [status, setStatus] = useState('pending'),
     [page, setPage] = useState(0),
@@ -121,7 +130,13 @@ export default function Applications() {
           }),
         { server_audited: true },
       );
-      if (result.ok) await load();
+      if (result.ok) {
+        const title = decision === 'approved' ? 'Your business application was approved' : decision === 'rejected' ? 'Your business application was not approved' : 'Changes are needed for your business application';
+        const body = decision === 'approved' ? 'Your provider workspace is ready. You can now appear in the marketplace and receive bookings.' : decision === 'rejected' ? `Your application was not approved. Review the decision note and contact support if you think this was a mistake. ${note.slice(0, 350)}` : `Please update your application using this note, then submit it again: ${note.slice(0, 420)}`;
+        try { await sendNotification({ audience: 'user', userId: row.applicant_id, title, body }); }
+        catch { admin.notify('Saved, but the applicant notification could not be sent.', 'error'); }
+        await load();
+      }
     } finally {
       setBusy(false);
     }
@@ -137,10 +152,11 @@ export default function Applications() {
     window.open(result.data.signedUrl, '_blank', 'noopener,noreferrer');
   }
   return (
-    <AdminShell title="Business applications">
+    
       <Page
         title="Business account review"
         note="Check the business details and UK trading evidence before granting provider access. Review pending applications within 3 days."
+        stats={[{label:'Pending',value:show('pending'),tone:'amber'},{label:'Approved',value:show('approved'),tone:'green'},{label:'Changes requested',value:show('changes'),tone:'purple'},{label:'Rejected',value:show('rejected')} ]}
       >
         <div className="pills">
           {['pending', 'approved', 'changes_requested', 'rejected'].map((value) => (
@@ -248,6 +264,6 @@ export default function Applications() {
           </section>
         )}
       </Page>
-    </AdminShell>
+    
   );
 }

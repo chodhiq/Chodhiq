@@ -244,23 +244,21 @@
 
 /* Override legacy light-only responsive rules when dark appearance is selected. */
 :root[data-theme='dark'] {
-  --g: #37ced6;
-  --d: #0b2635;
-  --p: #143639;
-  --c: #0b131b;
-  --i: #f1f5f9;
-  --m: #a8b5c3;
-  --l: #2a3d4a;
-  --y: #37ced6;
-  --u: #7bdee2;
-  --r: #ff7b85;
-  --surface: #13212c;
-  --surface-2: #1a2d38;
-  --on-accent: #061316;
-  --nav: #071b29;
-  --nav-text: #eef6fb;
-  --nav-muted: #9dafbd;
-  --shadow: #0006;
+  --g: var(--teal);
+  --d: var(--sidebar);
+  --p: color-mix(in srgb, var(--purple) 16%, var(--surface));
+  --c: var(--bg);
+  --i: var(--text);
+  --m: var(--muted);
+  --l: var(--border);
+  --y: var(--amber);
+  --u: var(--purple);
+  --r: var(--red);
+  --on-accent: var(--text);
+  --nav: var(--sidebar);
+  --nav-text: var(--text);
+  --nav-muted: var(--muted);
+  --shadow: color-mix(in srgb, var(--bg) 35%, transparent);
 }
 [data-theme='dark'] .topbar,
 [data-theme='dark'] .quick a,

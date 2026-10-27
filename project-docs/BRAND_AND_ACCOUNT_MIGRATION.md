@@ -1,24 +1,19 @@
 # Brand, logo, and operational-account migration
 
-Use this checklist when the final company name, logo, domain, and shared mailboxes are approved. Do not rename production identifiers or transfer the final owner account until recovery access is tested.
+Use this checklist for the ChodhiQ domain and role-based email aliases. The four aliases currently forward to the existing Gmail inbox; they are not separate mailboxes and do not provide branded outbound sending. Do not rename production identifiers or transfer the final owner account until recovery access is tested.
 
 ## Recommended mailbox roles
 
 Create role-based mailboxes or shared aliases under the company domain:
 
-| Purpose | Suggested address | Used for |
+| Purpose | Address | Used for |
 | --- | --- | --- |
-| Primary ownership | `owner@company-domain` | Domain registrar, cloud organisation, billing recovery |
-| Engineering | `engineering@company-domain` | Source hosting, deployments, technical alerts |
-| Administration | `admin@company-domain` | Admin dashboard access and operational ownership |
-| Support | `support@company-domain` | Customer help and in-app support links |
-| Business support | `business@company-domain` | Provider onboarding and verification help |
-| Privacy | `privacy@company-domain` | Data requests, deletion, retention questions |
-| Security | `security@company-domain` | Vulnerability reports and security alerts |
-| Billing | `billing@company-domain` | Stripe, invoices, subscription support |
-| Legal | `legal@company-domain` | Terms, policies, complaints, formal notices |
+| General enquiries | `contact@chodhiq.co.uk` | Website enquiries and early-access questions |
+| Customer support | `support@chodhiq.co.uk` | Customer help, complaints, and in-app support links |
+| Business communications | `business@chodhiq.co.uk` | Provider onboarding and client communications |
+| Official correspondence | `office@chodhiq.co.uk` | Privacy requests, account deletion, and formal correspondence |
 
-Use shared access, MFA, recovery codes, and at least two authorised administrators for critical accounts. Avoid making one employee mailbox the sole owner.
+All four addresses currently forward to `chodhiq@gmail.com`. Cloudflare Email Routing handles inbound mail only; replies from Gmail will use the Gmail address unless outbound email is configured separately. The forwarding destination must remain verified and protected with MFA and recovery options.
 
 ## Code configuration
 
@@ -27,9 +22,10 @@ Use shared access, MFA, recovery codes, and at least two authorised administrato
 Set the `EXPO_PUBLIC_BRAND_*` and contact variables documented in `chodhiq/.env.example`. Native identity settings are supplied separately through:
 
 - `EXPO_APP_SLUG`
-- `EXPO_APP_SCHEME`
 - `EXPO_IOS_BUNDLE_ID`
 - `EXPO_ANDROID_PACKAGE`
+
+The customer callback scheme is fixed as `chodhiq` across debug and release builds so it stays aligned with the Android intent filters and Supabase redirect allowlist.
 
 The runtime brand defaults live in `chodhiq/src/config/brand.js`. Expo build identity is centralised in `chodhiq/app.config.js`.
 
@@ -37,16 +33,16 @@ Changing a bundle identifier creates a different installed application. Changing
 
 ### Admin dashboard
 
-Set `NEXT_PUBLIC_BRAND_*`, support, privacy, and security addresses from `chodhiq-admin-dashboard/.env.example`. Replace `public/favicon.svg` and `public/og.png` after final logo assets are approved.
+Set `NEXT_PUBLIC_BRAND_*`, support, privacy, and security addresses from `admin-dashboard/.env.example`. The supplied light/dark wordmarks and compact favicon are installed in `admin-dashboard/public`; the existing social-preview design now uses the new wordmark.
 
 ### Business dashboard
 
-Set `NEXT_PUBLIC_BRAND_*`, support, business, and billing addresses from `chodhiq-business-dashboard/.env.example`. Replace `public/favicon.svg` and `public/og.png` after approval.
+Set `NEXT_PUBLIC_BRAND_*`, support, business, and billing addresses from `business-dashboard/.env.example`. The supplied light/dark wordmarks and compact favicon are installed in `business-dashboard/public`; the existing social-preview design now uses the new wordmark.
 
 ## Account transfer order
 
 1. Register and protect the company domain using the new primary-owner mailbox.
-2. Create role mailboxes, MFA, recovery codes, and a password-manager organisation.
+2. Keep the four forwarding aliases active and the destination Gmail protected with MFA and recovery options. Move to hosted mailboxes later if separate inboxes or branded replies are needed.
 3. Invite the new owner/admin identities to source control, Supabase, Cloudflare/hosting, Expo/EAS, Apple, Google, Stripe, monitoring, and notification services.
 4. Verify the new accounts can sign in and perform their intended role before removing personal access.
 5. Transfer billing profiles, recovery contacts, webhook contacts, DNS ownership, and app-store agreements.
@@ -58,16 +54,14 @@ Set `NEXT_PUBLIC_BRAND_*`, support, business, and billing addresses from `chodhi
 
 ## Logo asset handoff
 
-Request these approved source files from the designer:
+The latest transparent horizontal wordmark is kept in `assets/brand/source/chodhiq-logo-dark-mode.png`; its dark-text light-surface variant and compact Q icon are derived in the same source folder. Run `workspace-scripts/process-brand-assets.ps1` to refresh the app, dashboard, marketing-site, and documentation copies.
+
+The following source assets are still needed from the designer:
 
 - Editable vector master (`.svg` or design-source file)
-- Full horizontal logo and compact mark
-- Light and dark variants
-- Transparent PNG exports
-- Square app icon with safe padding
-- Android adaptive foreground/background assets
-- iOS 1024×1024 icon without transparency
-- Web favicon and social-preview image
+- Dedicated high-resolution compact app mark (the current app and browser icons use the Q cropped from the wordmark)
+- Written app-icon safe-area guidance
+- Social-preview image
 - Written colour, spacing, and minimum-size guidance
 
-Keep temporary initials until the approved assets arrive. Do not upscale a small raster logo for app-store or social assets.
+The current square app and browser icons use the supplied wordmark's Q mark; replace the cropped mark with a dedicated vector or high-resolution square export from the designer when available. Keep social-preview artwork as a separately composed asset rather than enlarging the compact icon.

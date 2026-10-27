@@ -212,33 +212,32 @@ export const MotionModal = forwardRef(function MotionModal(
   return <Modal {...props} ref={ref} animationType={reduced ? 'none' : animationType} />;
 });
 
-// Native stack handles detail/form transitions; tabs get a small UI-thread fade.
+// Native stack handles detail/form transitions; tabs fade out and in on the UI thread.
 export function withScreenMotion(Screen) {
   function MotionScreen(props) {
     const focused = useIsFocused();
     const reduced = useReducedMotion();
     const opacity = useSharedValue(reduced ? 1 : 0);
-    const firstFocus = useRef(true);
-    const previousFocused = useRef(false);
     const y = useSharedValue(reduced ? 0 : motion.entrance.distance);
     useEffect(() => {
       cancelAnimation(opacity);
       cancelAnimation(y);
-      const wasFocused = previousFocused.current;
-      previousFocused.current = focused;
-      if (!focused || reduced || wasFocused) {
-        if (focused) firstFocus.current = false;
+      if (reduced) {
         opacity.value = 1;
         y.value = 0;
         return undefined;
       }
-      const entrance = firstFocus.current ? motion.entrance : motion.navigation;
-      firstFocus.current = false;
-      opacity.value = 0;
-      y.value = entrance.distance;
-      const config = { duration: entrance.duration, easing: Easing.out(Easing.cubic) };
-      opacity.value = withTiming(1, config);
-      y.value = withTiming(0, config);
+      if (focused) {
+        opacity.value = 0;
+        y.value = motion.navigation.distance;
+        const config = { duration: motion.navigation.duration, easing: Easing.out(Easing.cubic) };
+        opacity.value = withTiming(1, config);
+        y.value = withTiming(0, config);
+      } else {
+        const config = { duration: motion.navigation.exitDuration, easing: Easing.in(Easing.quad) };
+        opacity.value = withTiming(0, config);
+        y.value = withTiming(-motion.navigation.distance / 2, config);
+      }
       return () => {
         cancelAnimation(opacity);
         cancelAnimation(y);

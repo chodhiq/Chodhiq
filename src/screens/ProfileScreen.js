@@ -1,6 +1,6 @@
 import { MotionScrollView as ScrollView } from '../components/Motion';
 import { MotionTouchable as TouchableOpacity } from '../components/Motion';
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Image, Linking, Platform, StyleSheet, Switch, View } from 'react-native';
 import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import {
   BadgeCheck,
   Building2,
   ChevronRight,
+  ChevronDown,
   LogIn,
   LogOut,
   Pencil,
@@ -20,6 +21,7 @@ import { colors, radius, shadows, spacing, typography } from '../theme/theme';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { FadeInView, PressableScale } from '../components/Motion';
+import GlassView from '../components/GlassView';
 import { accountMenu } from './AccountScreens';
 
 export default function ProfileScreen({ navigation }) {
@@ -40,8 +42,9 @@ export default function ProfileScreen({ navigation }) {
     retryPreferencesSync,
     setPreferences,
   } = useAppState();
-  const { palette, mode: themeMode, setMode: setThemeMode } = useChodhiQTheme();
+  const { palette } = useChodhiQTheme();
   const logoutSheetRef = useRef(null);
+  const [expandedSection, setExpandedSection] = useState(null);
   const snapPoints = useMemo(() => ['34%'], []);
   const initials =
     profile.name
@@ -93,28 +96,15 @@ export default function ProfileScreen({ navigation }) {
               { backgroundColor: palette.surface, borderColor: palette.border },
             ]}
           >
-            <Text style={[styles.guestThemeLabel, { color: palette.text }]}>Appearance</Text>
-            <TouchableOpacity
-              accessibilityRole="switch"
-              accessibilityState={{ checked: themeMode === 'dark' }}
-              accessibilityLabel="Toggle dark mode"
-              onPress={() => setThemeMode(themeMode === 'dark' ? 'fresh' : 'dark')}
-              style={[styles.themeToggle, { backgroundColor: palette.surfaceAlt }]}
-            >
-              <Text style={[styles.themeToggleLabel, { color: palette.text }]}>Light</Text>
-              <View style={[styles.themeTrack, { backgroundColor: palette.border }]}>
-                <View
-                  style={[
-                    styles.themeThumb,
-                    {
-                      backgroundColor: palette.primary,
-                      transform: [{ translateX: themeMode === 'dark' ? 22 : 0 }],
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={[styles.themeToggleLabel, { color: palette.text }]}>Dark</Text>
-            </TouchableOpacity>
+            <Sparkles size={18} color={palette.accent} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.guestThemeLabel, { color: palette.text }]}>
+                Glossy matte black
+              </Text>
+              <Text style={{ color: palette.text2, fontSize: 12 }}>
+                ChodhiQ’s dark appearance is always on.
+              </Text>
+            </View>
           </View>
           <TouchableOpacity
             accessibilityRole="button"
@@ -206,125 +196,149 @@ export default function ProfileScreen({ navigation }) {
         </FadeInView>
 
         <FadeInView delay={170}>
-          <View
-            style={[
-              styles.menuCard,
-              { backgroundColor: palette.surface, borderColor: palette.border },
-            ]}
+          <ProfileGroup
+            title="Account & preferences"
+            hint="Notifications, location, privacy and settings"
+            expanded={expandedSection === 'account'}
+            onPress={() => setExpandedSection(expandedSection === 'account' ? null : 'account')}
+            palette={palette}
           >
-            <View style={styles.menuRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: palette.text, fontWeight: '700' }}>
-                  Notification vibration
-                </Text>
-                <Text style={[styles.preferenceHint, { color: palette.text2 }]}>
-                  {preferencesSyncing
-                    ? 'Syncing notification settings...'
-                    : preferencesError || 'Vibrate when a new phone notification arrives'}
-                </Text>
+            <View style={[styles.groupContent, { borderTopColor: palette.border }]}>
+              <View style={styles.menuRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: palette.text, fontWeight: '700' }}>
+                    Notification vibration
+                  </Text>
+                  <Text style={[styles.preferenceHint, { color: palette.text2 }]}>
+                    {preferencesSyncing
+                      ? 'Syncing notification settings...'
+                      : preferencesError || 'Vibrate when a new phone notification arrives'}
+                  </Text>
+                </View>
+                <Switch
+                  accessibilityLabel="Notification vibration"
+                  value={preferences.vibration}
+                  onValueChange={(vibration) =>
+                    setPreferences((current) => ({ ...current, vibration }))
+                  }
+                  trackColor={{ false: palette.border, true: palette.primary }}
+                  thumbColor={palette.onPrimary}
+                />
               </View>
-              <Switch
-                accessibilityLabel="Notification vibration"
-                value={preferences.vibration}
-                onValueChange={(vibration) =>
-                  setPreferences((current) => ({ ...current, vibration }))
-                }
-                trackColor={{ false: palette.border, true: palette.primary }}
-                thumbColor={palette.onPrimary}
-              />
+              {!!preferencesError && (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  disabled={preferencesSyncing}
+                  onPress={retryPreferencesSync}
+                  style={styles.inlineAction}
+                >
+                  <Text style={{ color: palette.primary, fontWeight: '700' }}>
+                    {preferencesSyncing ? 'Syncing...' : "Couldn't sync. Retry"}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {permissionDenied && Platform.OS !== 'web' && (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => Linking.openSettings().catch(() => {})}
+                  style={styles.inlineAction}
+                >
+                  <Text style={{ color: palette.primary, fontWeight: '700' }}>
+                    Open phone notification settings
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <MenuCard items={accountItems} palette={palette} navigation={navigation} />
             </View>
-          </View>
-          {!!preferencesError && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              disabled={preferencesSyncing}
-              onPress={retryPreferencesSync}
-              style={{ padding: 14 }}
-            >
-              <Text style={{ color: palette.primary, fontWeight: '700' }}>
-                {preferencesSyncing ? 'Syncing...' : "Couldn't sync. Retry"}
-              </Text>
-            </TouchableOpacity>
-          )}
-          {permissionDenied && Platform.OS !== 'web' && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={() => Linking.openSettings().catch(() => {})}
-              style={{ padding: 14 }}
-            >
-              <Text style={{ color: palette.primary, fontWeight: '700' }}>
-                Open phone notification settings
-              </Text>
-            </TouchableOpacity>
-          )}
-          <Text style={[styles.sectionLabel, { color: palette.text2 }]}>ACCOUNT</Text>
-          <MenuCard items={accountItems} palette={palette} navigation={navigation} />
+          </ProfileGroup>
         </FadeInView>
         {!access.ownedProviders.length && (
           <FadeInView delay={195}>
-            <View
-              style={[
-                styles.providerCard,
-                { backgroundColor: palette.primaryTint, borderColor: palette.primary },
-              ]}
+            <ProfileGroup
+              title="Grow your business"
+              hint="Join ChodhiQ as a local provider"
+              expanded={expandedSection === 'provider'}
+              onPress={() => setExpandedSection(expandedSection === 'provider' ? null : 'provider')}
+              palette={palette}
             >
-              <View style={styles.providerTop}>
-                <View style={[styles.providerIcon, { backgroundColor: palette.primary }]}>
-                  <Building2 size={24} color={palette.background} />
-                </View>
-                <View style={styles.providerHeading}>
-                  <Text style={[styles.providerKicker, { color: palette.primary }]}>
-                    FOR BUSINESSES & PROFESSIONALS
-                  </Text>
-                  <Text style={[styles.providerTitle, { color: palette.text }]}>
-                    Grow your business on ChodhiQ
-                  </Text>
-                </View>
-              </View>
-              <Text style={[styles.providerBody, { color: palette.text2 }]}>
-                Claim an existing listing or create a new profile so local customers can discover,
-                trust and contact you.
-              </Text>
-              <Text style={[styles.providerBody, { color: palette.text2 }]}>
-                Put your services in front of local customers, build confidence with a reviewed
-                business identity, and make it easier for people to ask about your availability.
-                Your profile brings your services, location and contact options together.
-              </Text>
-              <View style={styles.providerBenefits}>
-                <Benefit Icon={BadgeCheck} text="Apply for verified status" palette={palette} />
-                <Benefit
-                  Icon={Sparkles}
-                  text="Share services, offers and updates"
-                  palette={palette}
-                />
-                <Benefit
-                  Icon={ChevronRight}
-                  text="Receive enquiries in one place"
-                  palette={palette}
-                />
-              </View>
-              <PressableScale
-                style={styles.providerButton}
-                onPress={() => navigation.navigate('ClaimListing')}
+              <View
+                style={[
+                  styles.providerCard,
+                  { backgroundColor: palette.primaryTint, borderColor: palette.primary },
+                ]}
               >
-                <View style={[styles.providerButtonContent, { backgroundColor: palette.primary }]}>
-                  <Text style={{ color: palette.onPrimary, fontWeight: '900' }}>
-                    Join as a provider
-                  </Text>
-                  <ChevronRight size={18} color={palette.onPrimary} />
+                <View style={styles.providerTop}>
+                  <View style={[styles.providerIcon, { backgroundColor: palette.primary }]}>
+                    <Building2 size={24} color={palette.background} />
+                  </View>
+                  <View style={styles.providerHeading}>
+                    <Text style={[styles.providerKicker, { color: palette.primary }]}>
+                      FOR BUSINESSES & PROFESSIONALS
+                    </Text>
+                    <Text style={[styles.providerTitle, { color: palette.text }]}>
+                      Grow your business on ChodhiQ
+                    </Text>
+                  </View>
                 </View>
-              </PressableScale>
-              <Text style={[styles.providerNote, { color: palette.text2 }]}>
-                You’ll need basic business details and proof of ownership for verification.
-              </Text>
-            </View>
+                <Text style={[styles.providerBody, { color: palette.text2 }]}>
+                  Claim an existing listing or create a new profile so local customers can discover,
+                  trust and contact you.
+                </Text>
+                <Text style={[styles.providerBody, { color: palette.text2 }]}>
+                  Put your services in front of local customers, build confidence with a reviewed
+                  business identity, and make it easier for people to ask about your availability.
+                  Your profile brings your services, location and contact options together.
+                </Text>
+                <View style={styles.providerBenefits}>
+                  <Benefit Icon={BadgeCheck} text="Apply for verified status" palette={palette} />
+                  <Benefit
+                    Icon={Sparkles}
+                    text="Share services, offers and updates"
+                    palette={palette}
+                  />
+                  <Benefit
+                    Icon={ChevronRight}
+                    text="Receive enquiries in one place"
+                    palette={palette}
+                  />
+                </View>
+                <PressableScale
+                  style={styles.providerButton}
+                  onPress={() => navigation.navigate('ClaimListing')}
+                >
+                  <View
+                    style={[styles.providerButtonContent, { backgroundColor: palette.primary }]}
+                  >
+                    <Text style={{ color: palette.onPrimary, fontWeight: '900' }}>
+                      Join as a provider
+                    </Text>
+                    <ChevronRight size={18} color={palette.onPrimary} />
+                  </View>
+                </PressableScale>
+                <Text style={[styles.providerNote, { color: palette.text2 }]}>
+                  You’ll need basic business details and proof of ownership for verification.
+                </Text>
+              </View>
+            </ProfileGroup>
           </FadeInView>
         )}
         <FadeInView delay={220}>
-          <Text style={[styles.sectionLabel, { color: palette.text2, marginTop: spacing.lg }]}>
-            COMMUNITY & BUSINESS
-          </Text>
-          <MenuCard items={communityItems} palette={palette} navigation={navigation} emphasized />
+          <ProfileGroup
+            title="Community & business"
+            hint="Your posts, reviews and provider tools"
+            expanded={expandedSection === 'community'}
+            onPress={() => setExpandedSection(expandedSection === 'community' ? null : 'community')}
+            palette={palette}
+          >
+            <View style={[styles.groupContent, { borderTopColor: palette.border }]}>
+              <MenuCard
+                items={communityItems}
+                palette={palette}
+                navigation={navigation}
+                emphasized
+              />
+            </View>
+          </ProfileGroup>
         </FadeInView>
         <FadeInView delay={270}>
           <PressableScale
@@ -368,6 +382,30 @@ export default function ProfileScreen({ navigation }) {
         </BottomSheetView>
       </BottomSheetModal>
     </SafeAreaView>
+  );
+}
+
+function ProfileGroup({ title, hint, expanded, onPress, palette, children }) {
+  return (
+    <GlassView style={[styles.groupCard, { borderColor: palette.border }]} intensity={24}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        onPress={onPress}
+        style={styles.groupHeader}
+      >
+        <View style={styles.groupCopy}>
+          <Text style={[styles.groupTitle, { color: palette.text }]}>{title}</Text>
+          <Text style={[styles.groupHint, { color: palette.text2 }]}>{hint}</Text>
+        </View>
+        <ChevronDown
+          size={19}
+          color={palette.muted}
+          style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }}
+        />
+      </TouchableOpacity>
+      {expanded && children}
+    </GlassView>
   );
 }
 
@@ -444,39 +482,18 @@ function MenuCard({ items, palette, navigation, emphasized = false }) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   guest: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 14 },
-  guestTheme: { width: '100%', maxWidth: 420, padding: 14, borderRadius: 18, borderWidth: 1 },
-  guestThemeLabel: { fontSize: 13, fontWeight: '900', marginBottom: 10 },
-  guestThemeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  themeToggle: {
-    minHeight: 52,
-    borderRadius: 999,
+  guestTheme: {
+    width: '100%',
+    maxWidth: 420,
+    minHeight: 66,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 12,
-    paddingHorizontal: 18,
   },
-  themeToggleLabel: { fontSize: 13, fontWeight: '800' },
-  themeTrack: { width: 48, height: 26, borderRadius: 999, padding: 3 },
-  themeThumb: { width: 20, height: 20, borderRadius: 10 },
-  guestThemeOption: {
-    width: '31%',
-    minHeight: 62,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    borderRadius: 13,
-    borderWidth: 1,
-  },
-  swatches: { flexDirection: 'row' },
-  swatch: {
-    width: 13,
-    height: 13,
-    borderRadius: 7,
-    marginLeft: -2,
-    borderWidth: 1,
-    borderColor: '#FFFFFF88',
-  },
+  guestThemeLabel: { fontSize: 13, fontWeight: '900', marginBottom: 3 },
   content: {
     width: '100%',
     maxWidth: 760,
@@ -534,6 +551,26 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 18, fontWeight: '900' },
   statLabel: { fontSize: 10, fontWeight: '700', marginTop: 2 },
   divider: { width: 1, height: 28 },
+  groupCard: {
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    ...shadows.soft,
+  },
+  groupHeader: {
+    minHeight: 68,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 11,
+  },
+  groupCopy: { flex: 1, gap: 3 },
+  groupTitle: { fontSize: 14, fontWeight: '800' },
+  groupHint: { fontSize: 11, lineHeight: 15 },
+  groupContent: { borderTopWidth: 1, padding: 10, gap: 10 },
+  inlineAction: { padding: 10 },
   sectionLabel: {
     fontSize: 10,
     fontWeight: '900',

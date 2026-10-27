@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { cleanSearchValue, csvSafeValue, isLegalTransition, pageRange, runBoundedBulk } from "../lib/operations.ts";
+import { cachedQuery, clearQueryCache, readCachedQuery } from "../lib/query-cache.ts";
 
 test("search cleaning removes Supabase filter control characters", () => {
-  assert.equal(cleanSearchValue("  Kerala,_%() Kitchen  "), "Kerala      Kitchen");
+  assert.equal(cleanSearchValue("  Kerala,._%():*`\\ Kitchen  "), "Kerala Kitchen");
+  assert.equal(cleanSearchValue("a".repeat(120)).length, 100);
 });
 
 test("pagination produces inclusive server ranges", () => {
@@ -28,4 +30,19 @@ test("bounded bulk preserves per-record success and failure", async () => {
   assert.deepEqual(summary.succeeded.sort(), ["a", "c"]);
   assert.deepEqual(summary.failed, ["b"]);
   assert.equal(summary.message, "2 succeeded, 1 failed.");
+});
+
+test("query cache serves fresh values, deduplicates requests, and preserves stale data on errors", async () => {
+  clearQueryCache();
+  let calls = 0;
+  const first = await cachedQuery("providers", async () => { calls += 1; return ["cached"]; });
+  const fresh = await cachedQuery("providers", async () => { calls += 1; return ["unexpected"]; });
+  assert.deepEqual(first, ["cached"]);
+  assert.deepEqual(fresh, ["cached"]);
+  assert.equal(calls, 1);
+
+  const stale = await cachedQuery("providers", async () => { calls += 1; throw new Error("offline"); }, { force: true, retries: 0 });
+  assert.deepEqual(stale, ["cached"]);
+  assert.deepEqual(readCachedQuery("providers"), ["cached"]);
+  assert.equal(calls, 2);
 });

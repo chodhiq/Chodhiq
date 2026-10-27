@@ -1,10 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
-import { AdminShell } from '../components/admin-shell';
 import { EmptyState, LoadError, Page, Skeleton, Status } from '../components/ui';
 import { useAdmin } from '../../lib/admin';
 import { supabase } from '../../lib/supabase';
+import { useCounts, type CountDef } from '../../lib/use-counts';
 
 type Provider = { id: string; business_name: string };
 type Campaign = {
@@ -50,6 +50,11 @@ const emptyDraft: Draft = {
   startsAt: '',
   endsAt: '',
 };
+const CAMPAIGN_COUNTS = [
+  { key: 'active', table: 'ad_campaigns', filters: { status: 'active' } },
+  { key: 'scheduled', table: 'ad_campaigns', filters: { status: 'scheduled' } },
+  { key: 'ended', table: 'ad_campaigns', filters: { status: 'expired' } },
+] as const satisfies readonly CountDef[];
 const allowedImages = new Map([
   ['image/jpeg', 'jpg'],
   ['image/png', 'png'],
@@ -58,6 +63,7 @@ const allowedImages = new Map([
 
 export default function CampaignsPage() {
   const admin = useAdmin();
+  const { show } = useCounts(CAMPAIGN_COUNTS);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -264,10 +270,11 @@ export default function CampaignsPage() {
   };
 
   return (
-    <AdminShell title="Advertising campaigns">
+    
       <Page
         title="Advertising campaigns"
         note="Upload one approved creative at a time into the home feed. No active campaign means no custom-ad card appears in the app."
+        stats={[{label:'Active',value:show('active'),tone:'green'},{label:'Scheduled',value:show('scheduled'),tone:'amber'},{label:'Ended',value:show('ended')}]}
       >
         {error && <LoadError message={error} retry={load} />}
         {loading ? (
@@ -498,6 +505,6 @@ export default function CampaignsPage() {
           </div>
         )}
       </Page>
-    </AdminShell>
+    
   );
 }

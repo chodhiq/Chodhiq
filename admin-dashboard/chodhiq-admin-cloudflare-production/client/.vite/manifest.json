@@ -1,0 +1,290 @@
+{
+  "_admin-CwugDQLd.js": {
+    "file": "_next/static/chunks/admin-CwugDQLd.js",
+    "name": "admin",
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js"
+    ]
+  },
+  "_admin-page-title-m1Gm1fud.js": {
+    "file": "_next/static/chunks/admin-page-title-m1Gm1fud.js",
+    "name": "admin-page-title",
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js"
+    ]
+  },
+  "_framework-2k-VFE-j.js": {
+    "file": "_next/static/chunks/framework-2k-VFE-j.js",
+    "name": "framework",
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js"
+    ]
+  },
+  "_rolldown-runtime-hePW80VL.js": {
+    "file": "_next/static/chunks/rolldown-runtime-hePW80VL.js",
+    "name": "rolldown-runtime"
+  },
+  "_vinext-D5Lyw7Nu.js": {
+    "file": "_next/static/chunks/vinext-D5Lyw7Nu.js",
+    "name": "vinext",
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js"
+    ],
+    "dynamicImports": [
+      "node_modules/vinext/dist/shims/internal/hybrid-client-route-owner.js",
+      "_vinext-D5Lyw7Nu.js"
+    ]
+  },
+  "app/applications/page.tsx": {
+    "file": "_next/static/chunks/page-D2-ZIqD1.js",
+    "name": "page",
+    "src": "app/applications/page.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "app/components/admin-link.tsx",
+      "_admin-CwugDQLd.js",
+      "app/components/ui.tsx"
+    ]
+  },
+  "app/campaigns/page.tsx": {
+    "file": "_next/static/chunks/page-CF_c4Uum.js",
+    "name": "page",
+    "src": "app/campaigns/page.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "_admin-CwugDQLd.js",
+      "app/components/ui.tsx"
+    ]
+  },
+  "app/community/privileges/page.tsx": {
+    "file": "_next/static/chunks/page-CxAefoFv.js",
+    "name": "page",
+    "src": "app/community/privileges/page.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "app/components/admin-link.tsx",
+      "_admin-CwugDQLd.js",
+      "app/components/ui.tsx"
+    ]
+  },
+  "app/components/admin-link.tsx": {
+    "file": "_next/static/chunks/admin-link-AA5uR4Eq.js",
+    "name": "admin-link",
+    "src": "app/components/admin-link.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "_vinext-D5Lyw7Nu.js"
+    ],
+    "dynamicImports": [
+      "_vinext-D5Lyw7Nu.js"
+    ]
+  },
+  "app/components/admin-shell.tsx": {
+    "file": "_next/static/chunks/admin-shell-CT4pplQj.js",
+    "name": "admin-shell",
+    "src": "app/components/admin-shell.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "_vinext-D5Lyw7Nu.js",
+      "app/components/admin-link.tsx",
+      "_admin-CwugDQLd.js",
+      "_admin-page-title-m1Gm1fud.js"
+    ]
+  },
+  "app/components/enhanced-list-pages.tsx": {
+    "file": "_next/static/chunks/enhanced-list-pages-CZ_q8Pqw.js",
+    "name": "enhanced-list-pages",
+    "src": "app/components/enhanced-list-pages.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "app/components/admin-link.tsx",
+      "_admin-CwugDQLd.js",
+      "app/components/ui.tsx"
+    ]
+  },
+  "app/components/governance-pages.tsx": {
+    "file": "_next/static/chunks/governance-pages-CH7ZqKil.js",
+    "name": "governance-pages",
+    "src": "app/components/governance-pages.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "_admin-CwugDQLd.js",
+      "app/components/ui.tsx"
+    ]
+  },
+  "app/components/keyboard-visibility.tsx": {
+    "file": "_next/static/chunks/keyboard-visibility-DicDdMBs.js",
+    "name": "keyboard-visibility",
+    "src": "app/components/keyboard-visibility.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js"
+    ]
+  },
+  "app/components/operations-pages.tsx": {
+    "file": "_next/static/chunks/operations-pages-De2cqAv7.js",
+    "name": "operations-pages",
+    "src": "app/components/operations-pages.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "_admin-CwugDQLd.js",
+      "app/components/ui.tsx"
+    ]
+  },
+  "app/components/phase2-pages.tsx": {
+    "file": "_next/static/chunks/phase2-pages-Bz_evOJw.js",
+    "name": "phase2-pages",
+    "src": "app/components/phase2-pages.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "app/components/admin-link.tsx",
+      "_admin-CwugDQLd.js",
+      "app/components/ui.tsx"
+    ]
+  },
+  "app/components/report-queue.tsx": {
+    "file": "_next/static/chunks/report-queue-BJ6rx2Z2.js",
+    "name": "report-queue",
+    "src": "app/components/report-queue.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "app/components/admin-link.tsx",
+      "_admin-CwugDQLd.js",
+      "app/components/ui.tsx"
+    ]
+  },
+  "app/components/ui.tsx": {
+    "file": "_next/static/chunks/ui-BF60mTmd.js",
+    "name": "ui",
+    "src": "app/components/ui.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_framework-2k-VFE-j.js",
+      "_admin-CwugDQLd.js"
+    ]
+  },
+  "app/error.tsx": {
+    "file": "_next/static/chunks/error-B4KCqpnz.js",
+    "name": "error",
+    "src": "app/error.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_framework-2k-VFE-j.js"
+    ]
+  },
+  "app/page.tsx": {
+    "file": "_next/static/chunks/page-D3fhPVSL.js",
+    "name": "page",
+    "src": "app/page.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "app/components/admin-link.tsx",
+      "_admin-CwugDQLd.js",
+      "app/components/ui.tsx"
+    ]
+  },
+  "app/providers/[id]/page.tsx": {
+    "file": "_next/static/chunks/page-DrUbJX9-.js",
+    "name": "page",
+    "src": "app/providers/[id]/page.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "_vinext-D5Lyw7Nu.js",
+      "_admin-CwugDQLd.js",
+      "app/components/ui.tsx",
+      "_admin-page-title-m1Gm1fud.js"
+    ]
+  },
+  "app/verification/page.tsx": {
+    "file": "_next/static/chunks/page-CJOZ2wOt.js",
+    "name": "page",
+    "src": "app/verification/page.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "_admin-CwugDQLd.js",
+      "app/components/ui.tsx"
+    ]
+  },
+  "node_modules/vinext/dist/shims/internal/hybrid-client-route-owner.js": {
+    "file": "_next/static/chunks/hybrid-client-route-owner-C55WUARx.js",
+    "name": "hybrid-client-route-owner",
+    "src": "node_modules/vinext/dist/shims/internal/hybrid-client-route-owner.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vinext-D5Lyw7Nu.js"
+    ]
+  },
+  "node_modules/vinext/dist/shims/layout-segment-context.js": {
+    "file": "_next/static/chunks/layout-segment-context-CePjmZyr.js",
+    "name": "layout-segment-context",
+    "src": "node_modules/vinext/dist/shims/layout-segment-context.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "_vinext-D5Lyw7Nu.js"
+    ]
+  },
+  "virtual:vinext-app-browser-entry": {
+    "file": "_next/static/chunks/index-BHkH62mI.js",
+    "name": "index",
+    "src": "virtual:vinext-app-browser-entry",
+    "isEntry": true,
+    "imports": [
+      "_rolldown-runtime-hePW80VL.js",
+      "_framework-2k-VFE-j.js",
+      "_vinext-D5Lyw7Nu.js"
+    ],
+    "dynamicImports": [
+      "_vinext-D5Lyw7Nu.js",
+      "node_modules/vinext/dist/shims/layout-segment-context.js",
+      "app/community/privileges/page.tsx",
+      "app/campaigns/page.tsx",
+      "app/providers/[id]/page.tsx",
+      "app/components/operations-pages.tsx",
+      "app/verification/page.tsx",
+      "app/components/phase2-pages.tsx",
+      "app/page.tsx",
+      "app/components/report-queue.tsx",
+      "app/applications/page.tsx",
+      "app/components/ui.tsx",
+      "app/components/governance-pages.tsx",
+      "app/components/enhanced-list-pages.tsx",
+      "app/components/admin-link.tsx",
+      "app/error.tsx",
+      "app/components/admin-shell.tsx",
+      "_admin-CwugDQLd.js",
+      "app/components/keyboard-visibility.tsx"
+    ]
+  }
+}

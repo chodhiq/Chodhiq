@@ -31,8 +31,7 @@ async function registrationDeadline(promise) {
 export async function registerPushToken(userId, vibration = true) {
   if (!supabase || !userId || Platform.OS === 'web') return null;
   const Notifications = getNotificationsModule();
-  if (!Notifications)
-    throw pushError('PUSH_NATIVE_UNAVAILABLE', 'Native notifications unavailable');
+  if (!Notifications) return null;
   if (Platform.OS === 'android') {
     // Android channel vibration cannot be changed after creation; use distinct channels.
     for (const enabled of [true, false]) {

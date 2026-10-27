@@ -68,18 +68,18 @@ function AppContent() {
       <View
         style={{
           flex: 1,
-          backgroundColor: '#F8FAF7',
+          backgroundColor: '#080A09',
           alignItems: 'center',
           justifyContent: 'center',
           gap: 24,
         }}
       >
         <Image
-          source={require('./assets/chodhiq-logo-black.png')}
+          source={require('./assets/chodhiq-logo-white.png')}
           style={{ width: 180, height: 64 }}
           resizeMode="contain"
         />
-        <ActivityIndicator size="large" color="#16805D" />
+        <ActivityIndicator size="large" color="#20C767" />
       </View>
     );
   return (

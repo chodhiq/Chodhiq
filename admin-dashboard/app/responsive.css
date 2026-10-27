@@ -35,7 +35,13 @@
   flex-direction: column;
 }
 .activity-grid .table > table {
-  min-width: 580px;
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+.activity-grid .table th,
+.activity-grid .table td {
+  overflow-wrap: anywhere;
 }
 .activity-grid .pagination {
   margin-top: auto;
@@ -217,25 +223,7 @@ select {
   }
 }
 
-/* Production admin visual system: compact, operational and consistent with the approved reference. */
-:root {
-  --g: #009bb2;
-  --d: #09293b;
-  --p: #e7f8f7;
-  --c: #f4f7f9;
-  --i: #102033;
-  --m: #6b7887;
-  --l: #dce4e9;
-  --y: #00a9b7;
-  --u: #087f8c;
-  --r: #e7525d;
-  --surface: #ffffff;
-  --surface-2: #f7f9fa;
-  --nav: #092a3d;
-  --nav-text: #f4fbfd;
-  --nav-muted: #a9bec9;
-  --shadow: #17384a0c;
-}
+
 
 html,
 body,
@@ -249,7 +237,7 @@ body,
 
 .admin-sidebar {
   width: 196px !important;
-  background: linear-gradient(180deg, #0a3147 0%, #08283a 100%) !important;
+  background: linear-gradient(180deg, var(--border) 0%, var(--surface-2) 100%) !important;
 }
 
 .sidebar-brand {
@@ -259,19 +247,27 @@ body,
 }
 
 .sidebar-brand > span {
-  width: 35px !important;
-  height: 35px !important;
-  border-radius: 9px !important;
+  width: 150px !important;
+  height: 50px !important;
+  border-radius: 0 !important;
+  position: relative !important;
+  display: block !important;
+  flex: 0 0 150px;
+  overflow: hidden;
+  background: transparent !important;
 }
 
 .sidebar-brand > span img {
-  width: 35px !important;
-  height: 35px !important;
+  position: absolute;
+  inset: 0;
+  width: 150px !important;
+  height: 50px !important;
+  object-fit: contain;
 }
 
 .sidebar-brand strong {
   font:
-    800 17px/1 var(--font-geist-sans),
+    800 17px/1 var(--font-inter),
     Arial,
     sans-serif !important;
   letter-spacing: -0.03em;
@@ -298,7 +294,7 @@ body,
   margin: 3px 0 !important;
   padding: 7px 10px !important;
   border-radius: 7px !important;
-  color: #c5d5dd !important;
+  color: var(--text) !important;
   font-size: 12px !important;
   font-weight: 580 !important;
 }
@@ -312,9 +308,9 @@ body,
 }
 
 .nav-group a.active {
-  color: #fff !important;
-  background: linear-gradient(90deg, #0799a8, #087f92) !important;
-  box-shadow: 0 5px 14px #001c2738 !important;
+  color: var(--text) !important;
+  background: linear-gradient(90deg, var(--teal), var(--teal)) !important;
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--sidebar) 22%, transparent) !important;
 }
 
 .sidebar-footer {
@@ -328,7 +324,7 @@ body,
 .sidebar-footer .account {
   min-height: 48px !important;
   border: 0 !important;
-  background: #ffffff09 !important;
+  background: color-mix(in srgb, var(--text) 3.5%, transparent) !important;
 }
 
 .workspace {
@@ -338,9 +334,9 @@ body,
 .topbar {
   height: 68px !important;
   padding: 0 24px !important;
-  grid-template-columns: minmax(130px, 0.65fr) minmax(260px, 520px) auto !important;
+  grid-template-columns: minmax(130px, 1fr) minmax(220px, 460px) auto auto !important;
   gap: 20px !important;
-  background: #fff !important;
+  background: var(--text) !important;
   box-shadow: 0 1px 0 var(--l) !important;
 }
 
@@ -350,7 +346,7 @@ body,
 
 .page-identity h1 {
   font:
-    760 17px/1 var(--font-geist-sans),
+    760 17px/1 var(--font-inter),
     Arial,
     sans-serif !important;
 }
@@ -358,13 +354,13 @@ body,
 .global-search > input {
   height: 38px !important;
   border-radius: 7px !important;
-  background: #f5f7f9 !important;
+  background: var(--text) !important;
   font-size: 12px !important;
 }
 
 .admin-badge > span {
-  background: #dce5eb !important;
-  color: #6c7b8b !important;
+  background: var(--text) !important;
+  color: var(--muted) !important;
 }
 
 .admin-badge b {
@@ -386,7 +382,7 @@ body,
 
 .head h2 {
   font:
-    800 25px/1.1 var(--font-geist-sans),
+    800 25px/1.1 var(--font-inter),
     Arial,
     sans-serif !important;
   letter-spacing: -0.035em !important;
@@ -431,7 +427,7 @@ body,
 
 .metric small {
   margin-top: 5px !important;
-  color: #18a565 !important;
+  color: var(--teal) !important;
   font-size: 10px !important;
 }
 
@@ -456,7 +452,7 @@ body,
   padding: 16px !important;
   border: 1px solid var(--l) !important;
   border-radius: 9px !important;
-  background: #fff !important;
+  background: var(--text) !important;
   color: var(--i) !important;
   box-shadow: 0 3px 12px var(--shadow) !important;
   font-size: 12px !important;
@@ -464,7 +460,7 @@ body,
 
 th {
   padding: 11px 12px !important;
-  background: #f5f8f9 !important;
+  background: var(--text) !important;
   font-size: 10px !important;
 }
 
@@ -480,9 +476,9 @@ td {
 }
 
 .primary {
-  background: linear-gradient(180deg, #08a8b5, #078b9f) !important;
+  background: linear-gradient(180deg, var(--teal), var(--teal)) !important;
   border-radius: 7px !important;
-  box-shadow: 0 4px 10px #048b9a26;
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--teal) 14.9%, transparent);
 }
 
 @media (min-width: 761px) and (max-width: 1100px) {
@@ -539,7 +535,7 @@ td {
   min-height: 100dvh;
   padding: 0 !important;
   overflow: hidden;
-  background: #fff !important;
+  background: var(--text) !important;
   color-scheme: light;
 }
 .admin-login-brand {
@@ -547,9 +543,13 @@ td {
   min-width: 0;
   min-height: 100dvh;
   overflow: hidden;
-  background: #062a49;
+  background: var(--surface-2);
 }
 .admin-login-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   object-position: center center;
 }
@@ -558,32 +558,32 @@ td {
   width: min(520px, calc(100% - 48px)) !important;
   margin: 32px auto !important;
   padding: 42px 44px 32px !important;
-  border: 1px solid #dce5ea !important;
+  border: 1px solid var(--text) !important;
   border-radius: 18px !important;
-  background: #fff !important;
-  box-shadow: 0 24px 70px #102b471c !important;
-  color: #0f2031 !important;
+  background: var(--text) !important;
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--surface-2) 11%, transparent) !important;
+  color: var(--surface) !important;
   text-align: left;
 }
 .admin-login-card > small {
   display: block;
-  color: #087f8c !important;
+  color: var(--teal) !important;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.18em;
 }
 .admin-login-card h2 {
   margin: 12px 0 6px !important;
-  color: #0f2031 !important;
+  color: var(--surface) !important;
   font:
-    800 38px/1.05 var(--font-geist-sans),
+    800 38px/1.05 var(--font-inter),
     Arial,
     sans-serif !important;
   letter-spacing: -0.04em;
 }
 .admin-login-card > p {
   margin: 0;
-  color: #68758a !important;
+  color: var(--muted) !important;
   font-size: 14px;
 }
 .admin-login-card form {
@@ -592,47 +592,47 @@ td {
   text-align: left;
 }
 .admin-login-card label {
-  color: #0f2031 !important;
+  color: var(--surface) !important;
 }
 .admin-login-card input {
   min-height: 52px !important;
-  border-color: #cfd8df !important;
+  border-color: var(--text) !important;
   border-radius: 8px !important;
-  background: #fff !important;
-  color: #0f2031 !important;
+  background: var(--text) !important;
+  color: var(--surface) !important;
 }
 .admin-login-card input::placeholder {
-  color: #8a96a8 !important;
+  color: var(--muted) !important;
   opacity: 1;
 }
 .admin-login-card .primary {
   min-height: 52px !important;
   border-radius: 8px !important;
-  border-color: #07998e !important;
-  background: linear-gradient(90deg, #08aa9e, #07998e) !important;
-  color: #fff !important;
+  border-color: var(--teal) !important;
+  background: linear-gradient(90deg, var(--teal), var(--teal)) !important;
+  color: var(--text) !important;
   font-size: 16px;
 }
 .admin-login-card .text-button {
   padding: 6px 0;
-  color: #008f87 !important;
+  color: var(--teal) !important;
   font-size: 13px;
   text-align: center;
 }
 .admin-login-trust {
   margin-top: 18px !important;
   padding-top: 18px;
-  border-top: 1px solid #e1e7eb;
+  border-top: 1px solid var(--text);
   font-size: 12px !important;
   text-align: center;
 }
 .admin-login-restriction {
   margin-top: 16px !important;
   padding: 14px 16px;
-  border: 1px solid #b9dff0;
+  border: 1px solid var(--text);
   border-radius: 8px;
-  background: #eff8fc;
-  color: #49647a !important;
+  background: var(--text);
+  color: var(--border) !important;
   text-align: center;
 }
 .admin-login-support {
@@ -641,7 +641,7 @@ td {
   text-align: center;
 }
 .admin-login-support a {
-  color: #008f87 !important;
+  color: var(--teal) !important;
 }
 body:has(.admin-login-page) .theme-controls {
   display: none !important;
@@ -699,44 +699,30 @@ body:has(.admin-login-page) .theme-controls {
   }
 }
 
-/* Shared admin interaction flow. */
+/* Keep interaction transitions scoped to controls; content surfaces do not animate layout or shadows. */
 html {
   scroll-behavior: smooth;
 }
-.workspace,
-.page,
-.panel,
-.metric,
-.table,
-.admin-sidebar,
 .nav-group a,
 .primary,
 .toolbar button,
+button,
+a {
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease,
+    transform 120ms ease;
+}
 input,
 select,
-textarea,
-a,
-button {
+textarea {
   transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.18s ease,
-    opacity 0.18s ease;
-}
-.page {
-  animation: admin-page-enter 0.22s ease-out both;
-}
-@keyframes admin-page-enter {
-  from {
-    opacity: 0.55;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease;
 }
 button:not(:disabled):active,
 a:active {
@@ -744,33 +730,20 @@ a:active {
 }
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.58;
-}
-.panel:hover,
-.metric:hover {
-  box-shadow: 0 9px 24px color-mix(in srgb, var(--shadow) 78%, transparent) !important;
+  opacity: 1;
 }
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-  .workspace,
-  .page,
-  .panel,
-  .metric,
-  .table,
-  .admin-sidebar,
   .nav-group a,
   .primary,
   .toolbar button,
+  button,
+  a,
   input,
   select,
-  textarea,
-  a,
-  button {
+  textarea {
     transition: none !important;
-  }
-  .page {
-    animation: none !important;
   }
 }

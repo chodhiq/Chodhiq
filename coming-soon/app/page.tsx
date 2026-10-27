@@ -15,12 +15,12 @@ import {
   Utensils,
 } from 'lucide-react';
 
-const emailLink = 'mailto:chodhiq@gmail.com?subject=ChodhiQ%20provider%20enquiry';
+const generalEmailLink = 'mailto:contact@chodhiq.co.uk?subject=ChodhiQ%20enquiry';
+const businessEmailLink = 'mailto:business@chodhiq.co.uk?subject=ChodhiQ%20provider%20enquiry';
 function Logo() {
   return (
     <span className="logo">
-      <img className="logo-white" src="/chodhiq-logo-transparent.png" alt="ChodhiQ" width="2170" height="725" />
-      <img className="logo-colour" src="/chodhiq-logo-transparent.png" alt="" width="2170" height="725" aria-hidden="true" />
+      <img src="/chodhiq-logo-transparent.png" alt="ChodhiQ" width="865" height="288" />
     </span>
   );
 }
@@ -57,7 +57,7 @@ export default function Home() {
           <a href="#about">About</a>
           <a href="#business">For businesses</a>
           <a href="#contact">Contact</a>
-          <a className="nav-cta" href={emailLink}>
+          <a className="nav-cta" href={generalEmailLink}>
             Join early
           </a>
         </nav>
@@ -83,7 +83,7 @@ export default function Home() {
                 <a className="button lime" href="#about">
                   Explore ChodhiQ <ArrowRight size={18} />
                 </a>
-                <a className="button ghost" href={emailLink}>
+                <a className="button ghost" href={businessEmailLink}>
                   List your business
                 </a>
               </div>
@@ -159,7 +159,7 @@ export default function Home() {
                 People are already looking for what you offer. ChodhiQ helps you get found, build
                 trust and reach more customers.
               </p>
-              <a className="button dark" href={emailLink}>
+              <a className="button dark" href={businessEmailLink}>
                 List your business <ArrowRight size={18} />
               </a>
             </div>
@@ -249,9 +249,9 @@ export default function Home() {
               <h2>Be part of the beginning.</h2>
               <p>Providers can introduce their business and get launch updates.</p>
             </div>
-            <a className="email" href={emailLink}>
+            <a className="email" href={businessEmailLink}>
               <Mail />
-              chodhiq@gmail.com
+              business@chodhiq.co.uk
               <ArrowRight />
             </a>
             <p className="script note">
@@ -267,7 +267,7 @@ export default function Home() {
         <nav>
           <a href="#about">About</a>
           <a href="#business">Businesses</a>
-          <a href={emailLink}>Contact</a>
+          <a href={generalEmailLink}>Contact</a>
         </nav>
       </footer>
     </>

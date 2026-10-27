@@ -271,7 +271,7 @@ export default function ExploreScreen({ navigation, route }) {
         ]}
         ListHeaderComponent={
           <>
-            <ExploreHeader onBack={() => navigation.navigate('Home')} />
+            <ExploreHeader palette={palette} onBack={() => navigation.navigate('Home')} />
             <MarketplaceStatusBanner
               offline={offline}
               loading={marketplaceLoading}
@@ -379,10 +379,10 @@ export default function ExploreScreen({ navigation, route }) {
         accessibilityRole="button"
         accessibilityLabel="Toggle highest rated results"
         onPress={() => setFiltersVisible(true)}
-        style={styles.floatingFilter}
+        style={[styles.floatingFilter, { backgroundColor: palette.primary }]}
       >
-        <SlidersHorizontal size={17} color="#FFFFFF" />
-        <Text style={styles.floatingFilterText}>Filters</Text>
+        <SlidersHorizontal size={17} color={palette.onPrimary} />
+        <Text style={[styles.floatingFilterText, { color: palette.onPrimary }]}>Filters</Text>
       </TouchableOpacity>
       <FiltersModal
         visible={filtersVisible}
@@ -609,7 +609,7 @@ function FiltersModal(props) {
               onPress={onApply}
               style={[styles.applyButton, { backgroundColor: palette.primary }]}
             >
-              <Text style={styles.applyText}>
+              <Text style={[styles.applyText, { color: palette.onPrimary }]}>
                 Show {resultCount} {resultCount === 1 ? 'result' : 'results'}
               </Text>
             </TouchableOpacity>
@@ -693,12 +693,11 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 22,
     paddingHorizontal: 18,
-    backgroundColor: '#101817',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  floatingFilterText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+  floatingFilterText: { fontSize: 12, fontWeight: '800' },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(15,23,42,.38)' },
   keyboardAvoiding: { flex: 1, justifyContent: 'flex-end' },
   sheet: {

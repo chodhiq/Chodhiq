@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   Bell,
   BriefcaseBusiness,
@@ -29,12 +30,14 @@ import {
   EyeOff,
   MapPin,
   MessageCircle,
+  Moon,
   ShieldCheck,
   Star,
   UserRound,
 } from 'lucide-react-native';
 import ScreenHeader from '../components/ScreenHeader';
 import { colors, radius, spacing, typography } from '../theme/theme';
+import GlassView from '../components/GlassView';
 import { ukCities } from '../data/mockData';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
@@ -329,10 +332,7 @@ export function WelcomeScreen({ navigation, route }) {
           </FadeInView>{' '}
           <FadeInView
             delay={150}
-            style={[
-              stylesWelcome.form,
-              { backgroundColor: palette.surface, borderColor: palette.border },
-            ]}
+            style={stylesWelcome.form}
           >
             {' '}
             {mode === 'signup' && (
@@ -936,17 +936,19 @@ export function LocationScreen({ navigation }) {
       />{' '}
       <ScrollView contentContainerStyle={pageStyles.content}>
         <Text style={[pageStyles.body, { color: palette.text2 }]}>Search by city or postcode</Text>
-        <AppTextInput
-          accessibilityLabel="Search location by city or postcode"
-          value={locationQuery}
-          onChangeText={setLocationQuery}
-          placeholder="City or UK postcode, e.g. LE5 4AN"
-          autoCapitalize="characters"
-          returnKeyType="search"
-          onSubmitEditing={searchLocation}
-          placeholderTextColor={palette.muted}
-          style={{ color: palette.text, backgroundColor: palette.surface }}
-        />
+        <GlassView intensity={44} style={{ minHeight: 50, borderRadius: 14 }}>
+          <AppTextInput
+            accessibilityLabel="Search location by city or postcode"
+            value={locationQuery}
+            onChangeText={setLocationQuery}
+            placeholder="City or UK postcode, e.g. LE5 4AN"
+            autoCapitalize="characters"
+            returnKeyType="search"
+            onSubmitEditing={searchLocation}
+            placeholderTextColor={palette.muted}
+            style={{ color: palette.text, minHeight: 50, paddingHorizontal: 14 }}
+          />
+        </GlassView>
         {(citySuggestions.length > 0 || postcodeSuggestions.length > 0 || postcodesLoading) && (
           <View
             accessibilityLabel="Location suggestions"
@@ -1101,70 +1103,92 @@ export function NotificationsScreen({ navigation }) {
       {' '}
       <ScreenHeader
         navigation={navigation}
-        title="Notifications"
+        title="Activity"
         right={
           <TouchableOpacity
-            style={{ minHeight: 44, justifyContent: 'center' }}
+            style={[stylesNotifications.readAllButton, { backgroundColor: palette.surfaceAlt }]}
             accessibilityRole="button"
             accessibilityLabel="Mark all notifications read and clear the list"
             disabled={clearing || !unread.length}
             onPress={clearAll}
           >
-            {' '}
-            <Text style={{ color: palette.primary, fontSize: 12 }}>
-              {' '}
-              {clearing ? 'Clearing…' : 'Read all'}{' '}
-            </Text>{' '}
+            <Text
+              style={[
+                stylesNotifications.readAllText,
+                { color: unread.length ? palette.accent : palette.muted },
+              ]}
+            >
+              {clearing ? 'Clearing…' : 'Mark all read'}
+            </Text>
           </TouchableOpacity>
         }
       />{' '}
       <ScrollView contentContainerStyle={[pageStyles.content, stylesNotifications.content]}>
         {' '}
-        <View
-          style={[
-            stylesNotifications.hero,
-            { backgroundColor: palette.primarySoft, borderColor: palette.border },
-          ]}
+        <LinearGradient
+          colors={['#1B2921', palette.surface, '#101412']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[stylesNotifications.hero, { borderColor: palette.border }]}
         >
-          {' '}
-          <View style={[stylesNotifications.heroIcon, { backgroundColor: palette.primary }]}>
-            {' '}
-            <Bell size={22} color={palette.onPrimary} />{' '}
-          </View>{' '}
+          <View
+            style={[
+              stylesNotifications.heroIcon,
+              { backgroundColor: palette.primaryTint, borderColor: 'rgba(69,227,130,0.24)' },
+            ]}
+          >
+            <Bell size={21} color={palette.accent} />
+            {unread.length > 0 && (
+              <View style={[stylesNotifications.heroDot, { backgroundColor: palette.primary }]} />
+            )}
+          </View>
           <View style={pageStyles.grow}>
-            {' '}
-            <Text style={[pageStyles.title, { color: palette.text, fontSize: 20 }]}>
-              {' '}
-              Your activity{' '}
-            </Text>{' '}
-            <Text style={[pageStyles.body, { color: palette.text2 }]}>
-              {' '}
+            <Text style={[pageStyles.title, { color: palette.text, fontSize: 19 }]}>
+              Your activity
+            </Text>
+            <Text style={[pageStyles.body, { color: palette.text2, marginTop: 3 }]}>
               {unread.length
-                ? `${unread.length} new update${unread.length === 1 ? '' : 's'} for you`
-                : "You're all caught up"}{' '}
-            </Text>{' '}
-          </View>{' '}
-        </View>{' '}
+                ? 'The latest from your community'
+                : 'You’re up to date with your community'}
+            </Text>
+          </View>
+          <View style={[stylesNotifications.countBadge, { backgroundColor: palette.primaryTint }]}>
+            <Text style={[stylesNotifications.countText, { color: palette.accent }]}>
+              {unread.length}
+            </Text>
+          </View>
+        </LinearGradient>
         {!unread.length && (
           <View
             style={[
               stylesNotifications.empty,
-              { backgroundColor: palette.surface, borderColor: palette.border },
+              { borderColor: palette.border, backgroundColor: palette.surface },
             ]}
           >
-            {' '}
-            <View style={[stylesNotifications.emptyIcon, { backgroundColor: palette.primarySoft }]}>
-              {' '}
-              <Check size={24} color={palette.primary} />{' '}
+            <View style={[stylesNotifications.emptyOrbit, { borderColor: palette.primaryTint }]}>
+              <View
+                style={[stylesNotifications.emptyIcon, { backgroundColor: palette.primaryTint }]}
+              >
+                <Check size={24} color={palette.accent} />
+              </View>
             </View>{' '}
-            <Text style={[pageStyles.title, { color: palette.text }]}>All caught up</Text>{' '}
+            <Text style={[pageStyles.title, { color: palette.text, fontSize: 18 }]}>
+              All caught up
+            </Text>{' '}
             <Text style={[pageStyles.body, { color: palette.text2, textAlign: 'center' }]}>
-              {' '}
-              When something needs your attention, you’ll find it here.{' '}
+              When there’s something new, it’ll show up right here.
             </Text>{' '}
           </View>
         )}{' '}
-        {unread.map((item) => {
+        {!!unread.length && (
+          <View style={stylesNotifications.sectionHeading}>
+            <Text style={[stylesNotifications.sectionLabel, { color: palette.text2 }]}>
+              LATEST UPDATES
+            </Text>
+            <View style={[stylesNotifications.sectionRule, { backgroundColor: palette.border }]} />
+          </View>
+        )}
+        {unread.map((item, index) => {
           const ActivityIcon =
             item.type === 'community_like'
               ? Star
@@ -1172,46 +1196,73 @@ export function NotificationsScreen({ navigation }) {
                 ? MessageCircle
                 : Bell;
           return (
-            <TouchableOpacity
+            <FadeInView
               key={item.id}
-              accessibilityRole="button"
-              accessibilityLabel={item.communityPostId ? `Open ${item.title}` : item.title}
-              disabled={!item.communityPostId}
-              onPress={() => navigation.navigate('Community', { postId: item.communityPostId })}
-              style={[
-                stylesNotifications.card,
-                { backgroundColor: palette.surface, borderColor: palette.border },
-              ]}
+              delay={Math.min(index * 45, 180)}
+              style={stylesNotifications.cardMotion}
             >
-              {' '}
-              <View
-                style={[stylesNotifications.itemIcon, { backgroundColor: palette.primarySoft }]}
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={item.communityPostId ? `Open ${item.title}` : item.title}
+                disabled={!item.communityPostId}
+                onPress={() =>
+                  navigation.navigate('Community', { postId: item.communityPostId })
+                }
+                style={[
+                  stylesNotifications.card,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                  },
+                ]}
               >
-                {' '}
-                <ActivityIcon size={18} color={palette.primary} />{' '}
-              </View>{' '}
-              <View style={pageStyles.grow}>
-                {' '}
-                <View style={stylesNotifications.titleRow}>
-                  {' '}
-                  <Text style={[pageStyles.title, { color: palette.text, flex: 1 }]}>
-                    {' '}
-                    {item.title}{' '}
-                  </Text>{' '}
-                  <View
-                    style={[stylesNotifications.unreadDot, { backgroundColor: palette.primary }]}
-                  />{' '}
-                </View>{' '}
-                <Text style={[pageStyles.body, { color: palette.text2, marginTop: 5 }]}>
-                  {' '}
-                  {item.body}{' '}
-                </Text>{' '}
-                <Text style={[pageStyles.muted, { color: palette.muted, marginTop: 8 }]}>
-                  {' '}
-                  {item.time}{' '}
-                </Text>{' '}
-              </View>{' '}
-            </TouchableOpacity>
+                <View
+                  style={[
+                    stylesNotifications.itemIcon,
+                    {
+                      backgroundColor: palette.primaryTint,
+                      borderColor: 'rgba(69,227,130,0.12)',
+                    },
+                  ]}
+                >
+                  <ActivityIcon size={18} color={palette.accent} />
+                </View>
+                <View style={pageStyles.grow}>
+                  <View style={stylesNotifications.titleRow}>
+                    <Text
+                      style={[
+                        pageStyles.title,
+                        { color: palette.text, flex: 1, lineHeight: 21 },
+                      ]}
+                    >
+                      {item.title}
+                    </Text>
+                    <View
+                      style={[
+                        stylesNotifications.unreadDot,
+                        { backgroundColor: palette.primary },
+                      ]}
+                    />
+                  </View>
+                  <Text style={[pageStyles.body, { color: palette.text2, marginTop: 6 }]}>
+                    {item.body}
+                  </Text>
+                  <View style={stylesNotifications.itemFooter}>
+                    <Text style={[pageStyles.muted, { color: palette.muted, marginTop: 8 }]}>
+                      {item.time}
+                    </Text>
+                    {item.communityPostId ? (
+                      <View style={stylesNotifications.openPost}>
+                        <Text style={{ color: palette.accent, fontSize: 11, fontWeight: '700' }}>
+                          View post
+                        </Text>
+                        <ChevronRight size={14} color={palette.accent} />
+                      </View>
+                    ) : null}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </FadeInView>
           );
         })}{' '}
       </ScrollView>{' '}
@@ -1219,32 +1270,78 @@ export function NotificationsScreen({ navigation }) {
   );
 }
 const stylesNotifications = StyleSheet.create({
-  content: { paddingTop: 8, paddingBottom: 36 },
+  content: { paddingTop: 12, paddingBottom: 36, gap: 12 },
   hero: {
-    minHeight: 86,
+    minHeight: 104,
     borderWidth: 1,
-    borderRadius: 24,
-    padding: 16,
+    borderRadius: 25,
+    padding: 17,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    marginBottom: 8,
+    gap: 13,
+    overflow: 'hidden',
   },
   heroIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 17,
+    width: 50,
+    height: 50,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  heroDot: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#111513',
+  },
+  countBadge: {
+    minWidth: 34,
+    height: 34,
+    borderRadius: 12,
+    paddingHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  countText: { fontSize: 14, fontWeight: '900' },
+  readAllButton: {
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  readAllText: { fontSize: 11, fontWeight: '800' },
+  sectionHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 8,
+    marginBottom: 1,
+  },
+  sectionLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
+  sectionRule: { flex: 1, height: StyleSheet.hairlineWidth },
+  cardMotion: { width: '100%' },
   empty: {
-    minHeight: 240,
+    minHeight: 260,
     borderWidth: 1,
-    borderRadius: 24,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 26,
-    gap: 12,
+    padding: 28,
+    gap: 10,
+  },
+  emptyOrbit: {
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
   },
   emptyIcon: {
     width: 58,
@@ -1252,26 +1349,28 @@ const stylesNotifications = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
   card: {
-    minHeight: 100,
-    borderRadius: 20,
+    minHeight: 110,
+    borderRadius: 21,
     borderWidth: 1,
-    padding: 15,
+    padding: 16,
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 13,
+    alignItems: 'center',
+    gap: 14,
   },
   itemIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 15,
+    width: 46,
+    height: 46,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   unreadDot: { width: 8, height: 8, borderRadius: 4 },
+  itemFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  openPost: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 7 },
 });
 export function QuoteRequestsScreen({ navigation }) {
   const { quoteRequests } = useAppState();
@@ -1798,7 +1897,7 @@ export function EditProfileScreen({ navigation }) {
           onPress={save}
         >
           {' '}
-          <Text style={[pageStyles.buttonText, { color: palette.dark ? '#081B2C' : '#FFFFFF' }]}>
+          <Text style={[pageStyles.buttonText, { color: palette.onPrimary }]}>
             {' '}
             Save changes{' '}
           </Text>{' '}
@@ -1809,7 +1908,7 @@ export function EditProfileScreen({ navigation }) {
 }
 export function SettingsScreen({ navigation }) {
   const { preferences, setPreferences, permissionDenied } = useAppState();
-  const { palette, mode, setMode } = useChodhiQTheme();
+  const { palette } = useChodhiQTheme();
   const [settingsPermissionDenied, setSettingsPermissionDenied] = useState(false);
   useEffect(() => {
     if (Platform.OS === 'web') return undefined;
@@ -1834,32 +1933,29 @@ export function SettingsScreen({ navigation }) {
         <View
           style={[
             pageStyles.card,
+            pageStyles.row,
             { backgroundColor: palette.surface, borderColor: palette.border },
           ]}
         >
-          {' '}
-          <TouchableOpacity
-            accessibilityRole="switch"
-            accessibilityState={{ checked: mode === 'dark' }}
-            accessibilityLabel="Toggle dark mode"
-            onPress={() => setMode(mode === 'dark' ? 'fresh' : 'dark')}
-            style={[
-              pageStyles.row,
-              { height: 48, justifyContent: 'space-between', paddingHorizontal: 4 },
-            ]}
+          <View
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 13,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: palette.primaryTint,
+            }}
           >
-            {' '}
-            <Text style={[pageStyles.title, { color: palette.text }]}>Light</Text>{' '}
-            <Switch
-              accessibilityLabel="Dark mode"
-              value={mode === 'dark'}
-              onValueChange={(enabled) => setMode(enabled ? 'dark' : 'fresh')}
-              trackColor={{ false: palette.border, true: palette.primary }}
-              thumbColor={palette.onPrimary}
-              pointerEvents="none"
-            />{' '}
-            <Text style={[pageStyles.title, { color: palette.text }]}>Dark</Text>{' '}
-          </TouchableOpacity>{' '}
+            <Moon size={19} color={palette.accent} />
+          </View>
+          <View style={pageStyles.grow}>
+            <Text style={[pageStyles.title, { color: palette.text }]}>Glossy matte black</Text>
+            <Text style={[pageStyles.body, { color: palette.text2 }]}>
+              Dark appearance is always on.
+            </Text>
+          </View>
+          <Check size={18} color={palette.primary} />
         </View>{' '}
         <Text style={[pageStyles.label, { color: palette.text2 }]}>Communication</Text>{' '}
         {[
@@ -1990,7 +2086,7 @@ export function HelpScreen({ navigation }) {
           }
         >
           {' '}
-          <Text style={[pageStyles.buttonText, { color: palette.dark ? '#081B2C' : '#FFFFFF' }]}>
+          <Text style={[pageStyles.buttonText, { color: palette.onPrimary }]}>
             {' '}
             Contact support{' '}
           </Text>{' '}

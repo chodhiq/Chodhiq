@@ -23,6 +23,7 @@ import { categoryFallback, imageSource } from '../data/assetCatalog';
 import { shadows } from '../theme/theme';
 import * as Icons from 'lucide-react-native';
 import { PressableScale } from './Motion';
+import GlassView from './GlassView';
 
 export function HomeHeader({
   palette,
@@ -143,9 +144,22 @@ export function HomeSearch({ palette, onPress }) {
       style={[
         s.search,
         s.searchFloating,
-        { backgroundColor: palette.elevated, borderColor: palette.border },
+        {
+          backgroundColor: palette.dark ? 'rgba(18,27,23,0.88)' : 'rgba(255,255,255,0.9)',
+          borderColor: palette.dark ? 'rgba(255,255,255,0.16)' : palette.border,
+        },
       ]}
     >
+      <GlassView
+        androidBlurEnabled={false}
+        pointerEvents="none"
+        intensity={32}
+        style={[
+          StyleSheet.absoluteFill,
+          s.searchGlass,
+          { borderColor: palette.dark ? 'rgba(255,255,255,0.12)' : 'rgba(16,24,23,0.08)' },
+        ]}
+      />
       <Search size={20} color={palette.text} />
       <Text numberOfLines={1} ellipsizeMode="tail" style={[s.searchText, { color: palette.text2 }]}>
         Search for restaurants, salons, services, shops...
@@ -182,7 +196,7 @@ export function HomeHero({ palette, mode, image, images = [], location = '', onP
   const { width } = useWindowDimensions();
   const focused = useIsFocused();
   const { foreground, reducedMotion } = useMotionPreferences();
-  const heroHeight = Math.min(300, Math.max(260, (Math.min(width, 840) - 36) * 0.65));
+  const heroHeight = Math.min(250, Math.max(220, (Math.min(width, 840) - 36) * 0.55));
   const city = String(location || '').trim();
   const [activeImage, setActiveImage] = React.useState(0);
   React.useEffect(() => {
@@ -204,8 +218,8 @@ export function HomeHero({ palette, mode, image, images = [], location = '', onP
         <View
           style={[s.overlay, { backgroundColor: warm ? 'rgba(251,245,234,.72)' : palette.overlay }]}
         />
-        <View style={[s.heroCopy, { padding: 18, maxWidth: width < 380 ? '100%' : '65%' }]}>
-          <Text style={[s.heroEyebrow, { color: warm ? palette.textSecondary : '#FFFFFFB8' }]}>
+        <View style={[s.heroCopy, { padding: 20, maxWidth: '88%' }]}>
+          <Text style={[s.heroEyebrow, { color: warm ? palette.textSecondary : '#FFFFFFD1' }]}>
             {eyebrow}
           </Text>
           <Text
@@ -214,7 +228,7 @@ export function HomeHero({ palette, mode, image, images = [], location = '', onP
             numberOfLines={2}
             style={[
               s.heroTitle,
-              { color: warm ? palette.text : '#FFFFFF', fontSize: width < 420 ? 22 : 26 },
+              { color: warm ? palette.text : '#FFFFFF', fontSize: width < 420 ? 27 : 30 },
             ]}
           >
             {firstLine}
@@ -222,45 +236,25 @@ export function HomeHero({ palette, mode, image, images = [], location = '', onP
             <Text style={{ color: warm ? palette.primary : '#FFFFFF' }}>{secondLine}</Text>
           </Text>
           <Text
-            numberOfLines={3}
+            numberOfLines={1}
             style={[s.heroBody, { color: warm ? palette.textSecondary : '#F2F5F3' }]}
           >
-            Find great local businesses and trusted services near you.
+            Discover places you’ll love, close to home.
           </Text>
           <View
             style={[
               s.heroButton,
               {
-                backgroundColor: getMelaPalette(false).primary,
-                height: 40,
+                backgroundColor: getMelaPalette().primary,
+                height: 34,
               },
             ]}
           >
-            <Text style={{ color: getMelaPalette(false).onPrimary, fontWeight: '800' }}>
+            <Text style={{ color: getMelaPalette().onPrimary, fontWeight: '800' }}>
               Explore now
             </Text>
-            <ChevronRight size={18} color={getMelaPalette(false).onPrimary} />
+            <ChevronRight size={18} color={getMelaPalette().onPrimary} />
           </View>
-        </View>
-        <View style={[s.heroTrustPanel, width < 380 && { display: 'none' }]}>
-          {[
-            ['BadgeCheck', 'Local businesses'],
-            ['Star', 'Real reviews'],
-            ['ShieldCheck', 'Verified listings'],
-            ['HeartHandshake', 'Support local'],
-          ].map(([iconName, label]) => {
-            const Icon = Icons[iconName];
-            return (
-              <View key={label} style={s.heroTrustRow}>
-                <Icon size={17} color="#FFFFFF" />
-                <Text style={s.heroTrustText}>{label}</Text>
-              </View>
-            );
-          })}
-        </View>
-        <View style={s.heroCity}>
-          <MapPin size={13} color="#22C55E" fill="#22C55E" />
-          <Text style={s.heroCityText}>{city || 'Near you'}</Text>
         </View>
         {images.length > 1 && (
           <View style={s.heroPagination} pointerEvents="none">
@@ -348,14 +342,7 @@ export function HomeSectionHeader({ palette, title, subtitle, onPress, actionLab
     </View>
   );
 }
-export function HomeCategory({
-  palette,
-  category,
-  onPress,
-  more = false,
-  active = false,
-  index = 0,
-}) {
+export function HomeCategory({ palette, category, onPress, more = false, active = false }) {
   const iconMap = {
     building: 'Building2',
     car: 'CarFront',
@@ -390,27 +377,30 @@ export function HomeCategory({
     >
       <View
         style={[
-          s.categoryCircle,
+          s.categoryIcon,
           {
             backgroundColor: active
-              ? getMelaPalette(false).primary
-              : categoryTileColors[index % categoryTileColors.length].background,
-            borderColor: active ? getMelaPalette(false).primary : 'transparent',
+              ? palette.primary
+              : palette.dark
+                ? 'rgba(255,255,255,0.055)'
+                : palette.primaryTint,
+            borderColor: active
+              ? palette.primary
+              : palette.dark
+                ? 'rgba(255,255,255,0.1)'
+                : palette.border,
+            shadowColor: palette.primary,
+            shadowOpacity: active ? 0.2 : 0,
+            elevation: active ? 2 : 0,
           },
         ]}
       >
-        <Icon
-          size={24}
-          color={
-            active
-              ? getMelaPalette(false).onPrimary
-              : categoryTileColors[index % categoryTileColors.length].icon
-          }
-        />
+        <Icon size={21} color={active ? palette.onPrimary : palette.primary} strokeWidth={2} />
       </View>
       <Text
         numberOfLines={2}
-        style={[s.categoryLabel, { color: active ? getMelaPalette(false).primary : palette.text }]}
+        ellipsizeMode="tail"
+        style={[s.categoryLabel, { color: active ? palette.primary : palette.text }]}
       >
         {more ? 'More' : category.name}
       </Text>
@@ -460,7 +450,9 @@ export function HomeBusinessCard({ palette, provider, saved, onSave, onPress, on
           <View
             style={[
               s.status,
-              { backgroundColor: provider.openNow ? '#E7F8EF' : palette.surfaceMuted },
+              {
+                backgroundColor: provider.openNow ? '#E7F8EF' : palette.surfaceMuted,
+              },
             ]}
           >
             <Text style={[s.statusText, { color: provider.openNow ? '#087A3D' : palette.text2 }]}>
@@ -515,64 +507,43 @@ export function HomeBusinessCard({ palette, provider, saved, onSave, onPress, on
 }
 
 export function HomeQuickActions({ palette, onNearby, onTopRated, onOpenNow }) {
-  const { width } = useWindowDimensions();
-  const compact = width < 420;
   const items = [
     {
       title: 'Nearby',
       subtitle: 'See what’s around you',
       Icon: MapPin,
-      tint: '#E7F8EF',
-      color: '#13A65A',
+      mode: 'nearby',
       onPress: onNearby,
     },
     {
       title: 'Top rated',
       subtitle: 'Best reviewed nearby',
       Icon: Icons.Crown,
-      tint: '#FFF4E3',
-      color: '#E99414',
+      mode: 'topRated',
       onPress: onTopRated,
     },
     {
       title: 'Open now',
       subtitle: 'Places currently open',
       Icon: Icons.Clock3,
-      tint: '#FCE9EF',
-      color: '#E44867',
+      mode: 'open',
       onPress: onOpenNow,
     },
   ];
   return (
     <View style={s.quickRow}>
-      {items.map(({ title, subtitle, Icon, tint, color, onPress }) => (
+      {items.map(({ title, subtitle, Icon, onPress }) => (
         <TouchableOpacity
           key={title}
           accessibilityRole="button"
           accessibilityLabel={`${title}: ${subtitle}`}
           onPress={onPress}
-          style={[
-            s.quickCard,
-            compact && s.quickCardCompact,
-            { backgroundColor: palette.surface, borderColor: palette.border },
-          ]}
+          style={[s.quickCard, { backgroundColor: palette.surfaceAlt }]}
         >
-          <View style={s.quickTop}>
-            <View style={[s.quickIcon, { backgroundColor: tint }]}>
-              <Icon size={20} color={color} strokeWidth={2.5} />
-            </View>
-            <ChevronRight size={16} color={palette.primary} />
-          </View>
-          <View style={s.quickCopy}>
-            <Text numberOfLines={1} style={[s.quickTitle, { color: palette.text }]}>
-              {title}
-            </Text>
-            {!compact && (
-              <Text numberOfLines={1} style={[s.quickSubtitle, { color: palette.text2 }]}>
-                {subtitle}
-              </Text>
-            )}
-          </View>
+          <Icon size={15} color={palette.primary} strokeWidth={2.2} />
+          <Text numberOfLines={1} style={[s.quickTitle, { color: palette.text }]}>
+            {title}
+          </Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -602,13 +573,6 @@ export function HomeCommunityCTA({ palette, onPress }) {
   );
 }
 
-const categoryTileColors = [
-  { background: '#E7F8EF', icon: '#119A50' },
-  { background: '#FFF4E3', icon: '#E99414' },
-  { background: '#FCE9EF', icon: '#E44867' },
-  { background: '#E8F5FE', icon: '#2497DA' },
-  { background: '#F1EAFE', icon: '#8050D7' },
-];
 export function HomeOffer({ palette, image, onPress }) {
   return (
     <TouchableOpacity onPress={onPress} style={s.offer}>
@@ -689,10 +653,8 @@ export function HomeMapCTA({ palette, onPress }) {
         onPress={onPress}
         style={[s.mapButton, { backgroundColor: palette.primary }]}
       >
-        <Text style={{ color: palette.dark ? '#081B2C' : '#FFFFFF', fontWeight: '800' }}>
-          Open map
-        </Text>
-        <ChevronRight size={16} color={palette.dark ? '#081B2C' : '#FFFFFF'} />
+        <Text style={{ color: palette.onPrimary, fontWeight: '800' }}>Open map</Text>
+        <ChevronRight size={16} color={palette.onPrimary} />
       </TouchableOpacity>
     </View>
   );
@@ -700,14 +662,13 @@ export function HomeMapCTA({ palette, onPress }) {
 
 const s = StyleSheet.create({
   header: {
-    height: 124,
     position: 'relative',
     marginHorizontal: -18,
     marginTop: -12,
-    marginBottom: 23,
+    marginBottom: 10,
     paddingHorizontal: 18,
-    paddingTop: 7,
-    paddingBottom: 0,
+    paddingTop: 8,
+    paddingBottom: 8,
     backgroundColor: '#101817',
   },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -729,19 +690,17 @@ const s = StyleSheet.create({
   },
   headerLocationText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', flexShrink: 1 },
   headerCurrentLocation: {
-    height: 35,
+    height: 34,
     maxWidth: '51%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
     borderWidth: 1,
-    borderColor: '#16A34A88',
-    backgroundColor: '#0B5E3A88',
-    paddingHorizontal: 10,
+    paddingHorizontal: 9,
     borderRadius: 20,
   },
-  headerCurrentLocationText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
+  headerCurrentLocationText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   location: {
     maxWidth: '62%',
     height: 46,
@@ -780,33 +739,36 @@ const s = StyleSheet.create({
   },
   notificationBadgeText: { color: '#FFFFFF', fontSize: 8, lineHeight: 10, fontWeight: '900' },
   search: {
-    height: 52,
+    position: 'relative',
+    minHeight: 50,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingLeft: 18,
-    paddingRight: 7,
-    borderRadius: 26,
+    gap: 11,
+    paddingLeft: 16,
+    paddingRight: 8,
+    borderRadius: 27,
     borderWidth: 1,
+    overflow: 'hidden',
     marginTop: 0,
     ...shadows.soft,
   },
-  searchFloating: { position: 'absolute', left: 18, right: 18, bottom: -22 },
+  searchGlass: { borderWidth: 0, borderRadius: 27 },
+  searchFloating: { marginTop: 8 },
   searchText: { flex: 1, fontSize: 14 },
   filter: {
     width: 46,
     height: 46,
-    borderRadius: 13,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   locationRow: {
-    minHeight: 42,
+    minHeight: 40,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
-    marginTop: 5,
+    gap: 10,
+    marginTop: 8,
   },
   locationInline: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 7 },
   currentLocation: {
@@ -818,53 +780,22 @@ const s = StyleSheet.create({
     borderRadius: 18,
   },
   currentLocationText: { fontSize: 10, fontWeight: '800' },
-  hero: { marginTop: 12, borderRadius: 20, overflow: 'hidden', ...shadows.soft },
+  hero: { marginTop: 8, borderRadius: 20, overflow: 'hidden', ...shadows.soft },
   heroImage: { width: '100%', justifyContent: 'center' },
   heroRadius: { borderRadius: 20 },
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5,15,28,.42)' },
   heroCopy: { padding: 18, maxWidth: '69%', zIndex: 1 },
   heroEyebrow: { fontSize: 11, letterSpacing: 1.2, fontWeight: '700', marginBottom: 6 },
-  heroTitle: { fontSize: 26, lineHeight: 30, fontWeight: '800' },
-  heroBody: { fontSize: 13, lineHeight: 18, marginTop: 7 },
-  heroTrustPanel: {
-    position: 'absolute',
-    right: 14,
-    top: '17%',
-    bottom: '22%',
-    width: '27%',
-    justifyContent: 'center',
-    gap: 11,
-    paddingHorizontal: 10,
-    borderRadius: 17,
-    backgroundColor: '#111B19D9',
-    borderWidth: 1,
-    borderColor: '#FFFFFF24',
-  },
-  heroTrustRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  heroTrustText: {
-    color: '#FFFFFF',
-    fontSize: 9,
-    lineHeight: 12,
-    fontWeight: '600',
-    flexShrink: 1,
-  },
-  heroCity: {
-    position: 'absolute',
-    right: 16,
-    bottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  heroCityText: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' },
+  heroTitle: { fontSize: 30, lineHeight: 33, letterSpacing: -0.6, fontWeight: '800' },
+  heroBody: { fontSize: 12, lineHeight: 17, marginTop: 6 },
   heroButton: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
     paddingHorizontal: 16,
-    borderRadius: 22,
-    marginTop: 14,
+    borderRadius: 18,
+    marginTop: 12,
   },
   heroPagination: {
     position: 'absolute',
@@ -887,21 +818,28 @@ const s = StyleSheet.create({
   sectionSubtitle: { fontSize: 11, marginTop: 2 },
   viewAll: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   viewAllText: { fontSize: 12, fontWeight: '700' },
-  category: { width: 80, alignItems: 'center', marginRight: 3 },
-  categoryCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 17,
-    borderWidth: 1.5,
+  category: {
+    width: 82,
+    height: 82,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  categoryIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   categoryLabel: {
+    width: '100%',
     fontSize: 11,
     lineHeight: 14,
-    minHeight: 28,
+    height: 28,
     fontWeight: '700',
-    marginTop: 5,
+    marginTop: 4,
     textAlign: 'center',
   },
   categoryCard: {},
@@ -947,38 +885,19 @@ const s = StyleSheet.create({
     fontWeight: '800',
   },
   featuredCategoryCount: { fontSize: 10, marginTop: 4, fontWeight: '600' },
-  quickRow: { flexDirection: 'row', gap: 8, marginHorizontal: -3, marginTop: 10 },
+  quickRow: { flexDirection: 'row', gap: 8, marginHorizontal: -2, marginTop: 14 },
   quickCard: {
     flex: 1,
     minWidth: 0,
-    minHeight: 64,
+    minHeight: 42,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
+    justifyContent: 'center',
+    gap: 6,
     paddingHorizontal: 8,
-    borderRadius: 17,
-    borderWidth: 1,
-    ...shadows.soft,
+    borderRadius: 15,
   },
-  quickCardCompact: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
-    justifyContent: 'center',
-    minHeight: 67,
-    padding: 7,
-    gap: 4,
-  },
-  quickTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  quickIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickCopy: { flex: 1, minWidth: 0 },
-  quickTitle: { fontSize: 11, fontWeight: '800' },
-  quickSubtitle: { fontSize: 9, marginTop: 3 },
+  quickTitle: { fontSize: 11, fontWeight: '700', flexShrink: 1 },
   communityCta: {
     minHeight: 70,
     flexDirection: 'row',
@@ -1046,9 +965,9 @@ const s = StyleSheet.create({
     backgroundColor: '#111827B8',
   },
   statusText: { color: '#FFF', fontSize: 9, fontWeight: '800' },
-  businessName: { fontSize: 14, fontWeight: '800', marginTop: 9 },
-  meta: { fontSize: 11, marginTop: 3 },
-  rating: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
+  businessName: { fontSize: 14, fontWeight: '800', marginTop: 10 },
+  meta: { fontSize: 11, marginTop: 4 },
+  rating: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 7 },
   ratingText: { fontSize: 11, fontWeight: '600' },
   offer: { height: 130, borderRadius: 20, overflow: 'hidden', marginTop: 26 },
   offerImage: {

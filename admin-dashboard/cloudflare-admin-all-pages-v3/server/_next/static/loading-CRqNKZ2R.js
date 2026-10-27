@@ -1,0 +1,1 @@
+import{t as e}from"./framework~index~page~page~page~page~page~layout~loading~page~page~not-found~page~page~page~~c4r9f0j9-q1xVjzbe.js";var t=e();function n(){return(0,t.jsxs)(`main`,{className:`route-loading`,"aria-live":`polite`,"aria-busy":`true`,children:[(0,t.jsx)(`span`,{className:`loading-pulse`}),(0,t.jsx)(`p`,{children:`Loading this workspace…`})]})}export{n as default};

@@ -4,11 +4,14 @@ import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAdmin } from '../../../lib/admin';
 import { supabase } from '../../../lib/supabase';
-import { AdminShell } from '../../components/admin-shell';
+import Link from '../../components/admin-link';
+import { sendNotification } from '../../../lib/notify-user';
+import { useAdminPageTitle } from '../../components/admin-page-title';
 import { LoadError, Page, Skeleton, Status } from '../../components/ui';
 
 interface Provider {
   id: string;
+  owner_id: string | null;
   business_name: string;
   category_id: string | null;
   base_city: string | null;
@@ -39,6 +42,7 @@ export default function ProviderDetail() {
   const [provider, setProvider] = useState<Provider | null>(null),
     [draft, setDraft] = useState<Provider | null>(null),
     [categories, setCategories] = useState<Category[]>([]);
+  useAdminPageTitle(provider?.business_name || 'Provider dossier');
   const [related, setRelated] = useState<Related>({
     reviews: [],
     quotes: [],
@@ -193,9 +197,7 @@ export default function ProviderDetail() {
           is_verified: false,
           previous_verification_status: provider.verification_status,
         };
-    if (
-      (
-        await admin.act(
+    const result = await admin.act(
           suspended ? 'provider_restored' : 'provider_suspended',
           'provider',
           id,
@@ -204,46 +206,51 @@ export default function ProviderDetail() {
             previous_values: { verification_status: provider.verification_status },
             new_values: fields,
           },
-        )
-      ).ok
-    )
+        );
+    if (result.ok) {
+      if (provider.owner_id) {
+        try { await sendNotification({ audience: 'user', userId: provider.owner_id, title: suspended ? 'Your provider account is active again' : 'Your provider account was suspended', body: suspended ? 'Your provider profile is available in the marketplace again.' : 'Your provider profile was suspended and is hidden from the marketplace. Contact support if you need help.' }); }
+        catch { admin.notify('Provider status updated, but the owner notification could not be sent.', 'error'); }
+      }
       await load();
+    }
     setSaving(false);
   }
 
   if (loading)
     return (
-      <AdminShell title="Provider dossier">
+      
         <Page title="Loading provider" note="Fetching live provider data.">
           <Skeleton />
         </Page>
-      </AdminShell>
+      
     );
   if (error)
     return (
-      <AdminShell title="Provider dossier">
+      
         <Page title="Provider unavailable" note="No changes were made.">
           <LoadError message={error} retry={load} />
         </Page>
-      </AdminShell>
+      
     );
   if (notFound || !provider || !draft)
     return (
-      <AdminShell title="Provider dossier">
+      
         <Page
           title="Provider not found"
           note="This record may have been removed or the link is invalid."
         >
           <p>Return to the provider directory and select another record.</p>
         </Page>
-      </AdminShell>
+      
     );
   return (
-    <AdminShell title={provider.business_name}>
+    
       <Page
         title="Provider dossier"
         note="Profile and recent related records; lists are transparently limited to the latest 10 reviews/verifications and 25 quotes."
       >
+        {provider.owner_id && <p><Link className="outline" href={`/notifications?to=${encodeURIComponent(provider.owner_id)}`}>Notify provider</Link></p>}
         {related.errors.length > 0 && (
           <section className="load-error" role="alert">
             <b>Some related data is unavailable</b>
@@ -371,6 +378,6 @@ export default function ProviderDetail() {
           </section>
         </div>
       </Page>
-    </AdminShell>
+    
   );
 }

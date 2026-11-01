@@ -37,7 +37,7 @@
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/poppins": "^0.4.1",
-    "@expo/metro-runtime": "~57.0.16",
+    "@expo/metro-runtime": "~57.0.17",
     "@gorhom/bottom-sheet": "^5.2.14",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "9.1.0",
@@ -45,8 +45,8 @@
     "@react-navigation/bottom-tabs": "^6.5.20",
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/native-stack": "^6.9.26",
-    "@sentry/react-native": "~7.11.0",
-    "@supabase/supabase-js": "^2.45.0",
+    "@sentry/react-native": "~7.13.0",
+    "@supabase/supabase-js": "^2.118.0",
     "expo": "^57.0.0",
     "expo-auth-session": "~57.0.14",
     "expo-clipboard": "~57.0.2",
@@ -66,7 +66,7 @@
     "expo-web-browser": "~57.0.3",
     "lucide-react-native": "^1.30.0",
     "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "react-dom": "19.3.1",
     "react-native": "0.86.3",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-google-mobile-ads": "16.0.0",
@@ -82,9 +82,9 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.10",
-    "babel-preset-expo": "~57.0.0",
-    "prettier": "3.6.2",
-    "supabase": "2.114.0",
+    "babel-preset-expo": "~57.0.16",
+    "prettier": "3.9.10",
+    "supabase": "2.122.0",
     "typescript": "~6.0.3"
   }
 }

@@ -314,3 +314,13 @@ test('offline failures remain visible and do not stop later queued operations', 
   assert.match(sync, /prepareQueuedPayload/);
   assert.match(context, /syncStatus/);
 });
+test('preview builds reject missing Supabase URL or anon key', () => {
+  assert.throws(
+    () => resolveBuildConfig('preview', { EXPO_PUBLIC_SUPABASE_URL: '' }),
+    /EXPO_PUBLIC_SUPABASE_URL/,
+  );
+  assert.throws(
+    () => resolveBuildConfig('preview', { EXPO_PUBLIC_SUPABASE_ANON_KEY: '' }),
+    /EXPO_PUBLIC_SUPABASE_ANON_KEY/,
+  );
+});

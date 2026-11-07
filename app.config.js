@@ -15,8 +15,11 @@ const productionBuild =
     process.env.EAS_BUILD_PROFILE === 'beta' ||
     process.env.EAS_BUILD_PROFILE === 'production' ||
     process.env.EAS_BUILD_PROFILE === 'production-apk');
+const previewBuild =
+  process.env.EAS_BUILD === 'true' && process.env.EAS_BUILD_PROFILE === 'preview';
 const internalBetaBuild =
   process.env.EAS_BUILD === 'true' && process.env.EAS_BUILD_PROFILE === 'beta-apk';
+const supabaseRequiredBuild = previewBuild || productionBuild || internalBetaBuild;
 const googleTestPublisher = '3940256099942544';
 const requiredAdIds = [
   ['GOOGLE_MOBILE_ADS_ANDROID_APP_ID', process.env.GOOGLE_MOBILE_ADS_ANDROID_APP_ID],
@@ -28,8 +31,6 @@ const requiredAdIds = [
   ['EXPO_PUBLIC_GOOGLE_ADS_IOS_BANNER_ID', process.env.EXPO_PUBLIC_GOOGLE_ADS_IOS_BANNER_ID],
 ];
 const requiredProductionValues = [
-  ['EXPO_PUBLIC_SUPABASE_URL', process.env.EXPO_PUBLIC_SUPABASE_URL],
-  ['EXPO_PUBLIC_SUPABASE_ANON_KEY', process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY],
   ['EXPO_PUBLIC_EAS_PROJECT_ID', process.env.EXPO_PUBLIC_EAS_PROJECT_ID],
   ['EXPO_PUBLIC_RELEASE_COMMIT', process.env.EXPO_PUBLIC_RELEASE_COMMIT],
   ['EXPO_PUBLIC_TERMS_URL', process.env.EXPO_PUBLIC_TERMS_URL],
@@ -71,6 +72,25 @@ const sentryConfigured = [
 
 if (googleMapsEnabled && !googleMapsApiKey) {
   throw new Error('Google Maps cannot be enabled without GOOGLE_MAPS_API_KEY.');
+}
+
+if (supabaseRequiredBuild) {
+  const missingSupabaseValues = [
+    ['EXPO_PUBLIC_SUPABASE_URL', process.env.EXPO_PUBLIC_SUPABASE_URL],
+    ['EXPO_PUBLIC_SUPABASE_ANON_KEY', process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY],
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+  if (missingSupabaseValues.length) {
+    const buildLabel = previewBuild
+      ? 'Preview'
+      : internalBetaBuild
+        ? 'Internal beta'
+        : 'Production';
+    throw new Error(
+      `${buildLabel} builds require: ${missingSupabaseValues.join(', ')}.`,
+    );
+  }
 }
 
 if (productionBuild || internalBetaBuild) {

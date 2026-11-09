@@ -72,7 +72,26 @@ const palettes = {
   }),
 };
 
-const ThemeContext = createContext(null);
+export const defaultThemeContext = {
+  mode: 'dark',
+  preference: 'dark',
+  resolvedMode: 'dark',
+  palette: palettes.dark,
+  isDark: true,
+  communityPalette: {
+    ...palettes.dark,
+    secondary: palettes.dark.primary,
+    actionText: palettes.dark.text,
+    textPrimary: palettes.dark.text,
+    textSecondary: palettes.dark.text2,
+  },
+  toggle: () => {},
+  setMode: () => {},
+  options: paletteOptions,
+  transition: new Animated.Value(1),
+};
+
+const ThemeContext = createContext(defaultThemeContext);
 export function ChodhiQThemeProvider({ children }) {
   const mode = 'dark';
   const transition = useRef(new Animated.Value(1)).current;
@@ -111,5 +130,8 @@ export function ChodhiQThemeProvider({ children }) {
     </ThemeContext.Provider>
   );
 }
-export const useTheme = () => useContext(ThemeContext);
-export const useChodhiQTheme = useTheme;
+export function useChodhiQTheme() {
+  return useContext(ThemeContext) || defaultThemeContext;
+}
+
+export const useTheme = useChodhiQTheme;

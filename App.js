@@ -1,17 +1,15 @@
 import { AppDialogProvider } from './src/components/AppDialog';
 import 'react-native-gesture-handler';
-import useReducedMotion from './src/hooks/useMotionPreferences';
 import { Poppins_400Regular } from '@expo-google-fonts/poppins/400Regular';
 import { Poppins_600SemiBold } from '@expo-google-fonts/poppins/600SemiBold';
 import React from 'react';
-import { ActivityIndicator, Button, View, Image } from 'react-native';
+import { ActivityIndicator, ScrollView, View, Image } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNavigator from './src/navigation/RootNavigator';
-import { AppStateProvider } from './src/context/AppStateContext';
+import AppProviders from './src/components/AppProviders';
 import { ChodhiQThemeProvider, useChodhiQTheme } from './src/context/ThemeContext';
 import { configureNotificationHandler } from './src/lib/notificationRuntime';
 import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
@@ -22,10 +20,22 @@ import { Inter_800ExtraBold } from '@expo-google-fonts/inter/800ExtraBold';
 import { useFonts } from '@expo-google-fonts/inter/useFonts';
 import { redactSentryEvent } from './src/lib/sentryUtils';
 import Text from './src/components/AppText';
+import ErrorDiagnostics, { getDiagnosticComponentStack } from './src/components/ErrorDiagnostics';
+import { captureError } from './src/lib/sentryUtils';
+import AmbientBackground from './components/ui/AmbientBackground';
+import { BackgroundVariantProvider, useBackgroundVariant } from './components/ui/Screen';
+import { theme } from './theme';
+import GlowButton from './components/ui/GlowButton';
+import ButtonToastHost from './src/components/ButtonToastHost';
+
+const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN || '';
+if (!sentryDsn && !__DEV__) {
+  console.warn('Sentry is not configured; crash and button-error reporting is disabled.');
+}
 
 // Initialize Sentry for error tracking
 Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '',
+  dsn: sentryDsn,
   environment: process.env.EXPO_PUBLIC_APP_ENV || (__DEV__ ? 'development' : 'production'),
   release: process.env.EXPO_PUBLIC_RELEASE_COMMIT || undefined,
   tracesSampleRate: 0.1, // 10% of transactions in production
@@ -48,7 +58,18 @@ Sentry.init({
 configureNotificationHandler();
 
 function AppContent() {
-  useReducedMotion();
+  return (
+    <Sentry.ErrorBoundary
+      fallback={({ error, componentStack, resetError }) => (
+        <ErrorFallback error={error} componentStack={componentStack} resetError={resetError} />
+      )}
+    >
+      <AppRuntime />
+    </Sentry.ErrorBoundary>
+  );
+}
+
+function AppRuntime() {
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -83,36 +104,37 @@ function AppContent() {
       </View>
     );
   return (
-    <Sentry.ErrorBoundary
-      fallback={({ error, resetError }) => <ErrorFallback error={error} resetError={resetError} />}
-    >
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
-          <BottomSheetModalProvider>
-            <ChodhiQThemeProvider>
-              <ThemedApp />
-            </ChodhiQThemeProvider>
-          </BottomSheetModalProvider>
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    </Sentry.ErrorBoundary>
+    <AppProviders>
+      <ThemedApp />
+    </AppProviders>
   );
 }
 
 export default Sentry.wrap(AppContent);
 
-function ErrorFallback({ resetError }) {
+function ErrorFallback({ error, componentStack, resetError }) {
   return (
     <SafeAreaProvider>
       <ChodhiQThemeProvider>
-        <ErrorFallbackContent resetError={resetError} />
+        <ErrorFallbackContent
+          error={error}
+          componentStack={componentStack}
+          resetError={resetError}
+        />
       </ChodhiQThemeProvider>
     </SafeAreaProvider>
   );
 }
 
-function ErrorFallbackContent({ resetError }) {
+function ErrorFallbackContent({ error, componentStack, resetError }) {
   const { palette } = useChodhiQTheme();
+  React.useEffect(() => {
+    if (process.env.EXPO_PUBLIC_DIAGNOSTICS !== 'true' || !error) return;
+    captureError(error, {
+      operation: 'app_error_fallback',
+      componentStack: getDiagnosticComponentStack(componentStack),
+    });
+  }, [componentStack, error]);
   return (
     <GestureHandlerRootView
       style={{
@@ -129,7 +151,24 @@ function ErrorFallbackContent({ resetError }) {
       <Text style={{ fontSize: 14, marginBottom: 20, textAlign: 'center', color: palette.text2 }}>
         Try reopening this screen. If the problem continues, contact support.
       </Text>
-      <Button title="Try again" onPress={resetError} color={palette.primary} />
+      {process.env.EXPO_PUBLIC_DIAGNOSTICS === 'true' ? (
+        <ScrollView
+          style={{ maxHeight: 180, width: '100%', marginBottom: 20 }}
+          contentContainerStyle={{ alignItems: 'center' }}
+        >
+          <ErrorDiagnostics
+            error={error}
+            componentStack={componentStack}
+            style={{ fontSize: 12, textAlign: 'center', color: palette.text2 }}
+          />
+        </ScrollView>
+      ) : null}
+      <GlowButton
+        testID="btn-error-retry"
+        label="Try again"
+        variant="primary"
+        onPress={resetError}
+      />
     </GestureHandlerRootView>
   );
 }
@@ -137,11 +176,22 @@ function ErrorFallbackContent({ resetError }) {
 function ThemedApp() {
   const { isDark, palette } = useChodhiQTheme();
   return (
-    <AppStateProvider>
+    <>
       <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={palette.background} />
-      <AppDialogProvider>
-        <RootNavigator />
-      </AppDialogProvider>
-    </AppStateProvider>
+      <BackgroundVariantProvider>
+        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+          <RootAmbientBackground />
+          <AppDialogProvider>
+            <RootNavigator />
+            <ButtonToastHost />
+          </AppDialogProvider>
+        </View>
+      </BackgroundVariantProvider>
+    </>
   );
+}
+
+function RootAmbientBackground() {
+  const variant = useBackgroundVariant();
+  return <AmbientBackground variant={variant} />;
 }

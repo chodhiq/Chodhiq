@@ -1,7 +1,7 @@
 import React from 'react';
 import { BlurView } from 'expo-blur';
 import { Platform, StyleSheet, View } from 'react-native';
-import { useChodhiQTheme } from '../context/ThemeContext';
+import { defaultThemeContext, useChodhiQTheme } from '../context/ThemeContext';
 
 export default function GlassView({
   intensity = 40,
@@ -11,7 +11,9 @@ export default function GlassView({
   children,
   ...props
 }) {
-  const { isDark, palette } = useChodhiQTheme();
+  const context = useChodhiQTheme() || defaultThemeContext;
+  const isDark = context.isDark ?? true;
+  const palette = context.palette || defaultThemeContext.palette;
   const tint = isDark ? 'rgba(20,26,23,0.64)' : 'rgba(255,255,255,0.62)';
   const fallback = isDark ? 'rgba(13,17,15,0.96)' : 'rgba(255,255,255,0.94)';
 

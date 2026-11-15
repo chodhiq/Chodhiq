@@ -75,7 +75,7 @@ export function AdminsPage() {
     }
   }
   return (
-    
+
       <Page
         title="Administrator access"
         note="View, grant and revoke server-issued administrator roles. Self-revocation and last-admin removal are blocked."
@@ -116,7 +116,7 @@ export function AdminsPage() {
         </section>
         <section className="panel"><h3>What each level can do</h3><table><thead><tr><th>Permission</th><th>Super admin</th><th>Moderator</th><th>Support</th><th>Finance</th><th>Analyst</th></tr></thead><tbody>{['applications.review','providers.suspend','users.suspend','reviews.moderate','categories.manage','community.moderate','community.privileges','reports.resolve','notifications.send','campaigns.manage','payments.view','analytics.view','admins.manage','audit.view'].map(permission => <tr key={permission}><td>{permission}</td>{['super_admin','moderator','support','finance','analyst'].map(role => <td key={role}>{role === 'super_admin' || (role === 'moderator' && !['campaigns.manage','payments.view','analytics.view','admins.manage'].includes(permission)) || (role === 'support' && ['applications.review','reports.resolve','notifications.send','audit.view'].includes(permission)) || (role === 'finance' && ['payments.view','analytics.view','audit.view'].includes(permission)) || (role === 'analyst' && ['analytics.view','audit.view'].includes(permission)) ? '✓' : '—'}</td>)}</tr>)}</tbody></table></section>
       </Page>
-    
+
   );
 }
 export function AnalyticsPage() {
@@ -161,7 +161,7 @@ export function AnalyticsPage() {
     ),
   );
   return (
-    
+
       <Page
         title="Marketplace analytics"
         note="Provider engagement events and subscription demand."
@@ -193,7 +193,7 @@ export function AnalyticsPage() {
           </table>
         </section>
       </Page>
-    
+
   );
 }
 function NotificationComposer({ onSent }: { onSent: () => void }) {
@@ -297,7 +297,7 @@ export function AuditPage() {
     };
   }, [notify, page, debouncedQuery]);
   return (
-    
+
       <Page title="Privileged action history" note="Immutable history of administrator mutations.">
         <Search
           id="audit-search"
@@ -324,6 +324,6 @@ export function AuditPage() {
           <Pager page={page} total={total} setPage={setPage} />
         </section>
       </Page>
-    
+
   );
 }

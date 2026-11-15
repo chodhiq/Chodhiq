@@ -28,6 +28,11 @@ import { normalizeUkPhone } from '../lib/uk-phone';
 import { updateBookingStatus } from '../lib/booking-api';
 import { signInErrorMessage, withAuthTimeout } from '../lib/auth-operations';
 import { BusinessApplication, CreateAccount } from './business-application';
+import {
+  geocodeUkPostcode,
+  saveProviderCoordinates,
+  type ProviderCoordinates,
+} from '../../src/lib/providerGeocoding';
 
 const paymentsEnabled = process.env.NEXT_PUBLIC_ENABLE_PAYMENTS?.trim().toLowerCase() === 'true';
 const freePromotionsEnabled =
@@ -881,6 +886,7 @@ function Onboarding({
   const [mode, setMode] = useState<'claim' | 'create'>('claim'),
     [name, setName] = useState(''),
     [city, setCity] = useState(''),
+    [postcode, setPostcode] = useState(''),
     [categoryId, setCategoryId] = useState(''),
     [search, setSearch] = useState(''),
     [claimable, setClaimable] = useState<ClaimableProvider[]>([]),
@@ -913,24 +919,43 @@ function Onboarding({
     if (nameError) return notify(nameError);
     const cityError = validateText(city, 'Base city', 2, 120);
     if (cityError) return notify(cityError);
+    if (!postcode.trim()) return notify('Enter a UK postcode to set the business map location.');
     if (!categoryId) return notify('Choose a business category');
     setBusy(true);
-    const { error } = await supabase.from('providers').insert({
-      owner_id: uid,
-      business_name: name.trim(),
-      base_city: city.trim(),
-      category_id: categoryId,
-      verification_status: 'unverified',
-      is_claimed: true,
-    });
-    setBusy(false);
-    if (error)
-      notify(
-        error.code === '23505' ? 'This account already has a business workspace' : error.message,
-      );
-    else {
-      notify('Business workspace created');
+    try {
+      const coordinates = await geocodeUkPostcode(postcode);
+      const { data, error } = await supabase
+        .from('providers')
+        .insert({
+          owner_id: uid,
+          business_name: name.trim(),
+          base_city: city.trim(),
+          base_postcode: postcode.trim(),
+          category_id: categoryId,
+          verification_status: 'unverified',
+          is_claimed: true,
+        })
+        .select('id')
+        .single();
+      if (error)
+        throw new Error(
+          error.code === '23505' ? 'This account already has a business workspace' : error.message,
+        );
+      try {
+        await saveProviderCoordinates(supabase, data.id, coordinates);
+        notify('Business workspace created');
+      } catch (locationError) {
+        const detail =
+          locationError instanceof Error ? locationError.message : 'Coordinates could not be saved.';
+        notify(
+          `Business workspace created, but its map location could not be saved: ${detail}`,
+        );
+      }
       done();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'The business workspace could not be created.');
+    } finally {
+      setBusy(false);
     }
   }
   async function claim(id: string) {
@@ -941,14 +966,36 @@ function Onboarding({
     )
       return;
     setBusy(true);
-    const { error } = await supabase.rpc('claim_imported_provider', {
-      target_provider: id,
-    });
-    setBusy(false);
-    if (error) notify(error.message);
-    else {
-      notify('Listing claimed — upload proof to request verification');
+    try {
+      const listing = claimable.find((item) => item.id === id);
+      const coordinates = listing?.base_postcode
+        ? await geocodeUkPostcode(listing.base_postcode)
+        : null;
+      const { error } = await supabase.rpc('claim_imported_provider', {
+        target_provider: id,
+      });
+      if (error) throw error;
+      if (coordinates) {
+        try {
+          await saveProviderCoordinates(supabase, id, coordinates);
+          notify('Listing claimed — upload proof to request verification');
+        } catch (locationError) {
+          const detail =
+            locationError instanceof Error
+              ? locationError.message
+              : 'Coordinates could not be saved.';
+          notify(
+            `Listing claimed, but its map location could not be saved: ${detail}`,
+          );
+        }
+      } else {
+        notify('Listing claimed — upload proof to request verification');
+      }
       done();
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'The listing could not be claimed.');
+    } finally {
+      setBusy(false);
     }
   }
   const matches = claimable.filter((p) =>
@@ -1011,6 +1058,15 @@ function Onboarding({
             <label>
               Base city
               <input required value={city} onChange={(e) => setCity(e.target.value)} />
+            </label>
+            <label>
+              UK postcode
+              <input
+                required
+                autoComplete="postal-code"
+                value={postcode}
+                onChange={(e) => setPostcode(e.target.value)}
+              />
             </label>
             <label>
               Business category
@@ -1188,6 +1244,14 @@ function Profile({
       return notify('Enter a valid UK phone number. It will be saved in +44 international format.');
     if (draft.whatsapp?.trim() && !whatsapp)
       return notify('Enter a valid UK WhatsApp number. It will be saved in +44 international format.');
+    let coordinates: ProviderCoordinates | null = null;
+    try {
+      coordinates = draft.base_postcode?.trim()
+        ? await geocodeUkPostcode(draft.base_postcode)
+        : null;
+    } catch (error) {
+      return notify(error instanceof Error ? error.message : 'The postcode could not be geocoded.');
+    }
     const { error } = await supabase
       .from('providers')
       .update({
@@ -1204,10 +1268,23 @@ function Profile({
       .eq('id', provider.id);
     if (error) notify(error.message);
     else {
+      let locationError: string | null = null;
+      if (coordinates) {
+        try {
+          await saveProviderCoordinates(supabase, provider.id, coordinates);
+        } catch (value) {
+          locationError =
+            value instanceof Error ? value.message : 'The map location could not be saved.';
+        }
+      }
       const savedProfile = { ...draft, phone, whatsapp };
       setDraft(savedProfile);
       setProvider(savedProfile);
-      notify('Profile saved to your live listing');
+      notify(
+        locationError
+          ? `Profile saved, but its map location could not be updated: ${locationError}`
+          : 'Profile saved to your live listing',
+      );
     }
   }
   async function upload(e: ChangeEvent<HTMLInputElement>) {

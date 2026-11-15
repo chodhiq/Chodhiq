@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { geocodeUkPostcode, saveProviderCoordinates } from '../lib/providerGeocoding';
 
 function requireClient() {
   if (!supabase) throw new Error('Connect Supabase before claiming a listing.');
@@ -21,6 +22,14 @@ export async function listProviderCategories() {
 }
 
 export async function claimProvider(providerId) {
+  const { data: provider, error: providerError } = await requireClient()
+    .from('providers')
+    .select('base_postcode')
+    .eq('id', providerId)
+    .maybeSingle();
+  if (providerError) throw providerError;
+  const postcode = provider?.base_postcode || '';
+  const coordinates = postcode.trim() ? await geocodeUkPostcode(postcode) : null;
   const { data, error } = await requireClient().rpc('claim_imported_provider', {
     target_provider: providerId,
   });
@@ -28,10 +37,19 @@ export async function claimProvider(providerId) {
   const claim = Array.isArray(data) ? data[0] : data;
   if (!claim?.provider_id || !claim?.request_id)
     throw new Error('The claim request could not be created.');
+  if (coordinates) {
+    try {
+      await saveProviderCoordinates(requireClient(), providerId, coordinates);
+    } catch {
+      claim.locationError =
+        'The listing was claimed, but its map location could not be saved. Please contact support.';
+    }
+  }
   return claim;
 }
 
 export async function createProvider(userId, values) {
+  const coordinates = values.postcode.trim() ? await geocodeUkPostcode(values.postcode) : null;
   const { data, error } = await requireClient()
     .from('providers')
     .insert({
@@ -46,6 +64,17 @@ export async function createProvider(userId, values) {
     .select('id,business_name,base_city,base_postcode')
     .single();
   if (error) throw error;
+  if (coordinates) {
+    try {
+      await saveProviderCoordinates(requireClient(), data.id, coordinates);
+    } catch (locationError) {
+      return {
+        ...data,
+        locationError:
+          'The business was created, but its map location could not be saved. Please contact support.',
+      };
+    }
+  }
   return data;
 }
 

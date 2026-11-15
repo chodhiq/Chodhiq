@@ -21,6 +21,7 @@ import { useChodhiQTheme } from '../context/ThemeContext';
 import { openSubscriptionCheckout } from '../data/subscriptionRepository';
 import { features } from '../config/features';
 import { cleanText } from '../lib/validation';
+import AsyncGlowButton from '../../components/ui/AsyncGlowButton';
 
 const iconMap = {
   sofa: 'Sofa',
@@ -51,7 +52,7 @@ export function CategoriesScreen({ navigation }) {
   const { palette } = useChodhiQTheme();
   return (
     <SafeAreaView
-      style={[styles.page, { backgroundColor: palette.background }]}
+      style={[styles.page, { backgroundColor: 'transparent' }]}
       edges={['left', 'right', 'bottom']}
     >
       <ScreenHeader
@@ -148,7 +149,7 @@ export function SubscriptionPlansScreen({ navigation }) {
   };
   return (
     <SafeAreaView
-      style={[styles.page, { backgroundColor: palette.background }]}
+      style={[styles.page, { backgroundColor: 'transparent' }]}
       edges={['left', 'right', 'bottom']}
     >
       <ScreenHeader
@@ -345,7 +346,7 @@ export function CreatePostScreen({ navigation }) {
   };
   return (
     <SafeAreaView
-      style={[styles.page, { backgroundColor: palette.background }]}
+      style={[styles.page, { backgroundColor: 'transparent' }]}
       edges={['left', 'right', 'bottom']}
     >
       <ScreenHeader
@@ -544,20 +545,23 @@ export function CreatePostScreen({ navigation }) {
             <Text style={[styles.imageActionText, { color: palette.text }]}>Take photo</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity
+        <AsyncGlowButton
           disabled={busy || picking}
-          style={[styles.publish, styles.publishLarge, { backgroundColor: palette.primary }]}
+          variant="primary"
+          size="lg"
+          label="Publish post"
+          stretch
+          status={busy ? 'loading' : undefined}
+          buttonStyle={[styles.publish, styles.publishLarge, { backgroundColor: palette.primary }]}
           onPress={publish}
-        >
-          <Text style={styles.publishText}>{busy ? 'Publishing…' : 'Publish post'}</Text>
-        </TouchableOpacity>
+        />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: colors.background },
+  page: { flex: 1, backgroundColor: 'transparent' },
   content: {
     width: '100%',
     maxWidth: 760,

@@ -1,6 +1,6 @@
 # ChodhiQ moderation and complaints policy
 
-**Status:** Beta operating policy aligned with the published beta contact details and founder-confirmed response targets; wider-launch review remains open.  
+**Status:** Beta operating policy aligned with the published beta contact details and founder-confirmed response targets; wider-launch review remains open.
 **Version:** 1.0 · **Effective:** 14 October 2026 (published beta pages)
 
 ## Scope and principles

@@ -20,7 +20,6 @@ import {
 
 import Text from '../components/community/MelaText';
 import CommunityPostCard from '../components/community/PostCard';
-import { canReportContent, reportFailureMessage } from '../components/community/communitySafety';
 import EmptySpace from '../components/community/EmptySpace';
 import SpaceTray from '../components/community/SpaceTray';
 import { isNewMember } from '../components/community/melaFeedUtils';
@@ -48,29 +47,19 @@ import {
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { showPermissionRecovery } from '../lib/permissionRecovery';
-import {
-  uploadCommunityImage,
-  removeCommunityImage,
-  resolveCommunityImages,
-} from '../data/communityImages';
-import {
-  cacheCommunityPosts,
-  createLocalPost,
-  enqueuePendingOperation,
-  loadLocalPosts,
-  updateLocalPost,
-} from '../data/localDatabase';
+import { updateLocalPost } from '../data/localDatabase';
+import { formatDate } from '../lib/dateTime';
 import { supabase } from '../lib/supabase';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { imageSource } from '../data/assetCatalog';
 import { LinearGradient } from 'expo-linear-gradient';
 import { devicePerformance } from '../lib/devicePerformance';
-import { mergeCommunityPage } from '../lib/communityPaging';
-import { communityFeedErrorMessage, withCommunityFeedDeadline } from '../lib/communityFeedDeadline';
 import { shadows } from '../theme/theme';
 import { REGION_KEYWORDS } from '../components/RegionEmblem';
-import useReducedMotion from '../hooks/useMotionPreferences';
+import useEffectsLevel from '../hooks/useEffectsLevel';
+import useCommunityFeed from '../hooks/useCommunityFeed';
+import GlowButton from '../../components/ui/GlowButton';
 
 const POST_TYPES = [
   ['discussion', 'Discussion', MessageCircle],
@@ -99,8 +88,10 @@ const CommunityPostRow = React.memo(function CommunityPostRow({
   openAuthor,
   transitionKey,
   index,
+  visible,
 }) {
-  const reducedMotion = useReducedMotion();
+  const effectsLevel = useEffectsLevel();
+  const reducedMotion = effectsLevel !== 'full';
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(8)).current;
   useEffect(() => {
@@ -150,13 +141,15 @@ const CommunityPostRow = React.memo(function CommunityPostRow({
         onAuthor={() => openAuthor(post)}
         onProvider={() => openProvider(post)}
         newHere={newHere}
+        visible={visible}
       />
     </Animated.View>
   );
 });
 
 function FeedTabButton({ tab, Icon, active, palette, onPress }) {
-  const reducedMotion = useReducedMotion();
+  const effectsLevel = useEffectsLevel();
+  const reducedMotion = effectsLevel !== 'full';
   const selectionProgress = useRef(new Animated.Value(active ? 1 : 0)).current;
 
   useEffect(() => {
@@ -175,6 +168,7 @@ function FeedTabButton({ tab, Icon, active, palette, onPress }) {
 
   return (
     <TouchableOpacity
+      testID="btn-open-composer"
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       onPress={onPress}
@@ -235,12 +229,45 @@ export default function CommunityScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const { session, profile, providers, unreadCount } = useAppState();
   const { communityPalette: palette } = useChodhiQTheme();
-  const [posts, setPosts] = useState([]);
-  const [generalPosts, setGeneralPosts] = useState([]);
   const [spaces, setSpaces] = useState([{ id: null, slug: 'general', name: 'General' }]);
   const [selectedSpace, setSelectedSpace] = useState('general');
   const [communityReady, setCommunityReady] = useState(false);
+  const [commentsPost, setCommentsPost] = useState(null);
   const activeSpace = spaces.find((space) => space.slug === selectedSpace) || spaces[0];
+  const feed = useCommunityFeed({
+    activeSpace,
+    communityReady,
+    generalSpaceId: spaces[0]?.id,
+    session,
+    providers,
+    navigation,
+    onUserBlocked: (userId) =>
+      setCommentsPost((current) => (current?.author_id === userId ? null : current)),
+  });
+  const {
+    posts,
+    generalPosts,
+    loading,
+    refreshing,
+    error: loadError,
+    hasMore,
+    refresh,
+    loadMore,
+    publishPost,
+    toggleLike: updateLike,
+    toggleSave: updateSave,
+    addComment,
+    loadComments,
+    reportPost: submitReport,
+    blockUser,
+    setPage,
+    engagement,
+    savedPostIds,
+    comments,
+    commentsLoading,
+    commentAuthors,
+    commentBusy,
+  } = feed;
 
   useEffect(() => {
     let cancelled = false;
@@ -312,163 +339,16 @@ export default function CommunityScreen({ navigation, route }) {
   const [providerSearch, setProviderSearch] = useState('');
   const [debouncedProviderSearch, setDebouncedProviderSearch] = useState('');
   const [providersExpanded, setProvidersExpanded] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
   const [publishing, setPublishing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [engagement, setEngagement] = useState({ counts: {}, saves: [] });
-  const [commentsPost, setCommentsPost] = useState(null);
-  const [comments, setComments] = useState([]);
-  const [commentsLoading, setCommentsLoading] = useState(false);
-  const [commentAuthors, setCommentAuthors] = useState({});
   const [commentBody, setCommentBody] = useState('');
-  const [commentBusy, setCommentBusy] = useState(false);
   const [reportingPostId, setReportingPostId] = useState(null);
   const [reportTarget, setReportTarget] = useState(null);
-  const loadSequence = useRef(0);
-  const loadedPosts = useRef([]);
-  const likeRequests = useRef(new Set());
-  const [hasMore, setHasMore] = useState(false);
   const composerRef = useRef(null);
 
   const [composeOpen, setComposeOpen] = useState(false);
   const [editingPostId, setEditingPostId] = useState(null);
   const [postOptionsOpen, setPostOptionsOpen] = useState(false);
 
-  const loadPosts = useCallback(async () => {
-    const request = ++loadSequence.current;
-    try {
-      if (supabase) {
-        await withCommunityFeedDeadline(async () => {
-          const fields =
-            'id,author_id,provider_id,post_type,body,image_url,offer_expires_at,region_key,location_city,created_at,providers(id,business_name,is_verified,categories(name,slug))' +
-            (communityReady ? ',community_id' : '');
-          let query = supabase
-            .from('community_posts')
-            .select(fields)
-            .eq('status', 'published')
-            .order('created_at', { ascending: false })
-            .order('id', { ascending: false })
-            .range((page - 1) * 30, page * 30 - 1);
-          if (communityReady && activeSpace?.id) query = query.eq('community_id', activeSpace.id);
-          const [{ data, error }, saveResult, generalResult] = await Promise.all([
-            query,
-            session
-              ? supabase
-                  .from('community_saved_posts')
-                  .select('post_id')
-                  .eq('user_id', session.user.id)
-              : Promise.resolve({ data: [] }),
-            communityReady && activeSpace?.slug !== 'general' && spaces[0]?.id
-              ? supabase
-                  .from('community_posts')
-                  .select(fields)
-                  .eq('status', 'published')
-                  .eq('community_id', spaces[0].id)
-                  .order('created_at', { ascending: false })
-                  .limit(3)
-              : Promise.resolve({ data: [] }),
-          ]);
-          if (request !== loadSequence.current) return;
-          if (error) throw error;
-          const countResult = data?.length
-            ? await supabase.rpc('community_post_engagement_for_posts', {
-                requested_posts: data.map((post) => post.id),
-              })
-            : { data: [], error: null };
-          if (request !== loadSequence.current) return;
-          setLoadError(countResult.error ? 'Posts loaded, but reactions could not refresh.' : '');
-          const [resolvedPosts, resolvedGeneral] = await Promise.all([
-            resolveCommunityImages(data || []),
-            resolveCommunityImages(generalResult.error ? [] : generalResult.data || []),
-          ]);
-          if (request !== loadSequence.current) return;
-          const visibleAuthors = [
-            ...new Set(
-              [...resolvedPosts, ...resolvedGeneral].map((post) => post.author_id).filter(Boolean),
-            ),
-          ];
-          const authorProfiles = await Promise.all(
-            visibleAuthors.map(async (authorId) => {
-              try {
-                const { data: author } = await supabase.rpc('get_community_member_profile', {
-                  target_author: authorId,
-                });
-                const row = Array.isArray(author) ? author[0] : author;
-                return [authorId, row?.display_name || null];
-              } catch {
-                return [authorId, null];
-              }
-            }),
-          );
-          if (request !== loadSequence.current) return;
-          const authorNames = new Map(authorProfiles);
-          const namedPosts = resolvedPosts.map((post) => ({
-            ...post,
-            author_name: authorNames.get(post.author_id) || post.author_name || 'Community member',
-          }));
-          const namedGeneral = resolvedGeneral.map((post) => ({
-            ...post,
-            author_name: authorNames.get(post.author_id) || post.author_name || 'Community member',
-          }));
-          const merged = mergeCommunityPage(loadedPosts.current, namedPosts, page === 1);
-          loadedPosts.current = merged;
-          setPosts(merged);
-          setHasMore((data || []).length === 30);
-          setGeneralPosts(namedGeneral);
-          setEngagement((current) => ({
-            counts: countResult.error
-              ? current.counts
-              : {
-                  ...(page > 1 ? current.counts : {}),
-                  ...Object.fromEntries((countResult.data || []).map((row) => [row.post_id, row])),
-                },
-            saves: saveResult.error ? current.saves : saveResult.data || [],
-          }));
-          if (activeSpace?.slug === 'general')
-            await cacheCommunityPosts(
-              merged.map((post) => ({
-                ...post,
-                image_url: post.storage_image_ref || post.image_url,
-              })),
-            );
-        });
-      } else {
-        setPosts(activeSpace?.slug === 'general' ? await loadLocalPosts(providers) : []);
-        setLoadError('');
-      }
-    } catch (error) {
-      if (request !== loadSequence.current) return;
-      if (error?.code === 'COMMUNITY_FEED_TIMEOUT') {
-        loadSequence.current += 1;
-        setHasMore(false);
-        setLoadError(communityFeedErrorMessage(error));
-        setLoading(false);
-        return;
-      }
-      console.warn('Community sync failed; using the local cache.', error.message);
-      setHasMore(false);
-      setLoadError(communityFeedErrorMessage(error));
-      try {
-        const cached = activeSpace?.slug === 'general' ? await loadLocalPosts(providers) : [];
-        if (request === loadSequence.current) setPosts(cached);
-      } catch {
-        setPosts([]);
-      }
-    } finally {
-      if (request === loadSequence.current) setLoading(false);
-    }
-  }, [activeSpace?.id, activeSpace?.slug, communityReady, page, providers, session, spaces]);
-
-  useEffect(() => {
-    setLoading(page === 1);
-    if (page === 1) {
-      setPosts([]);
-      loadedPosts.current = [];
-    }
-    loadPosts();
-  }, [loadPosts, page]);
   useEffect(() => {
     const timer = setTimeout(
       () => setDebouncedProviderSearch(providerSearch.trim().toLowerCase()),
@@ -476,21 +356,6 @@ export default function CommunityScreen({ navigation, route }) {
     );
     return () => clearTimeout(timer);
   }, [providerSearch]);
-
-  const refresh = async () => {
-    if (page > 1) {
-      setPage(1);
-      return;
-    }
-    setLoading(true);
-    setLoadError('');
-    setRefreshing(true);
-    try {
-      await loadPosts();
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   const matchingProviders = useMemo(() => {
     return providers.filter(
@@ -597,16 +462,6 @@ export default function CommunityScreen({ navigation, route }) {
         'Connect to publish a post with a photo. Your draft is saved here.',
       );
     setPublishing(true);
-    let uploadedImage = null;
-    const payload = {
-      ...(communityReady && activeSpace?.id ? { community_id: activeSpace.id } : {}),
-      author_id: session.user.id,
-      provider_id: providerId,
-      post_type: postType,
-      body: safeBody,
-      region_key: selectedRegion,
-      location_city: shareLocation ? profile?.location || null : null,
-    };
     try {
       if (editingPostId) {
         if (String(editingPostId).startsWith('post-')) {
@@ -630,168 +485,39 @@ export default function CommunityScreen({ navigation, route }) {
         setBody('');
         setPostOptionsOpen(false);
         setPage(1);
-        await loadPosts();
+        await refresh();
         return;
       }
-      if (!supabase) {
-        const local = await createLocalPost(session.user.id, {
-          providerId,
-          postType,
-          body: safeBody,
-          regionKey: selectedRegion,
-          locationCity: shareLocation ? profile?.location : null,
-        });
-        await enqueuePendingOperation('community_post', { remote: payload, localId: local.id });
-      } else {
-        if (postImage) {
-          uploadedImage = await uploadCommunityImage(session.user.id, postImage);
-          payload.image_url = uploadedImage.imageUrl;
-        }
-        const { error } = await supabase.from('community_posts').insert(payload);
-        if (error) throw error;
-        uploadedImage = null;
-      }
+      await publishPost({
+        text: safeBody,
+        imageUri: postImage,
+        category: postType,
+        providerId,
+        regionKey: selectedRegion,
+        locationCity: shareLocation ? profile?.location || null : null,
+      });
 
       setComposeOpen(false);
       setBody('');
       setPostImage(null);
       setProviderId(null);
       setPostType('discussion');
-      setPage(1);
-      await loadPosts();
     } catch (error) {
-      if (uploadedImage) await removeCommunityImage(uploadedImage.path).catch(() => {});
       Alert.alert('Could not publish', error.message || 'Please try again.');
     } finally {
       setPublishing(false);
     }
   };
 
-  const toggleLike = async (post) => {
-    if (!session) return navigation.navigate('Welcome');
-    if (!supabase)
-      return Alert.alert('Likes unavailable', 'Connect to the community service to like posts.');
-    if (likeRequests.current.has(post.id)) return;
-    likeRequests.current.add(post.id);
-    const counts = engagement.counts[post.id] || {
-      like_count: 0,
-      comment_count: 0,
-      is_liked: false,
-    };
-    const liked = counts.is_liked;
-    setEngagement((current) => ({
-      ...current,
-      counts: {
-        ...current.counts,
-        [post.id]: {
-          ...counts,
-          like_count: Math.max(0, Number(counts.like_count) + (liked ? -1 : 1)),
-          is_liked: !liked,
-          is_updating: true,
-        },
-      },
-    }));
-    try {
-      const result = liked
-        ? await supabase
-            .from('community_post_likes')
-            .delete()
-            .eq('post_id', post.id)
-            .eq('user_id', session.user.id)
-        : await supabase
-            .from('community_post_likes')
-            .insert({ post_id: post.id, user_id: session.user.id });
-      if (result.error) throw result.error;
-    } catch {
-      setEngagement((current) => ({
-        ...current,
-        counts: { ...current.counts, [post.id]: counts },
-      }));
-      Alert.alert('Could not update like', 'Please try again.');
-    } finally {
-      likeRequests.current.delete(post.id);
-      setEngagement((current) => ({
-        ...current,
-        counts: {
-          ...current.counts,
-          [post.id]: { ...current.counts[post.id], is_updating: false },
-        },
-      }));
-    }
-  };
-
-  const toggleSave = async (post) => {
-    if (!session) return navigation.navigate('Welcome');
-    if (!supabase)
-      return Alert.alert('Saves unavailable', 'Connect to the community service to save posts.');
-    const saved = engagement.saves.some((row) => row.post_id === post.id);
-    setEngagement((current) => ({
-      ...current,
-      saves: saved
-        ? current.saves.filter((row) => row.post_id !== post.id)
-        : [...current.saves, { post_id: post.id }],
-    }));
-    try {
-      const result = saved
-        ? await supabase
-            .from('community_saved_posts')
-            .delete()
-            .eq('post_id', post.id)
-            .eq('user_id', session.user.id)
-        : await supabase
-            .from('community_saved_posts')
-            .insert({ post_id: post.id, user_id: session.user.id });
-      if (result.error) throw result.error;
-    } catch {
-      await loadPosts();
-      Alert.alert('Could not save post', 'Please try again.');
-    }
-  };
-
   const openComments = async (post) => {
     setCommentsPost(post);
-    setComments([]);
-    setCommentAuthors({});
-    if (!supabase) {
-      setCommentsLoading(false);
-      return Alert.alert(
-        'Comments unavailable',
-        'Connect to the community service to read comments.',
-      );
-    }
-    setCommentsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('community_comments')
-        .select('id,author_id,body,created_at')
-        .eq('post_id', post.id)
-        .order('created_at')
-        .limit(100);
-      if (error) Alert.alert('Comments unavailable', error.message);
-      else {
-        const rows = data || [];
-        setComments(rows);
-        const authorIds = [...new Set(rows.map((row) => row.author_id).filter(Boolean))];
-        const profiles = await Promise.all(
-          authorIds.map(async (authorId) => {
-            const { data: profile, error: profileError } = await supabase.rpc(
-              'get_community_member_profile',
-              { target_author: authorId },
-            );
-            if (profileError) return [authorId, null];
-            const author = Array.isArray(profile) ? profile[0] : profile;
-            return [authorId, author || null];
-          }),
-        );
-        setCommentAuthors(Object.fromEntries(profiles));
-      }
+      await loadComments(post.id);
     } catch (error) {
       Alert.alert(
         'Comments unavailable',
         error?.message || 'Please check your connection and try again.',
       );
-    } finally {
-      setCommentsLoading(false);
     }
   };
   const submitComment = async () => {
@@ -800,29 +526,14 @@ export default function CommunityScreen({ navigation, route }) {
     if (!supabase)
       return Alert.alert('Comments unavailable', 'Connect to the community service to comment.');
     if (commentBody.trim().length < 1 || commentBody.trim().length > 1000) return;
-    setCommentBusy(true);
     try {
-      const { data, error } = await supabase
-        .from('community_comments')
-        .insert({ post_id: commentsPost.id, author_id: session.user.id, body: commentBody.trim() })
-        .select('id,author_id,body,created_at')
-        .single();
-      if (error) throw error;
-      setComments((current) => [...current, data]);
-      const { data: profile } = await supabase.rpc('get_community_member_profile', {
-        target_author: session.user.id,
-      });
-      const author = Array.isArray(profile) ? profile[0] : profile;
-      if (author) setCommentAuthors((current) => ({ ...current, [session.user.id]: author }));
+      await addComment(commentsPost.id, commentBody.trim());
       setCommentBody('');
-      await loadPosts();
     } catch (error) {
       Alert.alert(
         'Could not comment',
         error.message || 'Please try again. Your draft is still here.',
       );
-    } finally {
-      setCommentBusy(false);
     }
   };
 
@@ -833,9 +544,14 @@ export default function CommunityScreen({ navigation, route }) {
         'Reporting unavailable',
         'Connect to the community service to report a post.',
       );
-    if (!canReportContent(session.user.id, post, comment))
-      return Alert.alert('Your own content', 'You can report content shared by other members.');
     if (!reason) {
+      try {
+        await submitReport(post.id, null, comment);
+      } catch (error) {
+        if (error.message === 'You can report content shared by other members.')
+          return Alert.alert('Your own content', error.message);
+        return Alert.alert('Could not send report', error.message || 'Please try again.');
+      }
       if (commentsPost) setCommentsPost(null);
       setReportTarget({ post, comment });
       return;
@@ -844,29 +560,23 @@ export default function CommunityScreen({ navigation, route }) {
     if (reportingPostId === targetId) return;
     setReportingPostId(targetId);
     try {
-      const { error } = await supabase.from('community_post_reports').insert({
-        post_id: post.id,
-        ...(comment ? { comment_id: comment.id } : {}),
-        reporter_id: session.user.id,
-        reason,
-      });
-      if (error?.code === '23505')
+      const result = await submitReport(post.id, reason, comment);
+      if (result === 'queued') {
+        Alert.alert("Report saved, will send when you're online");
+      } else if (result === 'sent') {
+        Alert.alert('Report sent', 'Thanks. Our moderation team will review this content.');
+      }
+    } catch (error) {
+      if (error.message === 'You can report content shared by other members.')
+        return Alert.alert('Your own content', error.message);
+      if (error.message === 'Already reported.')
         return Alert.alert(
           'Already reported',
           'Our team has already received a report for this content.',
         );
-      if (error) {
-        const message = reportFailureMessage(error.code);
-        return Alert.alert('Could not send report', message, [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Retry', onPress: () => reportPost(post, reason, comment) },
-        ]);
-      }
-      Alert.alert('Report sent', 'Thanks. Our moderation team will review this content.');
-    } catch {
       Alert.alert(
         'Could not send report',
-        'Your report was not sent. Check your connection and retry.',
+        error.message || 'Your report was not sent. Check your connection and retry.',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Retry', onPress: () => reportPost(post, reason, comment) },
@@ -875,34 +585,6 @@ export default function CommunityScreen({ navigation, route }) {
     } finally {
       setReportingPostId(null);
     }
-  };
-
-  const blockAuthor = (authorId) => {
-    if (!session) return navigation.navigate('Welcome');
-    if (!communityReady || !supabase || authorId === session.user.id) return;
-    Alert.alert('Block this author?', 'Their posts and comments will be hidden from your feed.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Block',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const { error } = await supabase
-              .from('community_user_blocks')
-              .upsert(
-                { blocker_id: session.user.id, blocked_id: authorId },
-                { onConflict: 'blocker_id,blocked_id', ignoreDuplicates: true },
-              );
-            if (error) throw error;
-            setComments((current) => current.filter((comment) => comment.author_id !== authorId));
-            if (commentsPost?.author_id === authorId) setCommentsPost(null);
-            await loadPosts();
-          } catch {
-            Alert.alert('Could not block author', 'Please check your connection and try again.');
-          }
-        },
-      },
-    ]);
   };
 
   const selectedProvider = providers.find((provider) => provider.id === providerId);
@@ -932,17 +614,18 @@ export default function CommunityScreen({ navigation, route }) {
     () => new Map(providers.map((provider) => [provider.id, provider])),
     [providers],
   );
-  const savedPostIds = useMemo(
-    () => new Set(engagement.saves.map((save) => save.post_id)),
-    [engagement.saves],
+  const like = useLiveCallback((post) =>
+    updateLike(post.id).catch(() => Alert.alert('Could not update like', 'Please try again.')),
   );
-  const like = useLiveCallback(toggleLike);
   const comment = useLiveCallback(openComments);
-  const save = useLiveCallback(toggleSave);
+  const save = useLiveCallback((post) =>
+    updateSave(post.id).catch(() => Alert.alert('Could not save post', 'Please try again.')),
+  );
   const share = useLiveCallback(sharePost);
   const report = useLiveCallback(reportPost);
   const edit = useLiveCallback(beginEditPost);
-  const block = useLiveCallback(blockAuthor);
+  const block = useLiveCallback(blockUser);
+  const blockAuthor = block;
   const openAuthor = useLiveCallback(
     (post) =>
       post.author_id && navigation.navigate('CommunityProfile', { authorId: post.author_id }),
@@ -951,11 +634,17 @@ export default function CommunityScreen({ navigation, route }) {
     (post) => post.provider_id && navigation.navigate('ProviderDetail', { id: post.provider_id }),
   );
   const feedTransitionKey = `${feedTab}:${categoryFilter}:${selectedRegion || ''}:${activeSpace?.slug || ''}`;
+  const [visiblePostIds, setVisiblePostIds] = useState(() => new Set());
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 10 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    setVisiblePostIds(new Set(viewableItems.map(({ item }) => item.id)));
+  }).current;
   const renderPost = useCallback(
     ({ item: post, index }) => (
       <CommunityPostRow
         post={post}
         index={index}
+        visible={visiblePostIds.has(post.id)}
         transitionKey={feedTransitionKey}
         palette={palette}
         provider={providersById.get(post.provider_id)}
@@ -977,6 +666,7 @@ export default function CommunityScreen({ navigation, route }) {
     ),
     [
       feedTransitionKey,
+      visiblePostIds,
       palette,
       providersById,
       session,
@@ -996,7 +686,7 @@ export default function CommunityScreen({ navigation, route }) {
   );
 
   return (
-    <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.page, { backgroundColor: 'transparent' }]} edges={['top']}>
       <FlatList
         keyboardShouldPersistTaps="handled"
         refreshControl={
@@ -1011,6 +701,8 @@ export default function CommunityScreen({ navigation, route }) {
         data={visiblePosts}
         keyExtractor={(post) => `${feedTransitionKey}:${post.id}`}
         renderItem={renderPost}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
         initialNumToRender={devicePerformance.initialRows}
         maxToRenderPerBatch={devicePerformance.renderBatch}
         windowSize={devicePerformance.listWindow}
@@ -1048,6 +740,7 @@ export default function CommunityScreen({ navigation, route }) {
                   style={styles.brandLogo}
                 />
                 <TouchableOpacity
+                  testID="btn-open-composer"
                   accessibilityRole="button"
                   accessibilityLabel="Notifications"
                   onPress={() => navigation.navigate('Notifications')}
@@ -1067,6 +760,7 @@ export default function CommunityScreen({ navigation, route }) {
                     Real conversations, recommendations and experiences from your community.
                   </Text>
                   <TouchableOpacity
+                    testID="btn-close-composer"
                     accessibilityRole="button"
                     onPress={jumpToComposer}
                     style={[styles.heroButton, { backgroundColor: palette.primary }]}
@@ -1089,6 +783,7 @@ export default function CommunityScreen({ navigation, route }) {
               }}
             />
             <TouchableOpacity
+              testID="btn-open-composer"
               accessibilityRole="button"
               accessibilityLabel="Create a community post"
               onPress={jumpToComposer}
@@ -1121,7 +816,11 @@ export default function CommunityScreen({ navigation, route }) {
                 { backgroundColor: palette.surface, borderColor: palette.border },
               ]}
             >
-              <View style={[styles.safetyIcon, { backgroundColor: palette.primaryTint }]}>
+              <View
+                accessible
+                accessibilityLabel="Community safety"
+                style={[styles.safetyIcon, { backgroundColor: palette.primaryTint }]}
+              >
                 <ShieldCheck size={17} color={palette.actionText} />
               </View>
               <View style={styles.safetyCopy}>
@@ -1147,6 +846,8 @@ export default function CommunityScreen({ navigation, route }) {
                 </View>
               </View>
               <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`Filter community posts by category. Current category: ${categoryFilter}`}
                 onPress={() => setCategoryMenu(true)}
                 style={[
                   styles.filterButton,
@@ -1163,7 +864,6 @@ export default function CommunityScreen({ navigation, route }) {
               {[
                 ['Latest', Clock3],
                 ['Recommended', Sparkles],
-                ['Nearby', MapPin],
               ].map(([tab, Icon]) => (
                 <FeedTabButton
                   key={tab}
@@ -1200,6 +900,7 @@ export default function CommunityScreen({ navigation, route }) {
               >
                 <Text style={{ color: palette.text, fontSize: 13, flex: 1 }}>{loadError}</Text>
                 <TouchableOpacity
+                  testID="btn-retry-community"
                   accessibilityRole="button"
                   accessibilityLabel="Retry loading posts"
                   onPress={refresh}
@@ -1232,7 +933,7 @@ export default function CommunityScreen({ navigation, route }) {
           <>
             {hasMore && (
               <TouchableOpacity
-                onPress={() => setPage((current) => current + 1)}
+                onPress={loadMore}
                 style={[styles.loadMore, { borderColor: palette.border }]}
               >
                 <Text style={{ color: palette.actionText, fontWeight: '800' }}>Load more</Text>
@@ -1255,10 +956,16 @@ export default function CommunityScreen({ navigation, route }) {
         onShow={() => composerRef.current?.focus()}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.popupBackdrop}
         >
-          <View style={[styles.composePopup, { backgroundColor: palette.surface }]}>
+          <GlassView
+            intensity={48}
+            style={[
+              styles.composePopup,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
+          >
             <ScrollView
               accessibilityViewIsModal
               keyboardShouldPersistTaps="handled"
@@ -1270,6 +977,7 @@ export default function CommunityScreen({ navigation, route }) {
                   {editingPostId ? 'Edit post' : 'Create a post'}
                 </Text>
                 <TouchableOpacity
+                  testID="btn-add-post-photo"
                   accessibilityRole="button"
                   accessibilityLabel="Close composer"
                   disabled={publishing}
@@ -1318,6 +1026,7 @@ export default function CommunityScreen({ navigation, route }) {
                 </View>
                 {!editingPostId && (
                   <TouchableOpacity
+                    testID="btn-remove-post-photo"
                     accessibilityRole="button"
                     accessibilityLabel={postImage ? 'Change post photo' : 'Add photo to post'}
                     disabled={publishing || choosingImage}
@@ -1463,36 +1172,35 @@ export default function CommunityScreen({ navigation, route }) {
                     )}
                   </View>
                 )}
-                <TouchableOpacity
+                <GlowButton
+                  testID="btn-post"
                   accessibilityRole="button"
                   accessibilityLabel={
                     editingPostId ? 'Save community post changes' : 'Publish community post'
                   }
                   disabled={publishing || choosingImage || body.trim().length < 2}
+                  variant="primary"
+                  size="lg"
+                  label={
+                    publishing
+                      ? 'Posting…'
+                      : editingPostId
+                        ? 'Save changes'
+                        : session
+                          ? 'Post to ' + activeSpace.name
+                          : 'Sign in to publish'
+                  }
+                  leftIcon={!publishing && <Send size={18} color={palette.onPrimary} />}
+                  stretch
+                  status={publishing ? 'loading' : 'idle'}
                   onPress={publish}
-                  style={[
+                  buttonStyle={[
                     styles.publish,
                     {
                       backgroundColor: palette.primary,
-                      opacity: publishing || choosingImage || body.trim().length < 2 ? 0.5 : 1,
                     },
                   ]}
-                >
-                  {publishing ? (
-                    <ActivityIndicator color={palette.onPrimary} />
-                  ) : (
-                    <>
-                      <Send size={18} color={palette.onPrimary} />
-                      <Text style={[styles.publishText, { color: palette.onPrimary }]}>
-                        {editingPostId
-                          ? 'Save changes'
-                          : session
-                            ? 'Post to ' + activeSpace.name
-                            : 'Sign in to publish'}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                />
                 <Text
                   style={[
                     styles.charCount,
@@ -1503,7 +1211,7 @@ export default function CommunityScreen({ navigation, route }) {
                 </Text>
               </View>
             </ScrollView>
-          </View>
+          </GlassView>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -1518,7 +1226,13 @@ export default function CommunityScreen({ navigation, route }) {
           onPress={() => setCategoryMenu(false)}
           style={styles.modalBackdrop}
         >
-          <View style={[styles.categoryMenu, { backgroundColor: palette.surface }]}>
+          <GlassView
+            intensity={48}
+            style={[
+              styles.categoryMenu,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
+          >
             {categories.map((category) => (
               <TouchableOpacity
                 key={category}
@@ -1532,7 +1246,7 @@ export default function CommunityScreen({ navigation, route }) {
                 {categoryFilter === category && <Check size={17} color={palette.primary} />}
               </TouchableOpacity>
             ))}
-          </View>
+          </GlassView>
         </TouchableOpacity>
       </Modal>
       <Modal
@@ -1542,9 +1256,13 @@ export default function CommunityScreen({ navigation, route }) {
         onRequestClose={() => setReportTarget(null)}
       >
         <View style={styles.modalBackdrop}>
-          <View
+          <GlassView
             accessibilityViewIsModal
-            style={[styles.commentsSheet, { backgroundColor: palette.surface }]}
+            intensity={48}
+            style={[
+              styles.commentsSheet,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
           >
             <Text style={{ color: palette.text, fontFamily: melaHeadingFont, fontSize: 20 }}>
               Report {reportTarget?.comment ? 'comment' : 'post'}
@@ -1575,7 +1293,7 @@ export default function CommunityScreen({ navigation, route }) {
             >
               <Text style={{ color: palette.actionText }}>Cancel</Text>
             </TouchableOpacity>
-          </View>
+          </GlassView>
         </View>
       </Modal>
       <Modal
@@ -1588,7 +1306,13 @@ export default function CommunityScreen({ navigation, route }) {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalBackdrop}
         >
-          <View style={[styles.commentsSheet, { backgroundColor: palette.surface }]}>
+          <GlassView
+            intensity={48}
+            style={[
+              styles.commentsSheet,
+              { backgroundColor: palette.surface, borderColor: palette.border },
+            ]}
+          >
             <View style={[styles.commentsHandle, { backgroundColor: palette.border }]} />
             <View style={styles.commentHeading}>
               <View style={styles.commentHeadingCopy}>
@@ -1617,6 +1341,7 @@ export default function CommunityScreen({ navigation, route }) {
                 </Text>
               </View>
               <TouchableOpacity
+                testID="btn-close-comments"
                 accessibilityRole="button"
                 accessibilityLabel="Close comments"
                 style={[styles.commentClose, { backgroundColor: palette.surfaceAlt }]}
@@ -1775,6 +1500,7 @@ export default function CommunityScreen({ navigation, route }) {
                 style={[styles.commentInput, { color: palette.text }]}
               />
               <TouchableOpacity
+                testID="btn-send-comment"
                 accessibilityRole="button"
                 accessibilityLabel="Send comment"
                 disabled={commentBusy || !commentBody.trim()}
@@ -1794,7 +1520,7 @@ export default function CommunityScreen({ navigation, route }) {
                 )}
               </TouchableOpacity>
             </View>
-          </View>
+          </GlassView>
         </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
@@ -1847,10 +1573,13 @@ function relativeDate(value) {
   if (day < 1) return 'Today';
   if (day === 1) return '1 day ago';
   if (day < 30) return `${day} days ago`;
-  return new Date(value).toLocaleDateString();
+  return formatDate(value);
 }
 function sharePost(post) {
-  Share.share({ message: post.body }).catch(() => {});
+  Share.share({ message: post.body }).catch((error) => {
+    console.warn('Unable to share community post.', error);
+    Alert.alert('Could not share post', 'Please try sharing this post again.');
+  });
 }
 
 const styles = StyleSheet.create({

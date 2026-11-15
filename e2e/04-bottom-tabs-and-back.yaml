@@ -1,0 +1,34 @@
+appId: com.chodhiq.app
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: btn-continue-as-guest
+- assertVisible:
+    id: btn-home-search
+
+- tapOn:
+    id: tab-search
+- assertVisible: Search
+- tapOn:
+    text: Back to Home
+- assertVisible:
+    id: btn-home-search
+
+- tapOn:
+    id: tab-map
+- assertVisible:
+    id: btn-map-current-location
+- tapOn:
+    id: tab-community
+- assertVisible: Community feed
+- tapOn:
+    id: tab-saved
+- assertVisible: Saved
+- tapOn:
+    id: tab-profile
+- assertVisible: Sign in to your profile
+- tapOn:
+    id: tab-home
+- assertVisible:
+    id: btn-home-search

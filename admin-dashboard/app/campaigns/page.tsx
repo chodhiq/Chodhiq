@@ -15,7 +15,7 @@ type Campaign = {
   starts_at: string;
   ends_at: string;
   creative_url: string;
-  destination_url: string;
+  destination_url: string | null;
   providers: { business_name: string } | null;
 };
 type Enquiry = {
@@ -141,7 +141,8 @@ export default function CampaignsPage() {
     const startsAt = new Date(draft.startsAt);
     const endsAt = new Date(draft.endsAt);
     if (
-      !providers.some((provider) => provider.id === draft.providerId) ||
+      (draft.providerId !== '' &&
+        !providers.some((provider) => provider.id === draft.providerId)) ||
       draft.name.trim().length < 2 ||
       draft.headline.trim().length < 2 ||
       draft.body.trim().length < 2 ||
@@ -151,17 +152,20 @@ export default function CampaignsPage() {
       endsAt <= new Date()
     ) {
       setError(
-        'Choose a verified business, complete the creative and set a valid future end date.',
+        'Choose a verified business if applicable, complete the creative and set a valid future end date.',
       );
       return;
     }
-    let destination: URL;
-    try {
-      destination = new URL(draft.destinationUrl.trim());
-      if (destination.protocol !== 'https:') throw new Error('HTTPS required');
-    } catch {
-      setError('Enter a valid HTTPS destination URL.');
-      return;
+    let destinationUrl: string | null = null;
+    if (draft.destinationUrl.trim()) {
+      try {
+        const destination = new URL(draft.destinationUrl.trim());
+        if (destination.protocol !== 'https:') throw new Error('HTTPS required');
+        destinationUrl = destination.href;
+      } catch {
+        setError('Enter a valid HTTPS destination URL or leave it blank.');
+        return;
+      }
     }
     const approved = await admin.confirmAction({
       title: 'Upload advertising creative',
@@ -186,12 +190,12 @@ export default function CampaignsPage() {
           .from('ad_campaigns')
           .insert({
             id: campaignId,
-            provider_id: draft.providerId,
+            provider_id: draft.providerId || null,
             name: draft.name.trim(),
             headline: draft.headline.trim(),
             body: draft.body.trim(),
             creative_url: creativeUrl,
-            destination_url: destination.href,
+            destination_url: destinationUrl,
             starts_at: startsAt.toISOString(),
             ends_at: endsAt.toISOString(),
             status: 'in_review',
@@ -240,7 +244,7 @@ export default function CampaignsPage() {
       title: status === 'approved' ? 'Approve campaign' : 'Pause campaign',
       message:
         status === 'approved'
-          ? 'Confirm the image, destination, business and scheduled dates. The ad can appear during its active window.'
+          ? 'Confirm the image, any provided destination or business, and scheduled dates. The ad can appear during its active window.'
           : 'Pause this campaign immediately?',
       confirmLabel: status === 'approved' ? 'Approve' : 'Pause',
     });
@@ -270,7 +274,7 @@ export default function CampaignsPage() {
   };
 
   return (
-    
+
       <Page
         title="Advertising campaigns"
         note="Upload one approved creative at a time into the home feed. No active campaign means no custom-ad card appears in the app."
@@ -288,14 +292,13 @@ export default function CampaignsPage() {
                 ads remain disabled for beta.
               </p>
               <label className="field">
-                Verified business
+                Verified business (optional)
                 <select
-                  required
                   value={draft.providerId}
                   disabled={busy}
                   onChange={(event) => setDraft({ ...draft, providerId: event.target.value })}
                 >
-                  <option value="">Choose business</option>
+                  <option value="">No business linked</option>
                   {providers.map((provider) => (
                     <option key={provider.id} value={provider.id}>
                       {provider.business_name}
@@ -348,12 +351,11 @@ export default function CampaignsPage() {
               </label>
               {creative && <p>Selected: {creative.name}</p>}
               <label className="field">
-                HTTPS destination
+                HTTPS destination (optional)
                 <input
-                  required
                   type="url"
                   maxLength={2000}
-                  placeholder="https://example.com"
+                  placeholder="https://example.com (leave blank for no link)"
                   value={draft.destinationUrl}
                   disabled={busy}
                   onChange={(event) => setDraft({ ...draft, destinationUrl: event.target.value })}
@@ -382,7 +384,7 @@ export default function CampaignsPage() {
               <button
                 className="primary"
                 type="submit"
-                disabled={busy || !creative || !providers.length}
+                disabled={busy || !creative}
               >
                 {busy ? 'Saving…' : 'Create for review'}
               </button>
@@ -408,7 +410,7 @@ export default function CampaignsPage() {
                             {campaign.headline}
                           </a>
                         </td>
-                        <td>{campaign.providers?.business_name || 'Business unavailable'}</td>
+                        <td>{campaign.providers?.business_name || 'No business linked'}</td>
                         <td>
                           {new Date(campaign.starts_at).toLocaleString('en-GB')} –{' '}
                           {new Date(campaign.ends_at).toLocaleString('en-GB')}
@@ -505,6 +507,6 @@ export default function CampaignsPage() {
           </div>
         )}
       </Page>
-    
+
   );
 }

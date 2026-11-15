@@ -45,13 +45,9 @@ const validLegalUrl = (value) => {
       url.protocol === 'https:' &&
       !url.username &&
       !url.password &&
-      ![
-        'localhost',
-        'example.com',
-        'example.org',
-        'example.net',
-        'example.invalid',
-      ].includes(url.hostname) &&
+      !['localhost', 'example.com', 'example.org', 'example.net', 'example.invalid'].includes(
+        url.hostname,
+      ) &&
       !['.example.com', '.example.org', '.example.net'].some((suffix) =>
         url.hostname.endsWith(suffix),
       ) &&
@@ -69,6 +65,16 @@ const sentryConfigured = [
   process.env.SENTRY_PROJECT,
   process.env.SENTRY_AUTH_TOKEN,
 ].every(Boolean);
+const sentryPlugin = sentryConfigured
+  ? [
+      '@sentry/react-native',
+      {
+        organization: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+        url: process.env.SENTRY_URL || 'https://sentry.io/',
+      },
+    ]
+  : ['@sentry/react-native', { disableAutoUpload: true }];
 
 if (googleMapsEnabled && !googleMapsApiKey) {
   throw new Error('Google Maps cannot be enabled without GOOGLE_MAPS_API_KEY.');
@@ -226,19 +232,9 @@ module.exports = {
     ...plugins,
     '@react-native-community/datetimepicker',
     'expo-secure-store',
+    'expo-font',
     '@react-native-google-signin/google-signin',
-    ...(sentryConfigured
-      ? [
-          [
-            '@sentry/react-native',
-            {
-              organization: process.env.SENTRY_ORG,
-              project: process.env.SENTRY_PROJECT,
-              url: process.env.SENTRY_URL || 'https://sentry.io/',
-            },
-          ],
-        ]
-      : []),
+    sentryPlugin,
     // The native Mobile Ads package registers an Android ContentProvider even
     // when ad delivery is disabled. Keep a valid app ID in the manifest so Android can start.
     googleMobileAdsPlugin,

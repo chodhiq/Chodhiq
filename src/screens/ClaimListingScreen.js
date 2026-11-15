@@ -32,9 +32,12 @@ import {
 import { radius, spacing } from '../theme/theme';
 import GlassView from '../components/GlassView';
 import useUkPostcodeSuggestions from '../hooks/useUkPostcodeSuggestions';
+import AsyncGlowButton from '../../components/ui/AsyncGlowButton';
+import GlowButton from '../../components/ui/GlowButton';
+import { runAuthResumableWrite } from '../data/authResumableWrite';
 
 export default function ClaimListingScreen({ navigation }) {
-  const { session } = useAppState();
+  const { session, refreshMarketplace, promptAuthWrite } = useAppState();
   const { palette } = useChodhiQTheme();
   const [mode, setMode] = useState('claim');
   const [showBenefits, setShowBenefits] = useState(false);
@@ -79,8 +82,16 @@ export default function ClaimListingScreen({ navigation }) {
     setBusy(true);
     setError('');
     try {
-      const claim = await claimProvider(item.id);
+      const claim = await runAuthResumableWrite({
+        operation: 'claim_provider',
+        ownerId: session.user.id,
+        payload: { providerId: item.id },
+        write: () => claimProvider(item.id),
+        onAuthRequired: promptAuthWrite,
+      });
       setRequestId(claim.request_id);
+      setError(claim.locationError || '');
+      await refreshMarketplace();
       setProvider({
         id: claim.provider_id,
         business_name: claim.business_name || item.business_name,
@@ -97,7 +108,16 @@ export default function ClaimListingScreen({ navigation }) {
     setBusy(true);
     setError('');
     try {
-      setProvider(await createProvider(session.user.id, form));
+      const created = await runAuthResumableWrite({
+        operation: 'provider_create',
+        ownerId: session.user.id,
+        payload: { values: form },
+        write: () => createProvider(session.user.id, form),
+        onAuthRequired: promptAuthWrite,
+      });
+      setProvider(created);
+      setError(created.locationError || '');
+      await refreshMarketplace();
     } catch (value) {
       setError(value.message);
     } finally {
@@ -151,7 +171,7 @@ export default function ClaimListingScreen({ navigation }) {
   if (!session)
     return (
       <SafeAreaView
-        style={[styles.page, { backgroundColor: palette.background }]}
+        style={[styles.page, { backgroundColor: 'transparent' }]}
         edges={['left', 'right', 'bottom']}
       >
         <ScreenHeader navigation={navigation} title="Claim a listing" />
@@ -159,25 +179,25 @@ export default function ClaimListingScreen({ navigation }) {
           <Text style={{ color: palette.text }}>
             Sign in before claiming or creating a business listing.
           </Text>
-          <TouchableOpacity
-            style={[styles.primary, { backgroundColor: palette.primary }]}
+          <GlowButton
+            variant="primary"
+            label="Sign in"
+            buttonStyle={[styles.primary, { backgroundColor: palette.primary }]}
             onPress={() => navigation.navigate('Welcome')}
-          >
-            <Text style={[styles.primaryText, { color: palette.onPrimary }]}>Sign in</Text>
-          </TouchableOpacity>
+          />
         </View>
       </SafeAreaView>
     );
   if (loading)
     return (
-      <SafeAreaView style={[styles.page, styles.center, { backgroundColor: palette.background }]}>
+      <SafeAreaView style={[styles.page, styles.center, { backgroundColor: 'transparent' }]}>
         <ActivityIndicator color={palette.primary} />
         <Text style={{ color: palette.text2 }}>Loading available listings…</Text>
       </SafeAreaView>
     );
   return (
     <SafeAreaView
-      style={[styles.page, { backgroundColor: palette.background }]}
+      style={[styles.page, { backgroundColor: 'transparent' }]}
       edges={['left', 'right', 'bottom']}
     >
       <ScreenHeader
@@ -427,15 +447,19 @@ export default function ClaimListingScreen({ navigation }) {
                     ))}
                   </View>
                 </View>
-                <TouchableOpacity
+                <AsyncGlowButton
                   disabled={busy}
-                  style={[styles.primary, styles.formButton, { backgroundColor: palette.primary }]}
+                  variant="primary"
+                  label="Create workspace"
+                  stretch
+                  status={busy ? 'loading' : undefined}
+                  buttonStyle={[
+                    styles.primary,
+                    styles.formButton,
+                    { backgroundColor: palette.primary },
+                  ]}
                   onPress={createNew}
-                >
-                  <Text style={[styles.primaryText, { color: palette.onPrimary }]}>
-                    {busy ? 'Creating…' : 'Create workspace'}
-                  </Text>
-                </TouchableOpacity>
+                />
               </View>
             )}
           </>
@@ -494,19 +518,19 @@ export default function ClaimListingScreen({ navigation }) {
                 {document ? document.name : busy ? 'Uploading…' : 'Upload PDF or image'}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity
+            <AsyncGlowButton
               disabled={busy || !document}
-              style={[
+              variant="primary"
+              label="Submit verification"
+              stretch
+              status={busy ? 'loading' : undefined}
+              buttonStyle={[
                 styles.primary,
                 styles.formButton,
                 { backgroundColor: palette.primary, opacity: busy || !document ? 0.45 : 1 },
               ]}
               onPress={submit}
-            >
-              <Text style={[styles.primaryText, { color: palette.onPrimary }]}>
-                {busy ? 'Submitting…' : 'Submit verification'}
-              </Text>
-            </TouchableOpacity>
+            />
           </View>
         )}
       </ScrollView>

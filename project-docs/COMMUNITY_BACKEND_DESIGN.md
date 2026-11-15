@@ -1,6 +1,6 @@
 # ChodhiQ community backend design
 
-**Status:** Foundation replayed and tested on local Supabase; not applied to Production  
+**Status:** Foundation replayed and tested on local Supabase; not applied to Production
 **Scope:** Backend foundation for a regular, Reddit-like community. The current community interface remains unchanged until the backend work is complete.
 
 ## Current foundation

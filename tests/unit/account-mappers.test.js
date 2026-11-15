@@ -7,6 +7,7 @@ import {
   mapProfile,
   mapQuote,
 } from '../../src/data/accountMappers.js';
+import { formatBookingDateTime, formatDate, formatDateTime } from '../../src/lib/dateTime.js';
 
 test('mapQuote joins provider identity across string-compatible IDs', () => {
   const result = mapQuote({ id: 'q1', provider_id: 42, message: 'Hello', status: 'responded' }, [
@@ -22,9 +23,15 @@ test('quote status never claims delivery when WhatsApp only opened', () => {
   assert.equal(mapQuote({ id: 'q3', status: 'sent' }, []).status, 'Status unconfirmed');
 });
 
-test('review dates use a short UK date instead of a raw timestamp', () => {
-  assert.equal(formatReviewDate('2026-10-11T11:14:15.45406+00:00'), '11 Oct 2026');
+test('review dates use the shared UK date format instead of a raw timestamp', () => {
+  assert.equal(formatReviewDate('2026-10-11T11:14:15.45406+00:00'), 'Sun, 11 Oct 2026');
   assert.equal(formatReviewDate('not a date'), '');
+});
+
+test('shared date formatting gives calendar dates and booking wall times one UK display', () => {
+  assert.equal(formatDate('2026-11-08'), 'Sun, 8 Nov 2026');
+  assert.equal(formatDateTime('2026-11-08T15:00:00Z'), 'Sun, 8 Nov 2026, 3:00 pm');
+  assert.equal(formatBookingDateTime('2026-11-08', '15:00'), 'Sun, 8 Nov 2026, 3:00 pm');
 });
 
 test('mapNotification derives read state without leaking database fields', () => {

@@ -142,7 +142,7 @@ export function ReviewsPage() {
       );
   }
   return (
-    
+
       <Page
         title="Customer reviews"
         note="Search reviews, inspect owner replies, and moderate abusive content."
@@ -201,7 +201,7 @@ export function ReviewsPage() {
           </section>
         )}
       </Page>
-    
+
   );
 }
 
@@ -308,7 +308,7 @@ export function CategoriesPage() {
       setRows((current) => current.filter((item) => item.id !== row.id));
   }
   return (
-    
+
       <Page title="Category management" note="Create, edit, and order marketplace categories." stats={[{label:'Total categories',value:rows.length},{label:'Active',value:rows.filter(row => row.is_active).length,tone:'green'}]}>
         {loading ? (
           <Skeleton />
@@ -453,7 +453,7 @@ export function CategoriesPage() {
           </>
         )}
       </Page>
-    
+
   );
 }
 
@@ -496,7 +496,7 @@ export function DemandPage() {
     };
   }, [load]);
   return (
-    
+
       <Page
         title="Marketplace demand"
         note="Recent quote requests and bookings; each list shows up to 25 records."
@@ -537,6 +537,6 @@ export function DemandPage() {
           </div>
         )}
       </Page>
-    
+
   );
 }

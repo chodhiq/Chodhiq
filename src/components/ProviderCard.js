@@ -9,6 +9,9 @@ import { useChodhiQTheme } from '../context/ThemeContext';
 import { categoryFallback, imageSource } from '../data/assetCatalog';
 import StatusBadge from './StatusBadge';
 import { features } from '../config/features';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import useEffectsLevel from '../hooks/useEffectsLevel';
+import ProviderCardGlow from '../../components/ui/ProviderCardGlow';
 
 const priceLabel = (n) => (n ? '£'.repeat(n) : null);
 
@@ -21,52 +24,86 @@ const deriveStatus = (provider) => {
 };
 
 // Horizontal card style (used on Home screen)
-export function ProviderCardCompact({ provider, onPress, onSave, saved }) {
+export function ProviderCardCompact({ provider, onPress, onSave, saved, index = 0 }) {
   const { palette } = useChodhiQTheme();
+  const entrance =
+    useEffectsLevel() === 'full'
+      ? FadeInDown.delay(Math.min(index, 8) * 36).duration(230)
+      : undefined;
   return (
-    <PressableScale
-      style={[styles.compactCard, provider.isDataVerified && styles.dataVerifiedGlow]}
-      onPress={onPress}
-    >
-      <View
-        style={[
-          styles.compactInner,
-          { backgroundColor: palette.surface, borderColor: palette.border },
-        ]}
-      >
-        <View>
-          <Image
-            resizeMethod="resize"
-            source={imageSource(
-              provider.image,
-              categoryFallback(provider.category, provider.categoryId),
-            )}
-            style={styles.compactImage}
-            resizeMode="cover"
-          />
-          {provider.isVerified && (
-            <View style={styles.verifiedBadge}>
-              <BadgeCheck size={12} color={colors.primary} />
-              <Text style={styles.verifiedText}>Verified</Text>
+    <Animated.View entering={entrance}>
+      <View style={[styles.compactCard, provider.isDataVerified && styles.dataVerifiedGlow]}>
+        <View
+          style={[
+            styles.compactInner,
+            { backgroundColor: palette.surface, borderColor: palette.border },
+          ]}
+        >
+          <PressableScale
+            accessibilityLabel={`View ${provider.name}`}
+            style={styles.compactMain}
+            onPress={onPress}
+          >
+            <View style={styles.compactMedia}>
+              <Image
+                resizeMethod="resize"
+                source={imageSource(
+                  provider.image,
+                  categoryFallback(provider.category, provider.categoryId),
+                )}
+                style={styles.compactImage}
+                resizeMode="cover"
+              />
+              {provider.isVerified && (
+                <View style={styles.verifiedBadge}>
+                  <BadgeCheck size={12} color={colors.primary} />
+                  <Text style={styles.verifiedText}>Verified</Text>
+                </View>
+              )}
+              {!provider.isVerified && provider.isDataVerified && (
+                <View style={styles.dataCheckedBadge}>
+                  <BadgeCheck size={12} color="#08724F" />
+                  <Text style={styles.dataCheckedText}>Data checked</Text>
+                </View>
+              )}
+              {features.customAds && !!provider.sponsoredRank && (
+                <View style={styles.promotedBadge}>
+                  <Crown size={11} color="#2A1708" />
+                  <Text style={styles.promotedText}>Promoted</Text>
+                </View>
+              )}
+              {!!deriveStatus(provider) && (
+                <View style={styles.statusBadgeSlot}>
+                  <StatusBadge status={deriveStatus(provider)} size="sm" />
+                </View>
+              )}
             </View>
-          )}
-          {!provider.isVerified && provider.isDataVerified && (
-            <View style={styles.dataCheckedBadge}>
-              <BadgeCheck size={12} color="#08724F" />
-              <Text style={styles.dataCheckedText}>Data checked</Text>
+            <Text
+              style={[typography.label, { marginTop: spacing.sm, color: palette.text }]}
+              numberOfLines={1}
+            >
+              {provider.name}
+            </Text>
+            <Text style={[typography.caption, { color: palette.text2 }]}>{provider.category}</Text>
+            <View style={styles.ratingRow}>
+              <Star
+                size={12}
+                color={provider.reviewCount > 0 ? colors.star : palette.muted}
+                fill={provider.reviewCount > 0 ? colors.star : 'transparent'}
+              />
+              <Text style={[styles.ratingText, { color: palette.text2 }]}>
+                {provider.reviewCount > 0 ? `${provider.rating} (${provider.reviewCount})` : 'New'}
+              </Text>
+              {!!priceLabel(provider.priceRange) && (
+                <>
+                  <Text style={styles.dot}>·</Text>
+                  <Text style={[styles.ratingText, { color: palette.text2 }]}>
+                    {priceLabel(provider.priceRange)}
+                  </Text>
+                </>
+              )}
             </View>
-          )}
-          {features.customAds && !!provider.sponsoredRank && (
-            <View style={styles.promotedBadge}>
-              <Crown size={11} color="#2A1708" />
-              <Text style={styles.promotedText}>Promoted</Text>
-            </View>
-          )}
-          {!!deriveStatus(provider) && (
-            <View style={styles.statusBadgeSlot}>
-              <StatusBadge status={deriveStatus(provider)} size="sm" />
-            </View>
-          )}
+          </PressableScale>
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel={
@@ -83,126 +120,30 @@ export function ProviderCardCompact({ provider, onPress, onSave, saved }) {
             />
           </TouchableOpacity>
         </View>
-        <Text
-          style={[typography.label, { marginTop: spacing.sm, color: palette.text }]}
-          numberOfLines={1}
-        >
-          {provider.name}
-        </Text>
-        <Text style={[typography.caption, { color: palette.text2 }]}>{provider.category}</Text>
-        <View style={styles.ratingRow}>
-          <Star
-            size={12}
-            color={provider.reviewCount > 0 ? colors.star : palette.muted}
-            fill={provider.reviewCount > 0 ? colors.star : 'transparent'}
-          />
-          <Text style={[styles.ratingText, { color: palette.text2 }]}>
-            {provider.reviewCount > 0 ? `${provider.rating} (${provider.reviewCount})` : 'New'}
-          </Text>
-          {!!priceLabel(provider.priceRange) && (
-            <>
-              <Text style={styles.dot}>·</Text>
-              <Text style={[styles.ratingText, { color: palette.text2 }]}>
-                {priceLabel(provider.priceRange)}
-              </Text>
-            </>
-          )}
-        </View>
       </View>
-    </PressableScale>
+    </Animated.View>
   );
 }
 
 // Full-width list row style (used on Explore/Search results)
-export function ProviderCardRow({ provider, onPress, onSave, saved }) {
-  const { palette } = useChodhiQTheme();
+export function ProviderCardRow({ provider, onPress, onSave, saved, index = 0 }) {
   return (
-    <PressableScale
-      style={[styles.rowCard, provider.isDataVerified && styles.dataVerifiedGlow]}
+    <ProviderCardGlow
+      variant="row"
+      provider={provider}
+      saved={saved}
+      onSave={onSave}
       onPress={onPress}
-    >
-      <View
-        style={[styles.rowInner, { backgroundColor: palette.surface, borderColor: palette.border }]}
-      >
-        <Image
-          resizeMethod="resize"
-          source={imageSource(
-            provider.image,
-            categoryFallback(provider.category, provider.categoryId),
-          )}
-          style={styles.rowImage}
-          resizeMode="cover"
-        />
-        <View style={{ flex: 1, minWidth: 0, marginLeft: spacing.md }}>
-          <View style={styles.rowHeader}>
-            <Text style={[typography.label, { flex: 1, color: palette.text }]} numberOfLines={1}>
-              {provider.name}
-            </Text>
-            {provider.isVerified && <BadgeCheck size={15} color={colors.primary} />}
-            {!provider.isVerified && provider.isDataVerified && (
-              <View style={styles.rowDataCheckedBadge}>
-                <BadgeCheck size={12} color="#08724F" />
-                <Text style={styles.dataCheckedText}>Data checked</Text>
-              </View>
-            )}
-          </View>
-          <Text style={[typography.caption, { color: palette.text2 }]}>{provider.category}</Text>
-          <View style={styles.addressRow}>
-            <MapPin size={12} color={colors.textMuted} />
-            <Text style={[styles.addressText, { color: palette.muted }]} numberOfLines={1}>
-              {provider.baseCity}
-              {provider.serviceAreas?.length > 1
-                ? ` · covers ${provider.serviceAreas.slice(0, 2).join(', ')}`
-                : ''}
-            </Text>
-          </View>
-          <View style={styles.ratingRow}>
-            <Star
-              size={12}
-              color={provider.reviewCount > 0 ? colors.star : palette.muted}
-              fill={provider.reviewCount > 0 ? colors.star : 'transparent'}
-            />
-            <Text style={[styles.ratingText, { color: palette.text2 }]}>
-              {provider.reviewCount > 0 ? `${provider.rating} (${provider.reviewCount})` : 'New'}
-            </Text>
-            {!!priceLabel(provider.priceRange) && (
-              <>
-                <Text style={styles.dot}>·</Text>
-                <Text style={[styles.ratingText, { color: palette.text2 }]}>
-                  {priceLabel(provider.priceRange)}
-                </Text>
-              </>
-            )}
-          </View>
-          {!!deriveStatus(provider) && (
-            <View style={styles.rowStatus}>
-              <StatusBadge status={deriveStatus(provider)} size="sm" />
-            </View>
-          )}
-        </View>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={
-            saved ? `Remove ${provider.name} from saved` : `Save ${provider.name}`
-          }
-          accessibilityState={{ selected: saved }}
-          style={styles.heartButtonRow}
-          onPress={onSave}
-        >
-          <Heart
-            size={18}
-            color={saved ? colors.accentHalal : colors.textSecondary}
-            fill={saved ? colors.accentHalal : 'none'}
-          />
-        </TouchableOpacity>
-      </View>
-    </PressableScale>
+      index={index}
+      saveTestID="btn-save-business"
+    />
   );
 }
 
 const styles = StyleSheet.create({
   compactCard: { width: 190, marginRight: spacing.md, borderRadius: radius.lg, ...shadows.soft },
   compactInner: {
+    position: 'relative',
     padding: 7,
     paddingBottom: 14,
     backgroundColor: colors.card,
@@ -277,6 +218,8 @@ const styles = StyleSheet.create({
   promotedText: { fontSize: 9, fontWeight: '900', color: '#2A1708', letterSpacing: 0.3 },
   statusBadgeSlot: { position: 'absolute', right: 8, bottom: 8 },
   rowStatus: { marginTop: 5 },
+  compactMain: { alignSelf: 'stretch', alignItems: 'stretch' },
+  compactMedia: { position: 'relative' },
   heartButton: {
     position: 'absolute',
     top: 8,
@@ -291,6 +234,7 @@ const styles = StyleSheet.create({
 
   rowCard: { borderRadius: radius.lg, marginBottom: 12, ...shadows.soft },
   rowInner: {
+    position: 'relative',
     flexDirection: 'row',
     backgroundColor: colors.card,
     borderRadius: radius.lg,
@@ -301,6 +245,7 @@ const styles = StyleSheet.create({
   },
   rowImage: { width: 94, height: 94, borderRadius: 14, backgroundColor: colors.border },
   rowHeader: { flexWrap: 'wrap', flexDirection: 'row', alignItems: 'center', gap: 6 },
+  rowMain: { flex: 1, flexDirection: 'row', minWidth: 0, alignItems: 'flex-start' },
   addressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 },
   addressText: { fontSize: 12, color: colors.textMuted, flexShrink: 1 },
   heartButtonRow: { padding: spacing.sm, alignSelf: 'flex-start' },

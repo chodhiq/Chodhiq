@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMotionPreferencesStore } from '../../src/lib/motionPreferencesStore.js';
 
-function fixture() {
+function fixture(storedEffectsLevel = null) {
   const callbacks = {};
   let added = 0;
   let removed = 0;
+  let systemReads = 0;
+  let storageReads = 0;
   let resolve;
   const pending = new Promise((done) => {
     resolve = done;
@@ -19,11 +21,41 @@ function fixture() {
       },
     };
   };
+  const storage = {
+    getItem: async () => {
+      storageReads += 1;
+      return storedEffectsLevel;
+    },
+    setItem: async (_key, value) => {
+      storedEffectsLevel = value;
+    },
+    removeItem: async () => {
+      storedEffectsLevel = null;
+    },
+  };
   const store = createMotionPreferencesStore(
-    { isReduceMotionEnabled: () => pending, addEventListener },
+    {
+      isReduceMotionEnabled: () => {
+        systemReads += 1;
+        return pending;
+      },
+      addEventListener,
+    },
     { currentState: 'active', addEventListener },
+    storage,
   );
-  return { store, callbacks, resolve, counts: () => ({ added, removed }) };
+  return {
+    store,
+    callbacks,
+    resolve,
+    storage,
+    reads: () => ({ storageReads, systemReads }),
+    counts: () => ({ added, removed }),
+  };
+}
+
+function flushAsyncReads() {
+  return new Promise((resolve) => setImmediate(resolve));
 }
 
 test('many animated controls share native listeners and remove them after the last unmount', () => {
@@ -43,14 +75,20 @@ test('background and inactive states suspend ambient motion without duplicate no
     updates += 1;
   });
   resolve(false);
-  await Promise.resolve();
-  assert.deepEqual(store.getSnapshot(), { reducedMotion: false, foreground: true });
+  await flushAsyncReads();
+  assert.deepEqual(store.getSnapshot(), {
+    reducedMotion: false,
+    systemReducedMotion: false,
+    visualEffectsLevel: null,
+    visualEffectsLoaded: true,
+    foreground: true,
+  });
   callbacks.change('background');
   const background = store.getSnapshot();
   callbacks.change('inactive');
   assert.equal(store.getSnapshot(), background);
   callbacks.change('active');
-  assert.equal(updates, 3);
+  assert.equal(updates, 4);
   dispose();
 });
 
@@ -72,4 +110,28 @@ test('a preference read arriving after teardown cannot update the store', async 
   resolve(false);
   await Promise.resolve();
   assert.equal(store.getSnapshot(), previous);
+});
+
+test('stored visual effects override system motion and device policy, and persist changes', async () => {
+  const { store, storage } = fixture('off');
+  const dispose = store.subscribe(() => {});
+  await flushAsyncReads();
+  assert.equal(store.getSnapshot().visualEffectsLevel, 'off');
+  assert.equal(store.getSnapshot().reducedMotion, true);
+
+  await store.setVisualEffectsLevel('full');
+  assert.equal(store.getSnapshot().visualEffectsLevel, 'full');
+  assert.equal(store.getSnapshot().reducedMotion, false);
+  assert.equal(await storage.getItem(), 'full');
+  dispose();
+});
+
+test('reads the stored setting before querying system reduced motion', async () => {
+  const { store, reads } = fixture('off');
+  const dispose = store.subscribe(() => {});
+  assert.deepEqual(reads(), { storageReads: 0, systemReads: 0 });
+  await flushAsyncReads();
+  assert.deepEqual(reads(), { storageReads: 1, systemReads: 1 });
+  assert.equal(store.getSnapshot().visualEffectsLevel, 'off');
+  dispose();
 });

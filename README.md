@@ -40,6 +40,8 @@ npm run verify:all
 
 This verifies the customer app, administration dashboard, business dashboard, and coming-soon site. Useful targeted commands include `npm test`, `npm run verify:release`, `npm run launch:config`, `npm run test:db`, and `npm run test:e2e:staging`.
 
+Run the customer-app Maestro flows on a connected Android emulator/device with `npm run e2e`. See [e2e/README.md](./e2e/README.md) for setup, test data, credentials, iOS runs, and failure artifacts.
+
 Passing local checks is not production approval. Required staging, signed-device, security, accessibility, monitoring, legal, and operational evidence is tracked in `project-docs/QA_RELEASE_EVIDENCE.md`.
 
 ## Backend policy

@@ -1,12 +1,11 @@
 // @ts-check
+import { formatDate, formatDateTime, formatYear } from '../lib/dateTime.js';
+
 /** @param {string | null | undefined} value */
 export const formatReviewDate = (value) => {
   if (!value) return '';
   if (value === 'Today') return value;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? ''
-    : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  return formatDate(value);
 };
 
 /** @param {any} row @param {any[]} providers */
@@ -25,9 +24,9 @@ export const formatQuote = (row, providers) => ({
         : row.status
           ? row.status[0].toUpperCase() + row.status.slice(1)
           : 'Status unconfirmed',
-  createdAt: row.created_at ? new Date(row.created_at).toLocaleDateString() : 'Today',
+  createdAt: row.created_at ? formatDate(row.created_at) : 'Today',
   responseMessage: row.response_message || '',
-  respondedAt: row.responded_at ? new Date(row.responded_at).toLocaleDateString() : null,
+  respondedAt: row.responded_at ? formatDate(row.responded_at) : null,
 });
 
 /** @param {any} row */
@@ -36,7 +35,7 @@ export const formatNotification = (row) => ({
   title: row.title,
   body: row.body,
   read: Boolean(row.read_at),
-  time: row.created_at ? new Date(row.created_at).toLocaleDateString() : '',
+  time: row.created_at ? formatDateTime(row.created_at) : '',
   ...(row.type ? { type: row.type } : {}),
   ...(row.entity_type ? { entityType: row.entity_type } : {}),
   ...(row.entity_type === 'community_post' && row.entity_id
@@ -55,6 +54,6 @@ export function mapProfile(row = {}, user = {}, localAvatar = null) {
     phone: row.phone || '',
     location: row.city || row.location || 'Birmingham',
     avatarUri: localAvatar || row.avatar_url || row.avatarUri || null,
-    memberSince: new Date(row.created_at || user.created_at || Date.now()).getFullYear().toString(),
+    memberSince: formatYear(row.created_at || user.created_at || new Date()),
   };
 }

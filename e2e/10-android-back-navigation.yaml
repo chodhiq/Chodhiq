@@ -1,0 +1,105 @@
+appId: com.chodhiq.app
+tags:
+  - android-only
+---
+- launchApp:
+    clearState: true
+    permissions:
+      photos: allow
+- tapOn:
+    id: btn-sign-in
+- tapOn:
+    id: input-email
+- inputText: '${MAESTRO_EMAIL}'
+- tapOn:
+    id: input-password
+- inputText: '${MAESTRO_PASSWORD}'
+- tapOn:
+    id: btn-sign-in
+- assertVisible:
+    id: tab-home
+
+# The account and listing sheets should all dismiss without leaving the screen.
+- tapOn:
+    id: btn-home-search
+- tapOn:
+    text: Open search filters
+- assertVisible: Filters
+- pressKey: BACK
+- assertVisible: Search
+
+- tapOn:
+    text: Search businesses and services...
+- inputText: '${MAESTRO_PROVIDER_QUERY}'
+- tapOn:
+    text: 'View ${MAESTRO_PROVIDER_NAME}'
+- tapOn:
+    id: btn-request-quote
+- assertVisible: Request a Quote
+- pressKey: BACK
+- assertVisible:
+    id: btn-request-quote
+- tapOn:
+    id: btn-book-provider
+- assertVisible: Request a booking
+- pressKey: BACK
+- assertVisible:
+    id: btn-request-quote
+
+# Dismiss the full-screen community composer, then return to the tab feed.
+- tapOn:
+    text: Go back
+- tapOn:
+    text: Back to Home
+- scrollUntilVisible:
+    element:
+      id: btn-home-community
+- tapOn:
+    id: btn-home-community
+- assertVisible:
+    id: btn-close-composer
+- pressKey: BACK
+- assertNotVisible:
+    id: btn-close-composer
+- pressKey: BACK
+- assertVisible:
+    id: btn-home-search
+
+- tapOn:
+    id: tab-community
+- scrollUntilVisible:
+    element:
+      text: Checking
+- tapOn:
+    id: btn-post-comment
+    index: 0
+- assertVisible: "Comments \\(1\\)"
+- pressKey: BACK
+- assertNotVisible: "Comments \\(1\\)"
+
+- tapOn:
+    id: tab-profile
+- tapOn:
+    id: btn-change-profile-picture
+- assertVisible: Photos
+- pressKey: BACK
+- assertVisible:
+    id: btn-change-profile-picture
+- tapOn:
+    id: btn-open-logout
+- pressKey: BACK
+- assertVisible:
+    id: btn-open-logout
+
+- tapOn: Account & preferences
+- tapOn:
+    id: btn-profile-privacy
+- tapOn:
+    text: Type DELETE to confirm account deletion
+- inputText: DELETE
+- tapOn:
+    id: btn-delete-account
+- assertVisible: Permanently delete account?
+- pressKey: BACK
+- assertVisible:
+    id: btn-delete-account

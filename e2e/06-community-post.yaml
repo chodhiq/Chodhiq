@@ -1,0 +1,52 @@
+appId: com.chodhiq.app
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: btn-sign-in
+- tapOn:
+    id: input-email
+- inputText: '${MAESTRO_EMAIL}'
+- tapOn:
+    id: input-password
+- inputText: '${MAESTRO_PASSWORD}'
+- tapOn:
+    id: btn-sign-in
+- assertVisible:
+    id: tab-home
+
+- tapOn:
+    id: tab-community
+- assertVisible: Community feed
+- tapOn:
+    text: Share something with your community...
+- inputText: '${MAESTRO_POST_TEXT}'
+- tapOn:
+    id: btn-post
+- assertVisible: Posting
+- assertVisible:
+    text: Posted successfully
+- assertVisible:
+    text: '${MAESTRO_POST_TEXT}'
+- tapOn:
+    id: btn-post-like
+    index: 0
+- assertVisible: 'Unlike post, 1 likes'
+- tapOn:
+    id: btn-post-bookmark
+    index: 0
+- assertVisible: Remove bookmark
+- tapOn:
+    id: btn-post-comment
+    index: 0
+- assertVisible:
+    text: "Comments \\(0\\)"
+- tapOn:
+    text: Write your comment...
+- inputText: '${MAESTRO_COMMENT_TEXT}'
+- tapOn:
+    id: btn-post-comment-submit
+- assertVisible:
+    text: '${MAESTRO_COMMENT_TEXT}'
+- tapOn:
+    id: btn-post-comment-close

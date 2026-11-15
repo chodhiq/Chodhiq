@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { PressableScale as Pressable } from './Motion';
 import Text from './AppText';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useChodhiQTheme } from '../context/ThemeContext';
@@ -81,7 +82,7 @@ export default function RegionEmblem({ region, size = 56, selected = false, onPr
           selected && { borderWidth: 2, borderColor: palette.saffron },
         ]}
       >
-        <Svg width={size} height={size} viewBox="0 0 48 48">
+        <Svg pointerEvents="none" width={size} height={size} viewBox="0 0 48 48">
           <Circle cx={24} cy={24} r={24} fill={selected ? palette.primary : config.color} />
           {config.render()}
         </Svg>

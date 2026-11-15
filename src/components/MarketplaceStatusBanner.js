@@ -1,18 +1,19 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { PressableScale as Pressable } from './Motion';
 import Text from './AppText';
+import { formatDateTime } from '../lib/dateTime';
 
 export default function MarketplaceStatusBanner({
   offline,
+  refreshError,
   loading,
   lastUpdatedAt,
   onRetry,
   palette,
 }) {
-  if (!offline || loading) return null;
-  const updated = lastUpdatedAt ? new Date(lastUpdatedAt) : null;
-  const lastUpdatedLabel =
-    updated && !Number.isNaN(updated.getTime()) ? updated.toLocaleString() : null;
+  if ((!offline && !refreshError) || loading) return null;
+  const lastUpdatedLabel = lastUpdatedAt ? formatDateTime(lastUpdatedAt) : null;
 
   return (
     <View
@@ -21,17 +22,20 @@ export default function MarketplaceStatusBanner({
     >
       <View style={styles.message}>
         <Text style={[styles.title, { color: palette.text }]}>
-          {lastUpdatedLabel
+          {offline
             ? 'Offline — showing saved directory data'
-            : 'Directory could not be refreshed'}
+            : refreshError?.startsWith('Pending changes could not sync')
+              ? 'Pending changes could not be synced'
+              : 'Directory could not be refreshed'}
         </Text>
         <Text style={[styles.detail, { color: palette.text2 }]}>
           {lastUpdatedLabel
             ? `Last updated ${lastUpdatedLabel}`
-            : 'No saved directory snapshot is available yet.'}
+            : refreshError || 'No saved directory snapshot is available yet.'}
         </Text>
       </View>
       <Pressable
+        testID="btn-retry-directory"
         accessibilityRole="button"
         accessibilityLabel={loading ? 'Retrying directory refresh' : 'Retry directory refresh'}
         disabled={loading}

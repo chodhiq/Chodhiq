@@ -1,11 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Alert as NativeAlert, Modal, Pressable, View } from 'react-native';
+import { Alert as NativeAlert, Modal, View } from 'react-native';
 import { CircleAlert } from 'lucide-react-native';
 import Text from './AppText';
 import { useChodhiQTheme } from '../context/ThemeContext';
+import GlowButton from '../../components/ui/GlowButton';
+import GlassView from './GlassView';
 
 let showDialog;
 export const AppAlert = {
+  /**
+   * @param {string} title
+   * @param {string} [message]
+   * @param {Array<{text: string, style?: 'cancel' | 'destructive' | 'ghost', onPress?: () => void}>} [buttons]
+   * @param {object} [options]
+   */
   alert(title, message, buttons = [{ text: 'Got it' }], options = {}) {
     if (showDialog)
       showDialog({
@@ -45,14 +53,16 @@ export function AppDialogProvider({ children }) {
             backgroundColor: '#001B1866',
           }}
         >
-          <View
+          <GlassView
             accessibilityViewIsModal
+            intensity={48}
             style={{
               width: '100%',
               maxWidth: 400,
               padding: 24,
               borderRadius: 24,
               backgroundColor: palette.surface,
+              borderColor: palette.primary,
               gap: 16,
             }}
           >
@@ -76,32 +86,27 @@ export function AppDialogProvider({ children }) {
               {dialog?.message}
             </Text>
             {dialog?.buttons.map((button, index) => (
-              <Pressable
+              <GlowButton
                 key={index}
-                accessibilityRole="button"
+                label={button.text || 'Got it'}
+                variant={
+                  button.style === 'cancel'
+                    ? 'secondary'
+                    : button.style === 'ghost'
+                      ? 'ghost'
+                      : button.style === 'destructive'
+                        ? 'danger'
+                        : 'primary'
+                }
+                size="md"
+                stretch
                 onPress={() => {
                   setDialog(null);
                   button.onPress?.();
                 }}
-                style={{
-                  minHeight: 48,
-                  borderRadius: 14,
-                  padding: 14,
-                  alignItems: 'center',
-                  backgroundColor: button.style === 'cancel' ? palette.surfaceAlt : palette.primary,
-                }}
-              >
-                <Text
-                  style={{
-                    fontWeight: '700',
-                    color: button.style === 'cancel' ? palette.text : palette.onPrimary,
-                  }}
-                >
-                  {button.text || 'Got it'}
-                </Text>
-              </Pressable>
+              />
             ))}
-          </View>
+          </GlassView>
         </View>
       </Modal>
     </>

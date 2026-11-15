@@ -202,8 +202,8 @@ test('push taps route general notifications and reject another account destinati
   assert.equal(notificationDestination({}, null), null);
   const id = '96300000-0000-4000-8000-000000000020';
   assert.deepEqual(notificationDestination({ entityType: 'community_post', entityId: id }, 'me'), {
-    route: 'Community',
-    params: { postId: id },
+    route: 'MainTabs',
+    params: { screen: 'CommunityTab', params: { postId: id } },
   });
 });
 

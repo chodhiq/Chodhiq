@@ -6,6 +6,8 @@ import { CalendarDays, MapPin } from 'lucide-react-native';
 import { radius, shadows, spacing } from '../theme/theme';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { imageSource } from '../data/assetCatalog';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import useEffectsLevel from '../hooks/useEffectsLevel';
 
 export function SponsoredBadge() {
   const { palette } = useChodhiQTheme();
@@ -16,62 +18,74 @@ export function SponsoredBadge() {
   );
 }
 
-export function OfferCard({ item, onPress }) {
+export function OfferCard({ item, onPress, index = 0 }) {
   const { palette } = useChodhiQTheme();
+  const entrance =
+    useEffectsLevel() === 'full'
+      ? FadeInDown.delay(Math.min(index, 8) * 36).duration(230)
+      : undefined;
   return (
-    <TouchableOpacity
-      activeOpacity={0.88}
-      onPress={onPress}
-      style={[styles.offer, { backgroundColor: item.tone || palette.surface }]}
-    >
-      <Image
-        resizeMethod="resize"
-        source={imageSource(item.image)}
-        style={styles.offerImage}
-        resizeMode="cover"
-      />
-      <View style={styles.shade} />
-      <View style={styles.offerCopy}>
-        <SponsoredBadge />
-        <Text style={styles.offerTitle}>{item.title}</Text>
-        <Text style={styles.offerSubtitle}>{item.subtitle}</Text>
-        <Text style={styles.meta}>
-          {item.provider} · {item.city}
-        </Text>
-      </View>
-    </TouchableOpacity>
+    <Animated.View entering={entrance}>
+      <TouchableOpacity
+        activeOpacity={0.88}
+        onPress={onPress}
+        style={[styles.offer, { backgroundColor: item.tone || palette.surface }]}
+      >
+        <Image
+          resizeMethod="resize"
+          source={imageSource(item.image)}
+          style={styles.offerImage}
+          resizeMode="cover"
+        />
+        <View style={styles.shade} />
+        <View style={styles.offerCopy}>
+          <SponsoredBadge />
+          <Text style={styles.offerTitle}>{item.title}</Text>
+          <Text style={styles.offerSubtitle}>{item.subtitle}</Text>
+          <Text style={styles.meta}>
+            {item.provider} · {item.city}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
-export function EventCard({ item, onPress }) {
+export function EventCard({ item, onPress, index = 0 }) {
   const { palette } = useChodhiQTheme();
+  const entrance =
+    useEffectsLevel() === 'full'
+      ? FadeInDown.delay(Math.min(index, 8) * 36).duration(230)
+      : undefined;
   return (
-    <TouchableOpacity
-      activeOpacity={0.88}
-      onPress={onPress}
-      style={[styles.event, { backgroundColor: palette.surface, borderColor: palette.border }]}
-    >
-      <Image
-        resizeMethod="resize"
-        source={imageSource(item.image)}
-        style={styles.eventImage}
-        resizeMode="cover"
-      />
-      <View style={styles.eventBody}>
-        <View style={[styles.date, { backgroundColor: palette.primarySoft }]}>
-          <CalendarDays size={14} color={palette.primary} />
-          <Text style={[styles.dateText, { color: palette.primary }]}>{item.date}</Text>
+    <Animated.View entering={entrance}>
+      <TouchableOpacity
+        activeOpacity={0.88}
+        onPress={onPress}
+        style={[styles.event, { backgroundColor: palette.surface, borderColor: palette.border }]}
+      >
+        <Image
+          resizeMethod="resize"
+          source={imageSource(item.image)}
+          style={styles.eventImage}
+          resizeMode="cover"
+        />
+        <View style={styles.eventBody}>
+          <View style={[styles.date, { backgroundColor: palette.primarySoft }]}>
+            <CalendarDays size={14} color={palette.primary} />
+            <Text style={[styles.dateText, { color: palette.primary }]}>{item.date}</Text>
+          </View>
+          <Text numberOfLines={2} style={[styles.name, { color: palette.text }]}>
+            {item.title}
+          </Text>
+          <Text style={[styles.secondary, { color: palette.text2 }]}>{item.organiser}</Text>
+          <View style={styles.inline}>
+            <MapPin size={12} color={palette.primary} />
+            <Text style={[styles.metaDark, { color: palette.muted }]}>{item.city}</Text>
+          </View>
         </View>
-        <Text numberOfLines={2} style={[styles.name, { color: palette.text }]}>
-          {item.title}
-        </Text>
-        <Text style={[styles.secondary, { color: palette.text2 }]}>{item.organiser}</Text>
-        <View style={styles.inline}>
-          <MapPin size={12} color={palette.primary} />
-          <Text style={[styles.metaDark, { color: palette.muted }]}>{item.city}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 

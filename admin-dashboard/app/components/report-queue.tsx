@@ -205,7 +205,7 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
   }
 
   return (
-    
+
       <Page
         title={kind === 'provider' ? 'Provider-report queue' : 'Reported community content'}
         note="Realtime moderation with server-validated transitions and audited decisions."
@@ -384,6 +384,6 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
           </section>
         )}
       </Page>
-    
+
   );
 }

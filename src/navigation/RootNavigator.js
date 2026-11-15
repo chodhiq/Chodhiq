@@ -1,22 +1,36 @@
 import { motion } from '../theme/motion';
 import { notificationDestination } from '../lib/notificationDestination';
 import { isSafeAppLink } from '../lib/authCallback';
-import useReducedMotion from '../hooks/useMotionPreferences';
+import useEffectsLevel from '../hooks/useEffectsLevel';
 import { withScreenMotion } from '../components/Motion';
-import React, { useEffect, useMemo, useRef } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import Text from '../components/AppText';
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  createNavigationContainerRef,
+  useIsFocused,
+} from '@react-navigation/native';
 import { getNotificationsModule } from '../lib/notificationRuntime';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from '../screens/HomeScreen';
+import CommunityScreen from '../screens/CommunityScreen';
+import CommunityFeedScreen from '../../screens/CommunityFeedScreen';
+import DevUIGallery from '../../screens/DevUIGallery';
 import ExploreScreen from '../screens/ExploreScreen';
 import SavedScreen from '../screens/SavedScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ProviderDetailScreen from '../screens/ProviderDetailScreen';
-import CommunityScreen from '../screens/CommunityScreen';
 import CommunityProfileScreen from '../screens/CommunityProfileScreen';
 import OpeningScreen from '../screens/OpeningScreen';
 import EmailConfirmationScreen from '../screens/EmailConfirmationScreen';
@@ -42,43 +56,143 @@ import { useChodhiQTheme } from '../context/ThemeContext';
 import { useAppState } from '../context/AppStateContext';
 import * as ExpoLinking from 'expo-linking';
 import GlassTabBar from '../components/GlassTabBar';
+import { BlurTargetView } from 'expo-blur';
+import { setActiveScreenName } from '../lib/activeScreen';
+import PendingWriteAlerts from '../components/PendingWriteAlerts';
+import ProfileScreenErrorBoundary from '../components/ProfileScreenErrorBoundary';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 const notificationNavigationRef = createNavigationContainerRef();
-const AnimatedHomeScreen = withScreenMotion(HomeScreen);
-const AnimatedExploreScreen = withScreenMotion(ExploreScreen);
-const AnimatedMapScreen = withScreenMotion(MapScreen);
-const AnimatedCommunityScreen = withScreenMotion(CommunityScreen);
-const AnimatedSavedScreen = withScreenMotion(SavedScreen);
-const AnimatedProfileScreen = withScreenMotion(ProfileScreen);
+const AnimatedHomeScreen = withScreenMotion(HomeScreen, 'default');
+const AnimatedExploreScreen = withScreenMotion(ExploreScreen, 'default');
+const AnimatedMapScreen = withScreenMotion(MapScreen, 'default');
+const AnimatedCommunityScreen = withScreenMotion(CommunityScreen, 'default');
+const AnimatedCommunityFeedScreen = withScreenMotion(CommunityFeedScreen, 'default');
+const AnimatedSavedScreen = withScreenMotion(SavedScreen, 'default');
+const AnimatedProfileScreen = withScreenMotion(ProfileScreen, 'subtle');
+function ProfileTabScreen(props) {
+  return (
+    <ProfileScreenErrorBoundary navigation={props.navigation}>
+      <AnimatedProfileScreen {...props} />
+    </ProfileScreenErrorBoundary>
+  );
+}
+const AnimatedOpeningScreen = withScreenMotion(OpeningScreen, 'intense');
+const AnimatedProviderDetailScreen = withScreenMotion(ProviderDetailScreen, 'default');
+const AnimatedWelcomeScreen = withScreenMotion(WelcomeScreen, 'intense');
+const AnimatedEmailConfirmationScreen = withScreenMotion(EmailConfirmationScreen, 'intense');
+const AnimatedResetPasswordScreen = withScreenMotion(ResetPasswordScreen, 'intense');
+const AnimatedLocationScreen = withScreenMotion(LocationScreen, 'subtle');
+const AnimatedNotificationsScreen = withScreenMotion(NotificationsScreen, 'subtle');
+const AnimatedQuoteRequestsScreen = withScreenMotion(QuoteRequestsScreen, 'default');
+const AnimatedBookingsScreen = withScreenMotion(BookingsScreen, 'default');
+const AnimatedReviewsScreen = withScreenMotion(ReviewsScreen, 'default');
+const AnimatedEditProfileScreen = withScreenMotion(EditProfileScreen, 'subtle');
+const AnimatedSettingsScreen = withScreenMotion(SettingsScreen, 'subtle');
+const AnimatedPrivacyScreen = withScreenMotion(PrivacyScreen, 'subtle');
+const AnimatedHelpScreen = withScreenMotion(HelpScreen, 'subtle');
+const AnimatedBecomeProviderScreen = withScreenMotion(BecomeProviderScreen, 'subtle');
+const AnimatedClaimListingScreen = withScreenMotion(ClaimListingScreen, 'subtle');
+const AnimatedCategoriesScreen = withScreenMotion(CategoriesScreen, 'default');
+const AnimatedCreatePostScreen = withScreenMotion(CreatePostScreen, 'subtle');
+const AnimatedCommunityProfileScreen = withScreenMotion(CommunityProfileScreen, 'subtle');
+const AnimatedOffersScreen = withScreenMotion(OffersScreen, 'default');
+const AnimatedEventsScreen = withScreenMotion(EventsScreen, 'default');
+const AnimatedStandaloneMapScreen = withScreenMotion(MapScreen, 'default');
+
+const TabBlurTargetRegistry = createContext(null);
+
+function createTabBlurTargetScreen(ScreenComponent, routeName) {
+  function TabScreenWithBlurTarget(props) {
+    const registerTarget = useContext(TabBlurTargetRegistry);
+    const focused = useIsFocused();
+    const targetRef = useRef(null);
+
+    useEffect(() => {
+      if (focused && targetRef.current) registerTarget?.(routeName, targetRef.current);
+    }, [focused, registerTarget]);
+
+    return (
+      <BlurTargetView ref={targetRef} style={{ flex: 1 }}>
+        <ScreenComponent {...props} />
+      </BlurTargetView>
+    );
+  }
+
+  TabScreenWithBlurTarget.displayName = `BlurTarget(${ScreenComponent.displayName || ScreenComponent.name})`;
+  return TabScreenWithBlurTarget;
+}
+
+const TargetedHomeScreen = createTabBlurTargetScreen(AnimatedHomeScreen, 'Home');
+const TargetedExploreScreen = createTabBlurTargetScreen(AnimatedExploreScreen, 'Explore');
+const TargetedMapScreen = createTabBlurTargetScreen(AnimatedMapScreen, 'MapTab');
+const TargetedCommunityScreen = createTabBlurTargetScreen(
+  AnimatedCommunityFeedScreen,
+  'CommunityTab',
+);
+const TargetedSavedScreen = createTabBlurTargetScreen(AnimatedSavedScreen, 'Saved');
+const TargetedProfileScreen = createTabBlurTargetScreen(ProfileTabScreen, 'Profile');
 
 function MainTabs() {
+  const [blurTargets, setBlurTargets] = useState({});
+  const registerBlurTarget = useCallback((routeName, target) => {
+    if (!target) return;
+    setBlurTargets((current) =>
+      current[routeName] === target ? current : { ...current, [routeName]: target },
+    );
+  }, []);
+
   return (
-    <Tab.Navigator
-      tabBar={(props) => <GlassTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Tab.Screen name="Home" component={AnimatedHomeScreen} />
-      <Tab.Screen name="Explore" component={AnimatedExploreScreen} options={{ title: 'Search' }} />
-      <Tab.Screen name="MapTab" component={AnimatedMapScreen} options={{ title: 'Map' }} />
-      <Tab.Screen
-        name="CommunityTab"
-        component={AnimatedCommunityScreen}
-        options={{ title: 'Community' }}
-      />
-      <Tab.Screen name="Saved" component={AnimatedSavedScreen} />
-      <Tab.Screen name="Profile" component={AnimatedProfileScreen} />
-    </Tab.Navigator>
+    <TabBlurTargetRegistry.Provider value={registerBlurTarget}>
+      <Tab.Navigator
+        tabBar={(props) => {
+          const activeRoute = props.state.routes[props.state.index]?.name;
+          const activeTarget = blurTargets[activeRoute];
+          return (
+            <GlassTabBar
+              {...props}
+              blurTarget={activeTarget ? { current: activeTarget } : undefined}
+            />
+          );
+        }}
+        sceneContainerStyle={{ flex: 1, backgroundColor: 'transparent' }}
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Tab.Screen name="Home" component={TargetedHomeScreen} />
+        <Tab.Screen
+          name="Explore"
+          component={TargetedExploreScreen}
+          options={{ title: 'Search' }}
+        />
+        <Tab.Screen name="MapTab" component={TargetedMapScreen} options={{ title: 'Map' }} />
+        <Tab.Screen
+          name="CommunityTab"
+          component={TargetedCommunityScreen}
+          options={{ title: 'Community' }}
+        />
+        <Tab.Screen name="Saved" component={TargetedSavedScreen} />
+        <Tab.Screen name="Profile" component={TargetedProfileScreen} />
+      </Tab.Navigator>
+    </TabBlurTargetRegistry.Provider>
   );
 }
 
 export default function RootNavigator() {
   const { palette, isDark } = useChodhiQTheme();
-  const reducedMotion = useReducedMotion();
-  const { session, authReady, hasCompletedOnboarding } = useAppState();
+  const reducedMotion = useEffectsLevel() !== 'full';
+  const {
+    session,
+    authReady,
+    hasCompletedOnboarding,
+    syncStatus,
+    authWritePrompt,
+    clearAuthWritePrompt,
+    retryFailedOperation,
+    discardFailedOperation,
+  } = useAppState();
   const pendingPush = useRef(null);
   const handledPush = useRef(null);
   const openPendingPush = () => {
@@ -117,8 +231,8 @@ export default function RootNavigator() {
       dark: isDark,
       colors: {
         primary: palette.primary,
-        background: palette.background,
-        card: palette.surface,
+        background: 'transparent',
+        card: 'transparent',
         text: palette.text,
         border: palette.border,
         notification: palette.coral,
@@ -142,7 +256,7 @@ export default function RootNavigator() {
           alignItems: 'center',
           justifyContent: 'center',
           gap: 12,
-          backgroundColor: palette.background,
+          backgroundColor: 'transparent',
         }}
       >
         <ActivityIndicator size="large" color={palette.primary} />
@@ -153,7 +267,11 @@ export default function RootNavigator() {
   return (
     <NavigationContainer
       ref={notificationNavigationRef}
-      onReady={openPendingPush}
+      onReady={() => {
+        setActiveScreenName(notificationNavigationRef.getCurrentRoute()?.name);
+        openPendingPush();
+      }}
+      onStateChange={() => setActiveScreenName(notificationNavigationRef.getCurrentRoute()?.name)}
       linking={{
         filter: isSafeAppLink,
         prefixes: ['chodhiq://', ExpoLinking.createURL('/')],
@@ -161,39 +279,49 @@ export default function RootNavigator() {
       }}
       theme={navigationTheme}
     >
+      <PendingWriteAlerts
+        failedOperations={syncStatus?.failedOperations || []}
+        authRequiredOperations={syncStatus?.authRequiredOperations || []}
+        authWritePrompt={authWritePrompt}
+        onRetry={retryFailedOperation}
+        onDiscard={discardFailedOperation}
+        onSignIn={() => notificationNavigationRef.navigate('Welcome')}
+        onClearAuthPrompt={clearAuthWritePrompt}
+      />
       <Stack.Navigator
         initialRouteName={initialRouteName}
         screenOptions={{
           headerShown: false,
           animation: reducedMotion ? 'none' : 'fade',
           animationDuration: motion.navigation.duration,
-          contentStyle: { backgroundColor: palette.background },
+          contentStyle: { backgroundColor: 'transparent' },
         }}
       >
-        <Stack.Screen name="Opening" component={OpeningScreen} />
+        <Stack.Screen name="Opening" component={AnimatedOpeningScreen} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
-        <Stack.Screen name="ProviderDetail" component={ProviderDetailScreen} />
-        <Stack.Screen name="Welcome" component={WelcomeScreen} />
-        <Stack.Screen name="EmailConfirmation" component={EmailConfirmationScreen} />
-        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-        <Stack.Screen name="Location" component={LocationScreen} />
-        <Stack.Screen name="Notifications" component={NotificationsScreen} />
-        <Stack.Screen name="QuoteRequests" component={QuoteRequestsScreen} />
-        <Stack.Screen name="Bookings" component={BookingsScreen} />
-        <Stack.Screen name="Reviews" component={ReviewsScreen} />
-        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="Privacy" component={PrivacyScreen} />
-        <Stack.Screen name="Help" component={HelpScreen} />
-        <Stack.Screen name="BecomeProvider" component={BecomeProviderScreen} />
-        <Stack.Screen name="ClaimListing" component={ClaimListingScreen} />
-        <Stack.Screen name="Categories" component={CategoriesScreen} />
-        <Stack.Screen name="CreatePost" component={CreatePostScreen} />
-        <Stack.Screen name="Community" component={CommunityScreen} />
-        <Stack.Screen name="CommunityProfile" component={CommunityProfileScreen} />
-        <Stack.Screen name="Offers" component={OffersScreen} />
-        <Stack.Screen name="Events" component={EventsScreen} />
-        <Stack.Screen name="Map" component={MapScreen} />
+        <Stack.Screen name="ProviderDetail" component={AnimatedProviderDetailScreen} />
+        <Stack.Screen name="Welcome" component={AnimatedWelcomeScreen} />
+        <Stack.Screen name="EmailConfirmation" component={AnimatedEmailConfirmationScreen} />
+        <Stack.Screen name="ResetPassword" component={AnimatedResetPasswordScreen} />
+        <Stack.Screen name="Location" component={AnimatedLocationScreen} />
+        <Stack.Screen name="Notifications" component={AnimatedNotificationsScreen} />
+        <Stack.Screen name="QuoteRequests" component={AnimatedQuoteRequestsScreen} />
+        <Stack.Screen name="Bookings" component={AnimatedBookingsScreen} />
+        <Stack.Screen name="Reviews" component={AnimatedReviewsScreen} />
+        <Stack.Screen name="EditProfile" component={AnimatedEditProfileScreen} />
+        <Stack.Screen name="Settings" component={AnimatedSettingsScreen} />
+        <Stack.Screen name="Privacy" component={AnimatedPrivacyScreen} />
+        <Stack.Screen name="Help" component={AnimatedHelpScreen} />
+        <Stack.Screen name="BecomeProvider" component={AnimatedBecomeProviderScreen} />
+        <Stack.Screen name="ClaimListing" component={AnimatedClaimListingScreen} />
+        <Stack.Screen name="Categories" component={AnimatedCategoriesScreen} />
+        <Stack.Screen name="CreatePost" component={AnimatedCreatePostScreen} />
+        <Stack.Screen name="Community" component={AnimatedCommunityScreen} />
+        <Stack.Screen name="CommunityProfile" component={AnimatedCommunityProfileScreen} />
+        <Stack.Screen name="Offers" component={AnimatedOffersScreen} />
+        <Stack.Screen name="Events" component={AnimatedEventsScreen} />
+        <Stack.Screen name="Map" component={AnimatedStandaloneMapScreen} />
+        {__DEV__ ? <Stack.Screen name="DevUIGallery" component={DevUIGallery} /> : null}
       </Stack.Navigator>
     </NavigationContainer>
   );

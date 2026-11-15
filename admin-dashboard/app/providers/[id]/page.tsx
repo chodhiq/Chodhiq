@@ -8,6 +8,11 @@ import Link from '../../components/admin-link';
 import { sendNotification } from '../../../lib/notify-user';
 import { useAdminPageTitle } from '../../components/admin-page-title';
 import { LoadError, Page, Skeleton, Status } from '../../components/ui';
+import {
+  geocodeUkPostcode,
+  saveProviderCoordinates,
+  type ProviderCoordinates,
+} from '../../../../src/lib/providerGeocoding';
 
 interface Provider {
   id: string;
@@ -15,6 +20,7 @@ interface Provider {
   business_name: string;
   category_id: string | null;
   base_city: string | null;
+  base_postcode: string | null;
   phone: string | null;
   description: string | null;
   service_areas: string[] | null;
@@ -147,11 +153,24 @@ export default function ProviderDetail() {
       admin.notify('Enter a business name and a sponsored rank from 0 to 10.', 'error');
       return;
     }
+    let coordinates: ProviderCoordinates | null = null;
+    try {
+      coordinates = draft.base_postcode?.trim()
+        ? await geocodeUkPostcode(draft.base_postcode)
+        : null;
+    } catch (geocodeError) {
+      admin.notify(
+        geocodeError instanceof Error ? geocodeError.message : 'The postcode could not be geocoded.',
+        'error',
+      );
+      return;
+    }
     setSaving(true);
     const fields = {
       business_name: draft.business_name.trim(),
       category_id: draft.category_id,
       base_city: draft.base_city?.trim() || null,
+      base_postcode: draft.base_postcode?.trim() || null,
       phone: draft.phone?.trim() || null,
       description: draft.description?.trim() || null,
       service_areas: draft.service_areas ?? [],
@@ -168,7 +187,23 @@ export default function ProviderDetail() {
       },
       { previous_values: provider, new_values: fields },
     );
-    if (result.ok) await load();
+    if (result.ok) {
+      if (coordinates) {
+        try {
+          await saveProviderCoordinates(supabase, id, coordinates);
+        } catch (locationError) {
+          admin.notify(
+            `Provider details were saved, but coordinates could not be updated: ${
+              locationError instanceof Error
+                ? locationError.message
+                : 'The map location could not be saved.'
+            }`,
+            'error',
+          );
+        }
+      }
+      await load();
+    }
     setSaving(false);
   }
 
@@ -219,33 +254,33 @@ export default function ProviderDetail() {
 
   if (loading)
     return (
-      
+
         <Page title="Loading provider" note="Fetching live provider data.">
           <Skeleton />
         </Page>
-      
+
     );
   if (error)
     return (
-      
+
         <Page title="Provider unavailable" note="No changes were made.">
           <LoadError message={error} retry={load} />
         </Page>
-      
+
     );
   if (notFound || !provider || !draft)
     return (
-      
+
         <Page
           title="Provider not found"
           note="This record may have been removed or the link is invalid."
         >
           <p>Return to the provider directory and select another record.</p>
         </Page>
-      
+
     );
   return (
-    
+
       <Page
         title="Provider dossier"
         note="Profile and recent related records; lists are transparently limited to the latest 10 reviews/verifications and 25 quotes."
@@ -307,6 +342,14 @@ export default function ProviderDetail() {
                 id="provider-city"
                 value={draft.base_city || ''}
                 onChange={(event) => setDraft({ ...draft, base_city: event.target.value })}
+              />
+            </label>
+            <label htmlFor="provider-postcode">
+              Postcode
+              <input
+                id="provider-postcode"
+                value={draft.base_postcode || ''}
+                onChange={(event) => setDraft({ ...draft, base_postcode: event.target.value })}
               />
             </label>
             <label htmlFor="provider-phone">
@@ -378,6 +421,6 @@ export default function ProviderDetail() {
           </section>
         </div>
       </Page>
-    
+
   );
 }

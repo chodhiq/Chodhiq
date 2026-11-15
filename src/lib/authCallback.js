@@ -1,5 +1,12 @@
 export const EMAIL_CONFIRMATION_URL =
   'https://chodhiq-business-dashboard.chodhiq.workers.dev/auth/confirm';
+export const AUTH_CALLBACK_URL = 'chodhiq://auth/callback';
+
+export function getAuthCallbackRedirectUrl(platform, expoGo, makeRedirectUri) {
+  return platform === 'web' || expoGo
+    ? makeRedirectUri({ path: 'auth/callback' })
+    : AUTH_CALLBACK_URL;
+}
 
 // Browser OAuth and navigation can receive the same link at the same time.
 // Exchange its single-use code once, and discard the result on sign-out.

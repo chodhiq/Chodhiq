@@ -1,0 +1,69 @@
+appId: com.chodhiq.app
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: btn-sign-in
+- tapOn:
+    id: input-email
+- inputText: '${MAESTRO_EMAIL}'
+- tapOn:
+    id: input-password
+- inputText: '${MAESTRO_PASSWORD}'
+- tapOn:
+    id: btn-sign-in
+- assertVisible:
+    id: tab-home
+
+- scrollUntilVisible:
+    element:
+      id: 'btn-category-${MAESTRO_CATEGORY_ID}'
+- tapOn:
+    id: 'btn-category-${MAESTRO_CATEGORY_ID}'
+- assertVisible: Search
+- tapOn:
+    text: Search businesses and services...
+- inputText: '${MAESTRO_PROVIDER_QUERY}'
+- assertVisible:
+    text: '${MAESTRO_PROVIDER_NAME}'
+- tapOn:
+    text: 'View ${MAESTRO_PROVIDER_NAME}'
+- assertVisible:
+    id: btn-request-quote
+- tapOn:
+    id: btn-save-provider
+- tapOn:
+    id: btn-request-quote
+- assertVisible: Request a Quote
+- tapOn:
+    id: btn-send-quote
+- launchApp
+- assertVisible:
+    id: btn-request-quote
+- tapOn:
+    id: btn-book-provider
+- assertVisible: Request a booking
+- tapOn:
+    text: '${MAESTRO_SERVICE_NAME}'
+- tapOn: Tomorrow
+- tapOn: '09:00'
+- tapOn:
+    id: btn-request-booking
+- assertVisible: Booking requested
+- tapOn: OK
+- tapOn:
+    text: Go back
+- tapOn:
+    id: tab-profile
+- tapOn:
+    id: btn-profile-bookings
+- assertVisible: My bookings
+- assertVisible:
+    text: '${MAESTRO_PROVIDER_NAME}'
+- tapOn:
+    id: btn-cancel-booking
+- assertVisible: Cancel booking?
+- tapOn: Cancel booking
+- tapOn: Past
+- assertVisible:
+    text: '${MAESTRO_PROVIDER_NAME}'

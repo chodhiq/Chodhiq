@@ -1,11 +1,12 @@
 import { MotionScrollView as ScrollView } from '../components/Motion';
 import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Image, Linking, Platform, StyleSheet, Switch, View } from 'react-native';
+import { Image, Platform, StyleSheet, Switch, View } from 'react-native';
 import Text from '../components/AppText';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import * as ImagePicker from 'expo-image-picker';
+import { AppAlert as Alert } from '../components/AppDialog';
 import {
   BadgeCheck,
   Building2,
@@ -18,13 +19,20 @@ import {
   Sparkles,
 } from 'lucide-react-native';
 import { colors, radius, shadows, spacing, typography } from '../theme/theme';
+import { motion } from '../theme/motion';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { FadeInView, PressableScale } from '../components/Motion';
 import GlassView from '../components/GlassView';
 import { accountMenu } from './AccountScreens';
+import AsyncGlowButton from '../../components/ui/AsyncGlowButton';
+import GlowButton from '../../components/ui/GlowButton';
+import { GlowProfileCard } from '../../components/ui/GlowSurfaces';
+import { openPermissionSettings, showPermissionRecovery } from '../lib/permissionRecovery';
+import { getTabBarContentPadding } from '../navigation/tabBarLayout';
 
 export default function ProfileScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const {
     profile,
     saveProfile,
@@ -45,15 +53,24 @@ export default function ProfileScreen({ navigation }) {
   const { palette } = useChodhiQTheme();
   const logoutSheetRef = useRef(null);
   const [expandedSection, setExpandedSection] = useState(null);
+  const safeProfile = profile && typeof profile === 'object' ? profile : {};
+  const safeBookings = Array.isArray(bookings) ? bookings : [];
+  const activeBookingCount = safeBookings.filter((booking) =>
+    ['pending', 'confirmed'].includes(booking?.status),
+  ).length;
+  const safeSavedIds = Array.isArray(savedIds) ? savedIds : [];
+  const safeReviews = Array.isArray(reviews)
+    ? reviews.filter((review) => review.userId === session?.user?.id)
+    : [];
+  const ownedProviders = Array.isArray(access?.ownedProviders) ? access.ownedProviders : [];
   const snapPoints = useMemo(() => ['34%'], []);
-  const initials =
-    profile.name
-      ?.split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase() || 'S';
+  const initials = (typeof safeProfile.name === 'string' ? safeProfile.name : '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase() || 'S';
   const accountItems = accountMenu.filter((item) => item.group === 'account');
   const communityItems = accountMenu.filter(
     (item) => item.group === 'community' && item.route !== 'ClaimListing',
@@ -64,109 +81,161 @@ export default function ProfileScreen({ navigation }) {
   );
 
   const chooseAvatar = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.82,
-    });
-    if (!result.canceled && result.assets?.[0]?.uri)
-      await saveProfile({ ...profile, avatarUri: result.assets[0].uri });
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        showPermissionRecovery(
+          'Photo access needed',
+          'Allow photo library access to choose a profile picture.',
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.82,
+      });
+      if (!result.canceled && result.assets?.[0]?.uri)
+        await saveProfile({ ...safeProfile, avatarUri: result.assets[0].uri });
+    } catch (error) {
+      Alert.alert('Could not update profile picture', error?.message || 'Please try again.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Retry', onPress: () => void chooseAvatar() },
+      ]);
+    }
   };
 
   const confirmLogout = async () => {
     logoutSheetRef.current?.dismiss();
-    await signOut();
-    navigation.navigate('Welcome');
+    try {
+      const rootNavigation = navigation.getParent?.();
+      if (rootNavigation) {
+        await new Promise((resolve) => {
+          let removeTransitionListener = () => {};
+          const timeout = setTimeout(finishTransition, motion.navigation.duration + 100);
+          function finishTransition() {
+            clearTimeout(timeout);
+            removeTransitionListener();
+            resolve();
+          }
+          removeTransitionListener = rootNavigation.addListener('transitionEnd', (event) => {
+            if (!event.data?.closing) finishTransition();
+          });
+          rootNavigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
+        });
+      } else {
+        navigation.navigate('Welcome');
+        await new Promise((resolve) =>
+          setTimeout(resolve, motion.navigation.duration + 100),
+        );
+      }
+      await signOut();
+    } catch (error) {
+      Alert.alert('Could not log out', error?.message || 'Please try again.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Retry', onPress: () => void confirmLogout() },
+      ]);
+    }
   };
   if (!session)
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
         <View style={styles.guest}>
           <LogIn size={38} color={palette.primary} />
           <Text style={[typography.h2, { color: palette.text }]}>Sign in to your profile</Text>
           <Text style={[styles.sheetBody, { color: palette.text2, textAlign: 'center' }]}>
             Saved providers, quotes, reviews and business tools require a verified account.
           </Text>
-          <View
-            style={[
-              styles.guestTheme,
-              { backgroundColor: palette.surface, borderColor: palette.border },
-            ]}
-          >
-            <Sparkles size={18} color={palette.accent} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.guestThemeLabel, { color: palette.text }]}>
-                Glossy matte black
-              </Text>
-              <Text style={{ color: palette.text2, fontSize: 12 }}>
-                ChodhiQ’s dark appearance is always on.
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity
+          <GlowButton
+            variant="primary"
+            label="Sign in or create account"
             accessibilityRole="button"
             accessibilityLabel="Sign in or create account"
-            style={[styles.guestSignInButton, { backgroundColor: palette.primary }]}
+            buttonStyle={styles.guestSignInButton}
             onPress={() => navigation.navigate('Welcome')}
-          >
-            <Text style={{ color: palette.primaryActionText, fontWeight: '800' }}>
-              Sign in or create account
-            </Text>
-          </TouchableOpacity>
+          />
         </View>
       </SafeAreaView>
     );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <FadeInView
-          style={[
-            styles.profileHeader,
-            { backgroundColor: palette.surface, borderColor: palette.border },
-          ]}
-        >
-          <TouchableOpacity
-            accessibilityLabel="Change profile picture"
-            onPress={chooseAvatar}
-            style={styles.avatarWrap}
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: getTabBarContentPadding(insets.bottom) },
+        ]}
+      >
+        <FadeInView>
+          <GlowProfileCard
+            showAccentDecoration={false}
+            shadowTint="none"
+            style={[
+              {
+                marginBottom: 14,
+                borderRadius: radius.xl,
+                borderWidth: 1,
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+              },
+            ]}
+            contentStyle={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              padding: 18,
+            }}
           >
-            {profile.avatarUri ? (
-              <Image source={{ uri: profile.avatarUri }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, { backgroundColor: palette.primarySoft }]}>
-                <Text style={[styles.initials, { color: palette.primary }]}>{initials}</Text>
-              </View>
-            )}
-            <View
-              style={[
-                styles.editBadge,
-                { backgroundColor: palette.primary, borderColor: palette.surface },
-              ]}
+            <TouchableOpacity
+              testID="btn-change-profile-picture"
+              accessibilityRole="button"
+              accessibilityLabel="Change profile picture"
+              onPress={chooseAvatar}
+              style={styles.avatarWrap}
             >
-              <Pencil size={11} color={palette.background} />
+              {safeProfile.avatarUri ? (
+                <Image source={{ uri: safeProfile.avatarUri }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, { backgroundColor: palette.primarySoft }]}>
+                  <Text style={[styles.initials, { color: palette.primary }]}>{initials}</Text>
+                </View>
+              )}
+              <View
+                style={[
+                  styles.editBadge,
+                  { backgroundColor: palette.primary, borderColor: palette.surface },
+                ]}
+              >
+                <Pencil size={11} color={palette.background} />
+              </View>
+            </TouchableOpacity>
+            <View style={styles.identity}>
+              <Text style={[typography.h2, { color: palette.text }]}>
+                {!safeProfile.name || safeProfile.name === 'Guest'
+                  ? 'ChodhiQ member'
+                  : safeProfile.name}
+              </Text>
+              <Text style={[typography.caption, { color: palette.text2 }]}>
+                {safeProfile.email || ''}
+              </Text>
+              <Text style={[styles.member, { color: palette.primary }]}>
+                {safeProfile.memberSince
+                  ? `Community member since ${safeProfile.memberSince}`
+                  : 'Community member'}
+              </Text>
             </View>
-          </TouchableOpacity>
-          <View style={styles.identity}>
-            <Text style={[typography.h2, { color: palette.text }]}>
-              {profile.name === 'Guest' ? 'ChodhiQ member' : profile.name}
-            </Text>
-            <Text style={[typography.caption, { color: palette.text2 }]}>{profile.email}</Text>
-            <Text style={[styles.member, { color: palette.primary }]}>
-              {profile.memberSince
-                ? `Community member since ${profile.memberSince}`
-                : 'Community member'}
-            </Text>
-          </View>
-          <PressableScale
-            style={[styles.modeButton, { backgroundColor: palette.goldSoft }]}
-            onPress={() => navigation.navigate('EditProfile')}
-          >
-            <ShieldCheck size={20} color={palette.dark ? palette.saffron : palette.primary} />
-          </PressableScale>
+            <PressableScale
+              testID="btn-profile-edit"
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile and account security"
+              style={[styles.modeButton, { backgroundColor: palette.goldSoft }]}
+              onPress={() => navigation.navigate('EditProfile')}
+            >
+              <ShieldCheck size={20} color={palette.dark ? palette.saffron : palette.primary} />
+            </PressableScale>
+          </GlowProfileCard>
         </FadeInView>
 
         <FadeInView
@@ -174,21 +243,24 @@ export default function ProfileScreen({ navigation }) {
           style={[styles.stats, { backgroundColor: palette.surface, borderColor: palette.border }]}
         >
           <Stat
-            value={savedIds.length}
+            testID="btn-profile-saved"
+            value={safeSavedIds.length}
             label="Saved"
             palette={palette}
             onPress={() => navigation.navigate('Saved')}
           />
           <View style={[styles.divider, { backgroundColor: palette.border }]} />
           <Stat
-            value={reviews.length}
+            testID="btn-profile-reviews"
+            value={safeReviews.length}
             label="Reviews"
             palette={palette}
             onPress={() => navigation.navigate('Reviews')}
           />
           <View style={[styles.divider, { backgroundColor: palette.border }]} />
           <Stat
-            value={bookings.length}
+            testID="btn-profile-bookings"
+            value={activeBookingCount}
             label="Bookings"
             palette={palette}
             onPress={() => navigation.navigate('Bookings')}
@@ -216,6 +288,7 @@ export default function ProfileScreen({ navigation }) {
                   </Text>
                 </View>
                 <Switch
+                  testID="switch-notification-vibration"
                   accessibilityLabel="Notification vibration"
                   value={preferences.vibration}
                   onValueChange={(vibration) =>
@@ -240,7 +313,7 @@ export default function ProfileScreen({ navigation }) {
               {permissionDenied && Platform.OS !== 'web' && (
                 <TouchableOpacity
                   accessibilityRole="button"
-                  onPress={() => Linking.openSettings().catch(() => {})}
+                  onPress={openPermissionSettings}
                   style={styles.inlineAction}
                 >
                   <Text style={{ color: palette.primary, fontWeight: '700' }}>
@@ -252,7 +325,7 @@ export default function ProfileScreen({ navigation }) {
             </View>
           </ProfileGroup>
         </FadeInView>
-        {!access.ownedProviders.length && (
+        {!ownedProviders.length && (
           <FadeInView delay={195}>
             <ProfileGroup
               title="Grow your business"
@@ -303,6 +376,7 @@ export default function ProfileScreen({ navigation }) {
                   />
                 </View>
                 <PressableScale
+                  testID="btn-claim-listing"
                   style={styles.providerButton}
                   onPress={() => navigation.navigate('ClaimListing')}
                 >
@@ -342,6 +416,7 @@ export default function ProfileScreen({ navigation }) {
         </FadeInView>
         <FadeInView delay={270}>
           <PressableScale
+            testID="btn-open-logout"
             style={styles.logoutRow}
             onPress={() => logoutSheetRef.current?.present()}
           >
@@ -357,7 +432,12 @@ export default function ProfileScreen({ navigation }) {
         snapPoints={snapPoints}
         enablePanDownToClose
         backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: palette.surface }}
+        backgroundComponent={({ style }) => (
+          <GlassView
+            intensity={54}
+            style={[style, { borderColor: palette.border, backgroundColor: palette.surface }]}
+          />
+        )}
         handleIndicatorStyle={{ backgroundColor: palette.muted }}
       >
         <BottomSheetView style={styles.sheet}>
@@ -366,18 +446,22 @@ export default function ProfileScreen({ navigation }) {
             Your saved businesses and community activity will remain connected to your account.
           </Text>
           <View style={styles.sheetActions}>
-            <TouchableOpacity
-              style={[styles.sheetButton, { backgroundColor: palette.surfaceAlt }]}
+            <GlowButton
+              testID="btn-cancel-logout"
+              label="Stay signed in"
+              variant="secondary"
+              size="md"
+              buttonStyle={styles.sheetButton}
               onPress={() => logoutSheetRef.current?.dismiss()}
-            >
-              <Text style={{ color: palette.text, fontWeight: '800' }}>Stay signed in</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.sheetButton, { backgroundColor: colors.accentHalal }]}
+            />
+            <AsyncGlowButton
+              testID="btn-confirm-logout"
+              label="Log out"
+              variant="danger"
+              size="md"
+              buttonStyle={styles.sheetButton}
               onPress={confirmLogout}
-            >
-              <Text style={{ color: '#fff', fontWeight: '800' }}>Log out</Text>
-            </TouchableOpacity>
+            />
           </View>
         </BottomSheetView>
       </BottomSheetModal>
@@ -387,7 +471,12 @@ export default function ProfileScreen({ navigation }) {
 
 function ProfileGroup({ title, hint, expanded, onPress, palette, children }) {
   return (
-    <GlassView style={[styles.groupCard, { borderColor: palette.border }]} intensity={24}>
+    <GlowProfileCard
+      showAccentDecoration={false}
+      shadowTint="none"
+      style={[styles.groupCard, { borderColor: palette.border }]}
+      contentStyle={{ padding: 0, gap: 0 }}
+    >
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityState={{ expanded }}
@@ -405,13 +494,14 @@ function ProfileGroup({ title, hint, expanded, onPress, palette, children }) {
         />
       </TouchableOpacity>
       {expanded && children}
-    </GlassView>
+    </GlowProfileCard>
   );
 }
 
-function Stat({ value, label, palette, onPress }) {
+function Stat({ value, label, palette, onPress, testID }) {
   return (
     <TouchableOpacity
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={`${label}: ${value}`}
       onPress={onPress}
@@ -435,11 +525,18 @@ function Benefit({ Icon, text, palette }) {
 
 function MenuCard({ items, palette, navigation, emphasized = false }) {
   return (
-    <View
+    <GlowProfileCard
+      showAccentDecoration={false}
+      shadowTint="none"
       style={[styles.menuCard, { backgroundColor: palette.surface, borderColor: palette.border }]}
+      contentStyle={{ padding: 0, gap: 0 }}
     >
       {items.map((item, index) => (
-        <PressableScale key={item.route} onPress={() => navigation.navigate(item.route)}>
+        <PressableScale
+          key={item.route}
+          testID={`btn-profile-${String(item.route).toLowerCase()}`}
+          onPress={() => navigation.navigate(item.route)}
+        >
           <View
             style={[
               styles.menuRow,
@@ -475,25 +572,13 @@ function MenuCard({ items, palette, navigation, emphasized = false }) {
           </View>
         </PressableScale>
       ))}
-    </View>
+    </GlowProfileCard>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   guest: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 14 },
-  guestTheme: {
-    width: '100%',
-    maxWidth: 420,
-    minHeight: 66,
-    padding: 14,
-    borderRadius: 18,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  guestThemeLabel: { fontSize: 13, fontWeight: '900', marginBottom: 3 },
   content: {
     width: '100%',
     maxWidth: 760,
@@ -556,7 +641,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    ...shadows.soft,
   },
   groupHeader: {
     minHeight: 68,

@@ -86,11 +86,12 @@ test('password recovery returns securely to the app and preview builds gate unfi
   assert.match(appConfig, /EAS_BUILD_PROFILE === 'production'/);
 });
 
-test('custom advertising loads only approved in-window inventory and records delivery', async () => {
-  const [migration, repository, home] = await Promise.all([
+test('custom advertising loads approved inventory and records home hero delivery', async () => {
+  const [migration, repository, home, homeComponents] = await Promise.all([
     read('supabase/migrations/20260825140000_custom_ad_campaigns.sql'),
     read('src/data/adCampaignRepository.js'),
     read('src/screens/HomeScreen.js'),
+    read('src/components/HomeComponents.js'),
   ]);
   for (const table of [
     'ad_campaign_enquiries',
@@ -105,9 +106,16 @@ test('custom advertising loads only approved in-window inventory and records del
   assert.match(repository, /record_ad_campaign_event/);
   assert.match(home, /recordCampaignEvent\(campaign\.id, 'impression'\)/);
   assert.match(home, /recordCampaignEvent\(campaign\.id, 'click'\)/);
-  assert.match(home, /onViewableItemsChanged=\{onViewableItemsChanged\.current\}/);
-  assert.match(home, /itemVisiblePercentThreshold:\s*50/);
-  assert.match(home, /item\.type === 'campaign'/);
+  assert.match(home, /campaign=\{features\.customAds \? campaigns\[0\] : null\}/);
+  assert.match(
+    home,
+    /onCampaignImpression=\{\(campaign\) => recordImpression\(campaign, 'home_hero'\)\}/,
+  );
+  assert.match(
+    homeComponents,
+    /if \(!campaign \|\| !focused \|\| impressedCampaignId\.current === campaign\.id\) return/,
+  );
+  assert.match(homeComponents, /onCampaignImpression\?\.\(campaign\)/);
 });
 
 test('provider detail includes guarded review, quote, and booking workflows', async () => {

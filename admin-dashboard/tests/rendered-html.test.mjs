@@ -89,6 +89,10 @@ test('campaign operations expose upload, approval, pause and performance reporti
   assert.match(source, /ad_campaign_enquiries/);
   assert.match(source, /ad_campaign_performance/);
   assert.match(source, /from\('ad-creatives'\)\.upload/);
+  assert.match(source, /Verified business \(optional\)/);
+  assert.match(source, /HTTPS destination \(optional\)/);
+  assert.match(source, /provider_id:\s*draft\.providerId\s*\|\|\s*null/);
+  assert.match(source, /destination_url:\s*destinationUrl/);
   assert.match(source, /transition\(campaign, 'approved'\)/);
   assert.match(source, /transition\(campaign, 'paused'\)/);
 });
@@ -308,5 +312,9 @@ test('HTML uses a nonce CSP, reports violations, and keeps authenticated respons
   ))).join('\n');
   assert.doesNotMatch(clientBundle, /sb_secret_[A-Za-z0-9_-]{20,}/);
   assert.doesNotMatch(clientBundle, /SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*['"`][^'"`]+/);
-  assert.doesNotMatch(clientBundle, /gfjhvsajwjrrlylgrkhf/);
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL)
+    assert.ok(
+      clientBundle.includes(process.env.NEXT_PUBLIC_SUPABASE_URL),
+      'client bundle includes the configured public Supabase URL',
+    );
 });

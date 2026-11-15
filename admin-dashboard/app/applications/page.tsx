@@ -152,7 +152,7 @@ export default function Applications() {
     window.open(result.data.signedUrl, '_blank', 'noopener,noreferrer');
   }
   return (
-    
+
       <Page
         title="Business account review"
         note="Check the business details and UK trading evidence before granting provider access. Review pending applications within 3 days."
@@ -264,6 +264,6 @@ export default function Applications() {
           </section>
         )}
       </Page>
-    
+
   );
 }

@@ -111,3 +111,34 @@ test('missing Google web client ID fails with actionable build configuration gui
   );
   assert.equal(configured, false);
 });
+
+test('native module version mismatches explain that a fresh Android build is required', async () => {
+  const google = loadGoogleSignIn(
+    {
+      configure() {
+        throw new TypeError('undefined is not a function');
+      },
+    },
+    { EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-web.apps.googleusercontent.com' },
+  );
+
+  await assert.rejects(
+    google.getNativeGoogleIdToken(),
+    /incompatible with this installed app build.*fresh Android build/s,
+  );
+});
+
+test('a missing Google native method is translated to an actionable build error', async () => {
+  const google = loadGoogleSignIn(
+    {
+      configure() {},
+      hasPlayServices: undefined,
+    },
+    { EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-web.apps.googleusercontent.com' },
+  );
+
+  await assert.rejects(
+    google.getNativeGoogleIdToken(),
+    /incompatible with this installed app build.*fresh Android build/s,
+  );
+});

@@ -1,0 +1,47 @@
+appId: com.chodhiq.app
+---
+- launchApp:
+    clearState: true
+    permissions:
+      location: allow
+- tapOn:
+    id: btn-sign-in
+- tapOn:
+    id: input-email
+- inputText: '${MAESTRO_EMAIL}'
+- tapOn:
+    id: input-password
+- inputText: '${MAESTRO_PASSWORD}'
+- tapOn:
+    id: btn-sign-in
+- assertVisible:
+    id: tab-home
+
+- tapOn:
+    id: tab-map
+- tapOn:
+    text: Search restaurants, salons, services...
+- inputText: '${MAESTRO_PROVIDER_QUERY}'
+- tapOn:
+    id: btn-map-filters
+- assertVisible: Filter by city
+- tapOn: Everywhere
+- tapOn:
+    id: btn-map-filters
+- tapOn:
+    id: btn-map-current-location
+- assertVisible: Location updated
+- tapOn: OK
+- assertVisible:
+    text: '${MAESTRO_PROVIDER_NAME}'
+- assertVisible:
+    id: btn-map-provider
+- assertVisible:
+    id: btn-map-save
+- assertVisible:
+    id: btn-map-directions
+- tapOn:
+    id: btn-map-directions
+- launchApp
+- assertVisible:
+    id: btn-map-current-location

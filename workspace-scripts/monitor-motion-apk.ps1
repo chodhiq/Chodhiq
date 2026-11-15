@@ -57,4 +57,3 @@ Phone runtime testing remains pending.
 }
 'Background monitor reached its time limit. Check the Expo build page.' | Add-Content $logPath
 exit 2
-

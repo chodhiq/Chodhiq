@@ -31,6 +31,8 @@ export default function ChodhiQMap({
   location,
   onRegionChange,
   mapType = 'standard',
+  compact = false,
+  forceOpenStreetMap = false,
 }) {
   const mapsEnabled = Constants.expoConfig?.extra?.googleMapsEnabled === true;
   const mapRef = useRef(null);
@@ -64,19 +66,22 @@ export default function ChodhiQMap({
     mapRef.current.fitToCoordinates(
       coordinates.map((item) => ({ latitude: item.latitude, longitude: item.longitude })),
       {
-        edgePadding: { top: 150, right: 48, bottom: 170, left: 48 },
+        edgePadding: compact
+          ? { top: 12, right: 12, bottom: 12, left: 12 }
+          : { top: 150, right: 48, bottom: 170, left: 48 },
         animated: true,
       },
     );
-  }, [coordinates, mapsEnabled]);
+  }, [compact, coordinates, mapsEnabled]);
   useEffect(() => {
     if (!mapsEnabled || !mapRef.current || !location) return;
     mapRef.current.animateToRegion(location, 450);
   }, [location?.latitude, location?.longitude, mapsEnabled]);
-  if (!mapsEnabled)
+  if (!mapsEnabled || forceOpenStreetMap)
     return (
       <OpenStreetMap
         providers={providers}
+        selected={selected}
         location={location}
         onSelect={onSelect}
         onRegionChange={onRegionChange}
@@ -92,18 +97,24 @@ export default function ChodhiQMap({
         location || { latitude: 53.1, longitude: -1.65, latitudeDelta: 7.4, longitudeDelta: 7.4 }
       }
       mapType={mapType}
-      showsUserLocation
+      showsUserLocation={!compact}
       showsMyLocationButton={false}
       toolbarEnabled={false}
       onMapReady={() => {
         if (coordinates.length)
           mapRef.current?.fitToCoordinates(coordinates, {
-            edgePadding: { top: 150, right: 48, bottom: 190, left: 48 },
+            edgePadding: compact
+              ? { top: 12, right: 12, bottom: 12, left: 12 }
+              : { top: 150, right: 48, bottom: 190, left: 48 },
             animated: false,
           });
       }}
       onRegionChangeComplete={onRegionChange}
-      mapPadding={{ top: 150, right: 12, bottom: 190, left: 12 }}
+      mapPadding={
+        compact
+          ? { top: 0, right: 0, bottom: 0, left: 0 }
+          : { top: 150, right: 12, bottom: 190, left: 12 }
+      }
     >
       {groupedCoordinates.map((cluster) => {
         const provider = (cluster.find((item) => item.provider.id === selected?.id) || cluster[0])

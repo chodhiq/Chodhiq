@@ -12,6 +12,7 @@ import { radius, spacing } from '../theme/theme';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { useIsFocused } from '@react-navigation/native';
 import { useMotionPreferences } from '../hooks/useMotionPreferences';
+import useEffectsLevel from '../hooks/useEffectsLevel';
 
 const SkeletonOpacity = createContext(null);
 
@@ -41,11 +42,12 @@ export function ProviderSkeletonRow() {
 }
 
 export function MarketplaceSkeleton({ count = 3 }) {
-  const { reducedMotion, foreground } = useMotionPreferences();
+  const effectsLevel = useEffectsLevel();
+  const { foreground } = useMotionPreferences();
   const focused = useIsFocused();
   const opacity = useSharedValue(0.45);
   useEffect(() => {
-    if (reducedMotion || !foreground || !focused) {
+    if (effectsLevel !== 'full' || !foreground || !focused) {
       cancelAnimation(opacity);
       opacity.value = 0.7;
       return undefined;
@@ -55,7 +57,7 @@ export function MarketplaceSkeleton({ count = 3 }) {
       -1,
     );
     return () => cancelAnimation(opacity);
-  }, [opacity, reducedMotion, foreground, focused]);
+  }, [opacity, effectsLevel, foreground, focused]);
   return (
     <SkeletonOpacity.Provider value={opacity}>
       <View style={styles.list}>

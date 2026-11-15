@@ -19,7 +19,7 @@ export default function EmptySpace({
       <View
         style={[styles.empty, { backgroundColor: palette.surface, borderColor: palette.border }]}
       >
-        <Svg accessible={false} width={130} height={104} viewBox="0 0 130 104">
+        <Svg pointerEvents="none" accessible={false} width={130} height={104} viewBox="0 0 130 104">
           <Circle cx={106} cy={20} r={12} fill={palette.primary} />
           <Path d="M22 45 L32 19 H96 L106 45 Z" fill={palette.primary} />
           <Path

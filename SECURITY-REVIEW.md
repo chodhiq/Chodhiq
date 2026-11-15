@@ -1,7 +1,7 @@
 # ChodhiQ Production Admin Security Review
 
-**Assessment date:** 2026-10-24  
-**Scope:** `https://admin.chodhiq.co.uk/` and the Supabase project identified by the authenticated project listing as **ChodhiQ Production** (`gfjhvsajwjrrlylgrkhf`).  
+**Assessment date:** 2026-10-24
+**Scope:** `https://admin.chodhiq.co.uk/` and the Supabase project identified by the authenticated project listing as **ChodhiQ Production** (`gfjhvsajwjrrlylgrkhf`).
 **Mode:** Read-only. No production data was changed, no migrations were applied, and no deployment was performed.
 
 ## A. Executive summary

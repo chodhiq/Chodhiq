@@ -1,0 +1,58 @@
+appId: com.chodhiq.app
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: btn-sign-in
+- tapOn:
+    id: btn-toggle-auth-mode
+- assertVisible: Create your account
+- tapOn:
+    id: input-full-name
+- inputText: '${MAESTRO_NAME}'
+- tapOn:
+    id: input-email
+- inputText: '${MAESTRO_EMAIL}'
+- tapOn:
+    id: input-password
+- inputText: '${MAESTRO_PASSWORD}'
+- tapOn:
+    id: input-confirm-password
+- inputText: '${MAESTRO_PASSWORD}'
+- tapOn:
+    id: checkbox-signup-consent
+- tapOn:
+    id: btn-create-account
+- assertVisible:
+    id: tab-home
+
+# Log out, exercise the password-reset request, then sign in again.
+- tapOn:
+    id: tab-profile
+- tapOn:
+    id: btn-open-logout
+- tapOn:
+    id: btn-confirm-logout
+- assertVisible:
+    id: btn-forgot-password
+- tapOn:
+    id: input-email
+- inputText: '${MAESTRO_EMAIL}'
+- tapOn:
+    id: btn-forgot-password
+- assertVisible: 'Check your email.*'
+- tapOn:
+    id: input-password
+- inputText: '${MAESTRO_PASSWORD}'
+- tapOn:
+    id: btn-sign-in
+- assertVisible:
+    id: tab-home
+- tapOn:
+    id: tab-profile
+- tapOn:
+    id: btn-open-logout
+- tapOn:
+    id: btn-confirm-logout
+- assertVisible:
+    id: btn-forgot-password

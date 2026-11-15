@@ -218,7 +218,7 @@ export async function setSaved(userId, providerId, saved) {
       await setLocalSaved(userId, providerId, previousSaved);
       throw error;
     }
-    return;
+    return { status: 'pending' };
   }
   const result = saved
     ? await supabase.from('saved_items').upsert(remoteRow, {
@@ -230,7 +230,7 @@ export async function setSaved(userId, providerId, saved) {
         .delete()
         .eq('user_id', userId)
         .eq('provider_id', String(providerId));
-  if (!result.error) return;
+  if (!result.error) return { status: 'sent' };
   if (classifySyncError(result.error) === 'permanent') {
     await setLocalSaved(userId, providerId, previousSaved);
     throw result.error;
@@ -242,10 +242,20 @@ export async function setSaved(userId, providerId, saved) {
     await setLocalSaved(userId, providerId, previousSaved);
     throw error;
   }
+  return { status: 'pending' };
 }
 
 export async function createQuote(userId, input) {
   const quote = validateQuote(input);
+  const localId = `q-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const payload = {
+    user_id: userId,
+    provider_id: quote.providerId,
+    message: quote.message,
+    preferred_contact: quote.preferredContact,
+    status: 'opened',
+    id: localId,
+  };
   if (supabase) {
     const { data, error } = await supabase
       .from('quote_requests')
@@ -258,25 +268,20 @@ export async function createQuote(userId, input) {
       })
       .select('id,provider_id,message,status,created_at')
       .single();
-    if (!error) return data;
+    if (!error) return { ...data, syncStatus: 'sent' };
+    if (classifySyncError(error) === 'auth_required') throw error;
     if (classifySyncError(error) === 'permanent') throw error;
     console.warn('Quote upload failed; saving locally.', error.message);
   }
-  await enqueuePendingOperation('quote_request', {
-    user_id: userId,
-    provider_id: quote.providerId,
-    message: quote.message,
-    preferred_contact: quote.preferredContact,
-    status: 'opened',
-  });
-  return createLocalQuote(userId, quote);
+  await enqueuePendingOperation('quote_request', payload);
+  return { ...(await createLocalQuote(userId, { ...quote, id: localId })), syncStatus: 'pending' };
 }
 
 export async function updateProfile(userId, input) {
   const profile = validateProfile(input);
   const previousProfile = (await loadLocalAccount(userId)).profile;
   if (!supabase) {
-    await saveLocalProfile(userId, profile);
+    await saveLocalProfile(userId, { ...profile, syncStatus: 'pending' });
     try {
       await enqueuePendingOperation('profile_update', remoteProfilePayload(userId, profile));
     } catch (error) {
@@ -284,13 +289,14 @@ export async function updateProfile(userId, input) {
       else await deleteLocalProfile(userId);
       throw error;
     }
-    return profile;
+    return { ...profile, syncStatus: 'pending' };
   }
   const { error } = await supabase
     .from('profiles')
     .upsert(remoteProfilePayload(userId, profile), { onConflict: 'id' });
+  if (error && classifySyncError(error) === 'auth_required') throw error;
   if (error && classifySyncError(error) === 'permanent') throw error;
-  await saveLocalProfile(userId, profile);
+  await saveLocalProfile(userId, { ...profile, syncStatus: error ? 'pending' : 'sent' });
   if (error) {
     console.warn('Profile change queued for retry.', error.message);
     try {
@@ -301,7 +307,7 @@ export async function updateProfile(userId, input) {
       throw queueError;
     }
   }
-  return profile;
+  return { ...profile, syncStatus: error ? 'pending' : 'sent' };
 }
 
 export async function createProviderReport(userId, providerId, reason, details) {
@@ -310,15 +316,19 @@ export async function createProviderReport(userId, providerId, reason, details) 
     const { error } = await supabase
       .from('provider_reports')
       .insert({ reporter_id: userId, provider_id: providerId, ...report });
-    if (!error) return;
+    if (!error) return { status: 'sent' };
+    if (classifySyncError(error) === 'auth_required') throw error;
+    if (classifySyncError(error) === 'permanent') throw error;
     console.warn('Report upload failed; saving locally.', error.message);
   }
   await enqueuePendingOperation('provider_report', {
     reporter_id: userId,
+    user_id: userId,
     provider_id: providerId,
     ...report,
   });
-  return createLocalReport(userId, providerId, report.reason, report.details);
+  await createLocalReport(userId, providerId, report.reason, report.details);
+  return { status: 'pending' };
 }
 
 export async function markNotificationsRead(userId, notificationIds) {

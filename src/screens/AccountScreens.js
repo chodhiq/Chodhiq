@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   Image,
   Keyboard,
-  Linking,
   Platform,
   StyleSheet,
   Switch,
@@ -42,6 +41,8 @@ import { ukCities } from '../data/mockData';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { FadeInView, FloatingView, PressableScale } from '../components/Motion';
+import useEffectsLevel from '../hooks/useEffectsLevel';
+import { setVisualEffectsLevel, useMotionPreferences } from '../hooks/useMotionPreferences';
 import * as ExpoLocation from 'expo-location';
 import { openPermissionSettings, showPermissionRecovery } from '../lib/permissionRecovery';
 import { getDeviceLocation } from '../lib/deviceLocation';
@@ -69,8 +70,13 @@ import { authErrorMessage } from '../lib/authOperations';
 import { runSingleFlight } from '../lib/singleFlight';
 import { getNotificationsModule } from '../lib/notificationRuntime';
 import { formatReviewDate } from '../data/accountMappers';
+import { getUkLocalDateTime } from '../data/bookingValidation';
+import { formatBookingDateTime } from '../lib/dateTime';
+import { openExternalUrl } from '../lib/openExternalUrl';
+import AsyncGlowButton from '../../components/ui/AsyncGlowButton';
+import GlowButton from '../../components/ui/GlowButton';
 const pageStyles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: colors.background },
+  page: { flex: 1, backgroundColor: 'transparent' },
   content: {
     width: '100%',
     maxWidth: 760,
@@ -79,11 +85,16 @@ const pageStyles = StyleSheet.create({
     gap: spacing.md,
   },
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: 'rgba(11,18,16,0.86)',
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(46,230,160,0.22)',
     padding: spacing.md,
+    shadowColor: '#1FE5A0',
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 2,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   tab: {
@@ -143,7 +154,6 @@ function PasswordInput({ value, onChangeText, placeholder, palette, style, ...pr
   const [visible, setVisible] = useState(false);
   return (
     <View style={pageStyles.passwordField}>
-      {' '}
       <AppTextInput
         {...props}
         style={[style, pageStyles.passwordInput]}
@@ -152,7 +162,7 @@ function PasswordInput({ value, onChangeText, placeholder, palette, style, ...pr
         placeholder={placeholder}
         secureTextEntry={!visible}
         placeholderTextColor={palette.muted}
-      />{' '}
+      />
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityLabel={
@@ -161,13 +171,12 @@ function PasswordInput({ value, onChangeText, placeholder, palette, style, ...pr
         onPress={() => setVisible((current) => !current)}
         style={pageStyles.passwordToggle}
       >
-        {' '}
         {visible ? (
           <EyeOff size={20} color={palette.muted} />
         ) : (
           <Eye size={20} color={palette.muted} />
-        )}{' '}
-      </TouchableOpacity>{' '}
+        )}
+      </TouchableOpacity>
     </View>
   );
 }
@@ -278,29 +287,23 @@ export function WelcomeScreen({ navigation, route }) {
     },
   ];
   return (
-    <SafeAreaView style={[pageStyles.page, { backgroundColor: palette.background }]}>
-      {' '}
+    <SafeAreaView style={pageStyles.page}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={stylesWelcome.content}
       >
-        {' '}
         <View style={stylesWelcome.column}>
-          {' '}
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel="Go back"
             onPress={() => navigation.goBack()}
             style={[stylesWelcome.backButton, { borderColor: palette.border }]}
           >
-            {' '}
-            <ChevronLeft size={20} strokeWidth={1.75} color={palette.text} />{' '}
-          </TouchableOpacity>{' '}
+            <ChevronLeft size={20} strokeWidth={1.75} color={palette.text} />
+          </TouchableOpacity>
           <FadeInView>
-            {' '}
             <View style={stylesWelcome.brandLockup}>
-              {' '}
               <Image
                 source={
                   palette.dark
@@ -310,33 +313,26 @@ export function WelcomeScreen({ navigation, route }) {
                 style={stylesWelcome.brandLogo}
                 resizeMode="contain"
                 accessibilityLabel={`${brand.name} logo`}
-              />{' '}
+              />
               <Text style={[stylesWelcome.tagline, { color: palette.textTertiary }]}>
-                {' '}
-                ASK · CONNECT · GROW{' '}
-              </Text>{' '}
-            </View>{' '}
-          </FadeInView>{' '}
+                ASK · CONNECT · GROW
+              </Text>
+            </View>
+          </FadeInView>
           <FadeInView delay={80}>
-            {' '}
-            <Text style={[typography.h1, stylesWelcome.welcomeTitle, { color: palette.text }]}>
-              {' '}
-              {mode === 'signup' ? 'Create your account' : 'Welcome back'}{' '}
-            </Text>{' '}
-            <Text style={[pageStyles.body, { fontSize: 15, lineHeight: 22, color: palette.text2 }]}>
-              {' '}
+            <Text style={[typography.h1, stylesWelcome.welcomeTitle, { color: palette.text, textAlign: 'center' }]}>
+              {mode === 'signup' ? 'Create your account' : 'Welcome back'}
+            </Text>
+            <Text style={[pageStyles.body, { fontSize: 15, lineHeight: 22, color: palette.text2, textAlign: 'center' }]}>
               {mode === 'signup'
                 ? "Start discovering what's around you."
-                : 'Sign in to continue discovering.'}{' '}
-            </Text>{' '}
-          </FadeInView>{' '}
-          <FadeInView
-            delay={150}
-            style={stylesWelcome.form}
-          >
-            {' '}
+                : 'Sign in to continue discovering.'}
+            </Text>
+          </FadeInView>
+          <FadeInView delay={150} style={stylesWelcome.form}>
             {mode === 'signup' && (
               <AppTextInput
+                testID="input-full-name"
                 accessibilityLabel="Full name"
                 style={inputStyle}
                 value={name}
@@ -344,10 +340,10 @@ export function WelcomeScreen({ navigation, route }) {
                 placeholder="Full name"
                 placeholderTextColor={palette.muted}
               />
-            )}{' '}
+            )}
             <View style={[stylesWelcome.emailInputWrap, { backgroundColor: palette.field }]}>
-              {' '}
               <AppTextInput
+                testID="input-email"
                 accessibilityLabel="Email address"
                 style={[inputStyle, stylesWelcome.emailInput]}
                 value={email}
@@ -357,9 +353,10 @@ export function WelcomeScreen({ navigation, route }) {
                 keyboardType="email-address"
                 underlineColorAndroid="transparent"
                 placeholderTextColor={palette.muted}
-              />{' '}
-            </View>{' '}
+              />
+            </View>
             <PasswordInput
+              testID="input-password"
               accessibilityLabel="Password"
               style={inputStyle}
               value={password}
@@ -368,9 +365,10 @@ export function WelcomeScreen({ navigation, route }) {
               placeholder="Password"
               autoCapitalize="none"
               palette={palette}
-            />{' '}
+            />
             {mode === 'signup' && (
               <PasswordInput
+                testID="input-confirm-password"
                 accessibilityLabel="Confirm password"
                 style={[
                   ...inputStyle,
@@ -383,29 +381,28 @@ export function WelcomeScreen({ navigation, route }) {
                 autoCapitalize="none"
                 palette={palette}
               />
-            )}{' '}
+            )}
             {email.length > 0 && !emailValid ? (
               <Text style={stylesWelcome.validation}>Enter a valid email address.</Text>
-            ) : null}{' '}
+            ) : null}
             {password.length > 0 && !passwordValid ? (
               <Text style={stylesWelcome.validation}>
-                {' '}
                 {mode === 'signup'
                   ? `Use ${NEW_PASSWORD_MIN_LENGTH}–128 characters, including at least one letter and one number.`
-                  : `Use at least ${PASSWORD_MIN_LENGTH} characters.`}{' '}
+                  : `Use at least ${PASSWORD_MIN_LENGTH} characters.`}
               </Text>
-            ) : null}{' '}
+            ) : null}
             {mode === 'signup' && confirmPassword.length > 0 && confirmPassword !== password ? (
               <Text style={stylesWelcome.validation}>Passwords do not match.</Text>
-            ) : null}{' '}
+            ) : null}
             {mode === 'signup' ? (
               <TouchableOpacity
+                testID="checkbox-signup-consent"
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: consent }}
                 onPress={() => setConsent((value) => !value)}
                 style={stylesWelcome.consentRow}
               >
-                {' '}
                 <View
                   style={[
                     stylesWelcome.checkbox,
@@ -415,39 +412,43 @@ export function WelcomeScreen({ navigation, route }) {
                     },
                   ]}
                 >
-                  {' '}
-                  {consent ? <Check size={13} color="#FFFFFF" /> : null}{' '}
-                </View>{' '}
+                  {consent ? <Check size={13} color="#FFFFFF" /> : null}
+                </View>
                 <Text style={[stylesWelcome.consentText, { color: palette.text2 }]}>
-                  {' '}
                   {publishedLegalLinksReady
                     ? 'I agree to the Terms of Service and have read the Privacy Policy.'
-                    : 'I understand ChodhiQ uses my account details, posts and bookings to provide this test service.'}{' '}
-                </Text>{' '}
+                    : 'I understand ChodhiQ uses my account details, posts and bookings to provide this test service.'}
+                </Text>
               </TouchableOpacity>
-            ) : null}{' '}
+            ) : null}
             {mode === 'signup' && publishedLegalLinksReady ? (
               <View style={{ flexDirection: 'row', gap: 16, flexWrap: 'wrap' }}>
-                {' '}
                 <TouchableOpacity
                   accessibilityRole="link"
-                  onPress={() => void Linking.openURL(legalLinks.terms)}
+                  onPress={() =>
+                    void openExternalUrl(legalLinks.terms, {
+                      title: 'Terms unavailable',
+                      fallbackMessage: 'The Terms of Service could not be opened. Try again later.',
+                    })
+                  }
                 >
-                  {' '}
-                  <Text style={{ color: palette.primary, fontWeight: '700' }}>Read terms</Text>{' '}
-                </TouchableOpacity>{' '}
+                  <Text style={{ color: palette.primary, fontWeight: '700' }}>Read terms</Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   accessibilityRole="link"
-                  onPress={() => void Linking.openURL(legalLinks.privacy)}
+                  onPress={() =>
+                    void openExternalUrl(legalLinks.privacy, {
+                      title: 'Privacy policy unavailable',
+                      fallbackMessage: 'The Privacy Policy could not be opened. Try again later.',
+                    })
+                  }
                 >
-                  {' '}
                   <Text style={{ color: palette.primary, fontWeight: '700' }}>
-                    {' '}
-                    Read privacy policy{' '}
-                  </Text>{' '}
-                </TouchableOpacity>{' '}
+                    Read privacy policy
+                  </Text>
+                </TouchableOpacity>
               </View>
-            ) : null}{' '}
+            ) : null}
             {authMessage ? (
               <View
                 accessibilityRole="alert"
@@ -461,7 +462,6 @@ export function WelcomeScreen({ navigation, route }) {
                   },
                 ]}
               >
-                {' '}
                 <Text
                   style={{
                     color: authMessage.type === 'error' ? palette.coral : palette.text,
@@ -470,69 +470,52 @@ export function WelcomeScreen({ navigation, route }) {
                     fontWeight: '700',
                   }}
                 >
-                  {' '}
-                  {authMessage.text}{' '}
-                </Text>{' '}
-              </View>
-            ) : null}{' '}
-            <PressableScale
-              disabled={submitDisabled}
-              style={[
-                pageStyles.button,
-                stylesWelcome.authButton,
-                {
-                  backgroundColor: submitDisabled ? palette.surfaceAlt : palette.primary,
-                  opacity: 1,
-                },
-              ]}
-              onPress={() => submit(mode === 'signup' ? 'signup' : 'email')}
-            >
-              {' '}
-              {busy ? (
-                <ActivityIndicator size={18} color={palette.onPrimary} />
-              ) : (
-                <Text
-                  style={[
-                    pageStyles.buttonText,
-                    { color: submitDisabled ? palette.text2 : palette.onPrimary, fontSize: 16 },
-                  ]}
-                >
-                  {' '}
-                  {mode === 'signup' ? 'Create account' : 'Sign in'}{' '}
+                  {authMessage.text}
                 </Text>
-              )}{' '}
-            </PressableScale>{' '}
+              </View>
+            ) : null}
+            <AsyncGlowButton
+              testID={mode === 'signup' ? 'btn-create-account' : 'btn-sign-in'}
+              variant="primary"
+              size="lg"
+              height={54}
+              stretch
+              label={mode === 'signup' ? 'Create account' : 'Sign in'}
+              disabled={submitDisabled}
+              status={busy ? 'loading' : undefined}
+              buttonStyle={stylesWelcome.authButton}
+              onPress={() => submit(mode === 'signup' ? 'signup' : 'email')}
+            />
             {mode === 'signin' ? (
-              <TouchableOpacity disabled={busy} onPress={forgotPassword}>
-                {' '}
+              <TouchableOpacity
+                testID="btn-forgot-password"
+                disabled={busy}
+                onPress={forgotPassword}
+              >
                 <Text style={{ textAlign: 'right', color: palette.primary, fontWeight: '800' }}>
-                  {' '}
-                  Forgot password?{' '}
-                </Text>{' '}
+                  Forgot password?
+                </Text>
               </TouchableOpacity>
-            ) : null}{' '}
+            ) : null}
             {awaitingConfirmation ? (
               <TouchableOpacity
+                testID="btn-resend-confirmation"
                 accessibilityRole="button"
                 accessibilityLabel="Resend confirmation email"
                 disabled={busy || !emailValid}
                 onPress={resendConfirmation}
               >
-                {' '}
                 <Text style={{ textAlign: 'center', color: palette.primary, fontWeight: '700' }}>
-                  {' '}
-                  Resend confirmation email{' '}
-                </Text>{' '}
+                  Resend confirmation email
+                </Text>
               </TouchableOpacity>
-            ) : null}{' '}
+            ) : null}
             <View style={stylesWelcome.orRow}>
-              {' '}
-              <View style={[stylesWelcome.orLine, { backgroundColor: palette.border }]} />{' '}
-              <Text style={{ color: palette.text2, fontSize: 12 }}>or continue with</Text>{' '}
-              <View style={[stylesWelcome.orLine, { backgroundColor: palette.border }]} />{' '}
-            </View>{' '}
+              <View style={[stylesWelcome.orLine, { backgroundColor: palette.border }]} />
+              <Text style={{ color: palette.text2, fontSize: 12 }}>or continue with</Text>
+              <View style={[stylesWelcome.orLine, { backgroundColor: palette.border }]} />
+            </View>
             <View style={stylesWelcome.socialRow}>
-              {' '}
               <PressableScale
                 disabled={busy}
                 style={[
@@ -544,13 +527,11 @@ export function WelcomeScreen({ navigation, route }) {
                   submit('google');
                 }}
               >
-                {' '}
-                <Text style={{ color: palette.text, fontWeight: '600' }}>
-                  Continue with Google
-                </Text>{' '}
-              </PressableScale>{' '}
+                <Text style={{ color: palette.text, fontWeight: '600' }}>Continue with Google</Text>
+              </PressableScale>
               {Platform.OS === 'ios' ? (
                 <PressableScale
+                  testID="btn-continue-with-apple"
                   disabled={busy}
                   style={[
                     stylesWelcome.social,
@@ -558,47 +539,41 @@ export function WelcomeScreen({ navigation, route }) {
                   ]}
                   onPress={() => submit('apple')}
                 >
-                  {' '}
                   <Text style={{ color: palette.text, fontWeight: '600' }}>
-                    {' '}
-                    Continue with Apple{' '}
-                  </Text>{' '}
+                    Continue with Apple
+                  </Text>
                 </PressableScale>
-              ) : null}{' '}
-            </View>{' '}
-          </FadeInView>{' '}
+              ) : null}
+            </View>
+          </FadeInView>
           <FadeInView delay={220}>
-            {' '}
             <TouchableOpacity
+              testID="btn-toggle-auth-mode"
               onPress={() => {
                 setMode((value) => (value === 'signup' ? 'signin' : 'signup'));
                 setAuthMessage(null);
                 setAwaitingConfirmation(false);
               }}
             >
-              {' '}
               <Text style={{ textAlign: 'center', color: palette.primary, fontWeight: '800' }}>
-                {' '}
                 {mode === 'signup'
                   ? 'Already have an account? Sign in'
-                  : 'New to ChodhiQ? Create an account'}{' '}
-              </Text>{' '}
-            </TouchableOpacity>{' '}
-            <TouchableOpacity onPress={guest}>
-              {' '}
+                  : 'New to ChodhiQ? Create an account'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity testID="btn-continue-as-guest" onPress={guest}>
               <Text
                 style={[
                   pageStyles.muted,
                   { textAlign: 'center', color: palette.text2, marginTop: 14 },
                 ]}
               >
-                {' '}
-                Continue as guest{' '}
-              </Text>{' '}
-            </TouchableOpacity>{' '}
-          </FadeInView>{' '}
-        </View>{' '}
-      </ScrollView>{' '}
+                Continue as guest
+              </Text>
+            </TouchableOpacity>
+          </FadeInView>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -655,7 +630,7 @@ export function ResetPasswordScreen({ navigation, route }) {
     { backgroundColor: palette.surface, borderColor: palette.border, color: palette.text },
   ];
   return (
-    <SafeAreaView style={[pageStyles.page, { backgroundColor: palette.background }]}>
+    <SafeAreaView style={pageStyles.page}>
       {' '}
       <ScrollView
         style={{ flex: 1 }}
@@ -700,19 +675,19 @@ export function ResetPasswordScreen({ navigation, route }) {
               placeholder="Confirm new password"
               palette={palette}
             />{' '}
-            <TouchableOpacity
+            <AsyncGlowButton
+              testID="btn-update-password"
+              variant="primary"
+              label="Update password"
+              stretch
               disabled={busy}
-              style={[pageStyles.button, { opacity: busy ? 0.6 : 1 }]}
+              status={busy ? 'loading' : undefined}
+              buttonStyle={[pageStyles.button, { opacity: busy ? 0.6 : 1 }]}
               onPress={submit}
-            >
-              {' '}
-              <Text style={pageStyles.buttonText}>
-                {busy ? 'Updating…' : 'Update password'}
-              </Text>{' '}
-            </TouchableOpacity>{' '}
+            />{' '}
           </>
         ) : null}{' '}
-        <TouchableOpacity onPress={() => navigation.replace('Welcome')}>
+        <TouchableOpacity testID="btn-go-to-sign-in" onPress={() => navigation.replace('Welcome')}>
           {' '}
           <Text style={{ textAlign: 'center', color: palette.primary, fontWeight: '800' }}>
             {' '}
@@ -822,6 +797,7 @@ const stylesWelcome = StyleSheet.create({
 export function LocationScreen({ navigation }) {
   const { location, selectLocation, setCurrentLocation } = useAppState();
   const { palette } = useChodhiQTheme();
+  const canAnimate = useEffectsLevel() === 'full';
   const [selected, setSelected] = useState(location);
   const [locationQuery, setLocationQuery] = useState(location || '');
   const [detecting, setDetecting] = useState(false);
@@ -927,7 +903,7 @@ export function LocationScreen({ navigation }) {
     }
   };
   return (
-    <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
+    <View style={pageStyles.page}>
       {' '}
       <ScreenHeader
         navigation={navigation}
@@ -1050,7 +1026,7 @@ export function LocationScreen({ navigation }) {
                 </Text>{' '}
                 {selected === city && (
                   <Animated.View
-                    entering={ZoomIn.springify().damping(12)}
+                    entering={canAnimate ? ZoomIn.springify().damping(12) : undefined}
                     style={[stylesLocation.check, { backgroundColor: palette.primary }]}
                   >
                     {' '}
@@ -1099,7 +1075,7 @@ export function NotificationsScreen({ navigation }) {
     }
   };
   return (
-    <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
+    <View style={pageStyles.page}>
       {' '}
       <ScreenHeader
         navigation={navigation}
@@ -1126,6 +1102,7 @@ export function NotificationsScreen({ navigation }) {
       <ScrollView contentContainerStyle={[pageStyles.content, stylesNotifications.content]}>
         {' '}
         <LinearGradient
+          pointerEvents="none"
           colors={['#1B2921', palette.surface, '#101412']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -1206,7 +1183,15 @@ export function NotificationsScreen({ navigation }) {
                 accessibilityLabel={item.communityPostId ? `Open ${item.title}` : item.title}
                 disabled={!item.communityPostId}
                 onPress={() =>
-                  navigation.navigate('Community', { postId: item.communityPostId })
+                  navigation.navigate('MainTabs', {
+                    screen: 'CommunityTab',
+                    params: {
+                      postId: item.communityPostId,
+                      ...(['community_comment', 'community_reply'].includes(item.type)
+                        ? { openComments: true }
+                        : {}),
+                    },
+                  })
                 }
                 style={[
                   stylesNotifications.card,
@@ -1230,18 +1215,12 @@ export function NotificationsScreen({ navigation }) {
                 <View style={pageStyles.grow}>
                   <View style={stylesNotifications.titleRow}>
                     <Text
-                      style={[
-                        pageStyles.title,
-                        { color: palette.text, flex: 1, lineHeight: 21 },
-                      ]}
+                      style={[pageStyles.title, { color: palette.text, flex: 1, lineHeight: 21 }]}
                     >
                       {item.title}
                     </Text>
                     <View
-                      style={[
-                        stylesNotifications.unreadDot,
-                        { backgroundColor: palette.primary },
-                      ]}
+                      style={[stylesNotifications.unreadDot, { backgroundColor: palette.primary }]}
                     />
                   </View>
                   <Text style={[pageStyles.body, { color: palette.text2, marginTop: 6 }]}>
@@ -1376,7 +1355,7 @@ export function QuoteRequestsScreen({ navigation }) {
   const { quoteRequests } = useAppState();
   const { palette } = useChodhiQTheme();
   return (
-    <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
+    <View style={pageStyles.page}>
       {' '}
       <ScreenHeader
         navigation={navigation}
@@ -1388,8 +1367,8 @@ export function QuoteRequestsScreen({ navigation }) {
         {quoteRequests.length > 0 ? (
           <Text style={[pageStyles.body, { color: palette.text2 }]}>
             {' '}
-            Opening WhatsApp doesn't confirm delivery. Check the chat to see whether your message
-            was sent.{' '}
+            Opening WhatsApp doesn&apos;t confirm delivery. Check the chat to see whether your
+            message was sent.{' '}
           </Text>
         ) : null}{' '}
         {!quoteRequests.length ? (
@@ -1401,16 +1380,13 @@ export function QuoteRequestsScreen({ navigation }) {
               {' '}
               Open a provider and request a quote to track it here.{' '}
             </Text>{' '}
-            <TouchableOpacity
+            <GlowButton
+              variant="primary"
+              label="Find a business"
               accessibilityRole="button"
-              style={[pageStyles.button, { backgroundColor: palette.primary }]}
+              buttonStyle={[pageStyles.button, { backgroundColor: palette.primary }]}
               onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
-            >
-              {' '}
-              <Text style={{ color: palette.onPrimary, fontWeight: '700' }}>
-                Find a business
-              </Text>{' '}
-            </TouchableOpacity>{' '}
+            />{' '}
           </View>
         ) : (
           quoteRequests.map((item) => (
@@ -1481,15 +1457,17 @@ export function BookingsScreen({ navigation }) {
   const { bookings, cancelBooking } = useAppState();
   const { palette } = useChodhiQTheme();
   const [bookingTab, setBookingTab] = useState('Upcoming');
-  const now = Date.now();
-  const timestamp = (item) =>
-    new Date(`${item.requestedDate}T${item.requestedTime || '00:00'}:00`).getTime();
+  const now = getUkLocalDateTime();
+  const nowKey = `${now.date}T${now.time}`;
+  const timestamp = (item) => `${item.requestedDate}T${item.requestedTime || '00:00'}`;
   const isUpcoming = (item) =>
-    !['completed', 'cancelled', 'declined'].includes(item.status) && timestamp(item) >= now;
+    ['pending', 'confirmed'].includes(item.status) && timestamp(item) >= nowKey;
   const visibleBookings = bookings
     .filter((item) => (bookingTab === 'Upcoming' ? isUpcoming(item) : !isUpcoming(item)))
     .sort((a, b) =>
-      bookingTab === 'Upcoming' ? timestamp(a) - timestamp(b) : timestamp(b) - timestamp(a),
+      bookingTab === 'Upcoming'
+        ? timestamp(a).localeCompare(timestamp(b))
+        : timestamp(b).localeCompare(timestamp(a)),
     );
   const cancel = (item) =>
     Alert.alert(
@@ -1506,7 +1484,7 @@ export function BookingsScreen({ navigation }) {
       ],
     );
   return (
-    <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
+    <View style={pageStyles.page}>
       {' '}
       <ScreenHeader
         navigation={navigation}
@@ -1573,7 +1551,8 @@ export function BookingsScreen({ navigation }) {
                   </Text>{' '}
                   <Text style={[pageStyles.body, { color: palette.text2 }]}>
                     {' '}
-                    {item.serviceName} · {item.requestedDate} at {item.requestedTime}{' '}
+                    {item.serviceName} ·{' '}
+                    {formatBookingDateTime(item.requestedDate, item.requestedTime)}
                   </Text>{' '}
                 </View>{' '}
                 <Text
@@ -1594,6 +1573,7 @@ export function BookingsScreen({ navigation }) {
               ) : null}{' '}
               {['pending', 'confirmed'].includes(item.status) && (
                 <TouchableOpacity
+                  testID="btn-cancel-booking"
                   onPress={() => cancel(item)}
                   style={{ alignSelf: 'flex-start', marginTop: 12 }}
                 >
@@ -1612,7 +1592,8 @@ export function BookingsScreen({ navigation }) {
   );
 }
 export function ReviewsScreen({ navigation, route }) {
-  const { providers, reviews, addReview, editReview, removeReview, session } = useAppState();
+  const { providers, reviews, reviewsLoading, addReview, editReview, removeReview, session } =
+    useAppState();
   const providerId = route.params?.providerId;
   const provider = providers.find((p) => p.id === providerId);
   const { palette } = useChodhiQTheme();
@@ -1637,15 +1618,20 @@ export function ReviewsScreen({ navigation, route }) {
     try {
       if (editingId) {
         await editReview(editingId, { rating, comment: comment.trim() });
-        Alert.alert('Review updated', 'Your review has been saved.');
+        Alert.alert('Review updated', 'Your review was sent.');
       } else {
-        await addReview({
+        const result = await addReview({
           providerId,
           providerName: provider?.name || 'Provider',
           rating,
           comment: comment.trim(),
         });
-        Alert.alert('Thank you', 'Your review has been added.');
+        Alert.alert(
+          result?.syncStatus === 'pending' ? 'Review pending' : 'Thank you',
+          result?.syncStatus === 'pending'
+            ? 'Saved on your phone, will send when you’re online'
+            : 'Your review was sent.',
+        );
       }
       setComment('');
     } catch (error) {
@@ -1662,7 +1648,7 @@ export function ReviewsScreen({ navigation, route }) {
       await editReview(item.id, { rating, comment: comment.trim() });
       setEditingId(null);
       setComment('');
-      Alert.alert('Review updated', 'Your review has been saved.');
+      Alert.alert('Review updated', 'Your review was sent.');
     } catch (error) {
       Alert.alert('Could not update review', error.message);
     }
@@ -1683,7 +1669,7 @@ export function ReviewsScreen({ navigation, route }) {
       },
     ]);
   return (
-    <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
+    <View style={pageStyles.page}>
       {' '}
       <ScreenHeader
         navigation={navigation}
@@ -1728,16 +1714,13 @@ export function ReviewsScreen({ navigation, route }) {
               placeholder="How was your experience?"
               placeholderTextColor={colors.textMuted}
             />{' '}
-            <TouchableOpacity
-              style={[pageStyles.button, { marginTop: spacing.md }]}
+            <AsyncGlowButton
+              variant="primary"
+              label={editingId ? 'Save changes' : 'Publish review'}
+              stretch
+              buttonStyle={[pageStyles.button, { marginTop: spacing.md }]}
               onPress={submit}
-            >
-              {' '}
-              <Text style={pageStyles.buttonText}>
-                {' '}
-                {editingId ? 'Save changes' : 'Publish review'}{' '}
-              </Text>{' '}
-            </TouchableOpacity>{' '}
+            />{' '}
           </View>
         )}{' '}
         {visibleReviews.map((item) => (
@@ -1753,13 +1736,13 @@ export function ReviewsScreen({ navigation, route }) {
                   value={comment}
                   onChangeText={setComment}
                 />{' '}
-                <TouchableOpacity
-                  style={[pageStyles.button, { marginTop: spacing.sm }]}
+                <AsyncGlowButton
+                  variant="primary"
+                  label="Save changes"
+                  stretch
+                  buttonStyle={[pageStyles.button, { marginTop: spacing.sm }]}
                   onPress={() => saveEdit(item)}
-                >
-                  {' '}
-                  <Text style={pageStyles.buttonText}>Save changes</Text>{' '}
-                </TouchableOpacity>{' '}
+                />{' '}
                 <TouchableOpacity
                   onPress={() => {
                     setEditingId(null);
@@ -1812,25 +1795,32 @@ export function ReviewsScreen({ navigation, route }) {
             )}{' '}
           </View>
         ))}{' '}
-        {!provider && !reviews.length && (
+        {!provider && reviewsLoading && (
+          <View style={pageStyles.empty} accessibilityRole="progressbar">
+            <ActivityIndicator color={palette.primary} />
+            <Text style={[pageStyles.body, { color: palette.text2, marginTop: spacing.sm }]}>
+              Loading reviews…
+            </Text>
+          </View>
+        )}{' '}
+        {!provider && !reviewsLoading && !visibleReviews.length && (
           <View style={pageStyles.empty}>
             {' '}
             <Star size={34} color={palette.text2} />{' '}
-            <Text style={[pageStyles.title, { color: palette.text }]}>No reviews yet</Text>{' '}
+            <Text style={[pageStyles.title, { color: palette.text }]}>
+              You haven’t written any reviews yet
+            </Text>{' '}
             <Text style={[pageStyles.body, { color: palette.text2 }]}>
               {' '}
               Reviews you publish will appear here.{' '}
             </Text>{' '}
-            <TouchableOpacity
+            <GlowButton
+              variant="primary"
+              label="Find a business"
               accessibilityRole="button"
-              style={[pageStyles.button, { backgroundColor: palette.primary }]}
+              buttonStyle={[pageStyles.button, { backgroundColor: palette.primary }]}
               onPress={() => navigation.navigate('MainTabs', { screen: 'Explore' })}
-            >
-              {' '}
-              <Text style={{ color: palette.onPrimary, fontWeight: '700' }}>
-                Browse providers
-              </Text>{' '}
-            </TouchableOpacity>{' '}
+            />{' '}
           </View>
         )}{' '}
       </ScrollView>{' '}
@@ -1846,7 +1836,7 @@ export function EditProfileScreen({ navigation }) {
     navigation.goBack();
   };
   return (
-    <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
+    <View style={pageStyles.page}>
       {' '}
       <ScreenHeader navigation={navigation} title="Edit profile" />{' '}
       <ScrollView contentContainerStyle={pageStyles.content}>
@@ -1892,21 +1882,22 @@ export function EditProfileScreen({ navigation }) {
             </Text>{' '}
           </View>
         ) : null}{' '}
-        <TouchableOpacity
-          style={[pageStyles.button, { backgroundColor: palette.primary }]}
+        <AsyncGlowButton
+          variant="primary"
+          label="Save changes"
+          height={50}
+          stretch
+          buttonStyle={[pageStyles.button, { backgroundColor: palette.primary }]}
           onPress={save}
-        >
-          {' '}
-          <Text style={[pageStyles.buttonText, { color: palette.onPrimary }]}>
-            {' '}
-            Save changes{' '}
-          </Text>{' '}
-        </TouchableOpacity>{' '}
+        />{' '}
       </ScrollView>{' '}
     </View>
   );
 }
 export function SettingsScreen({ navigation }) {
+    const { visualEffectsLevel } = useMotionPreferences();
+    const effectsLevel = useEffectsLevel();
+    const selectedEffectsLevel = visualEffectsLevel || effectsLevel;
   const { preferences, setPreferences, permissionDenied } = useAppState();
   const { palette } = useChodhiQTheme();
   const [settingsPermissionDenied, setSettingsPermissionDenied] = useState(false);
@@ -1924,7 +1915,7 @@ export function SettingsScreen({ navigation }) {
     };
   }, []);
   return (
-    <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
+    <View style={pageStyles.page}>
       {' '}
       <ScreenHeader navigation={navigation} title="Settings" />{' '}
       <ScrollView contentContainerStyle={pageStyles.content}>
@@ -1957,6 +1948,47 @@ export function SettingsScreen({ navigation }) {
           </View>
           <Check size={18} color={palette.primary} />
         </View>{' '}
+        <Text style={[pageStyles.label, { color: palette.text2 }]}>Visual effects</Text>{' '}
+        <View
+          style={[
+            pageStyles.card,
+            { backgroundColor: palette.surface, borderColor: palette.border },
+          ]}
+        >
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {[
+              ['full', 'Full'],
+              ['reduced', 'Reduced'],
+              ['off', 'Off'],
+            ].map(([level, label]) => {
+              const selected = selectedEffectsLevel === level;
+              return (
+                <TouchableOpacity
+                  key={level}
+                  testID={`btn-effects-level-${level}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Visual effects ${label}`}
+                  accessibilityState={{ selected }}
+                  onPress={() => void setVisualEffectsLevel(level)}
+                  style={{
+                    flex: 1,
+                    minHeight: 40,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: radius.md,
+                    borderWidth: 1,
+                    borderColor: selected ? palette.primary : palette.border,
+                    backgroundColor: selected ? palette.primaryTint : palette.surfaceAlt,
+                  }}
+                >
+                  <Text style={[pageStyles.title, { color: selected ? palette.primary : palette.text }]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>{' '}
         <Text style={[pageStyles.label, { color: palette.text2 }]}>Communication</Text>{' '}
         {[
           ['push', 'Push notifications'],
@@ -1978,6 +2010,7 @@ export function SettingsScreen({ navigation }) {
               {label}{' '}
             </Text>{' '}
             <Switch
+              testID={`switch-${key}`}
               accessibilityLabel={label}
               value={preferences[key]}
               onValueChange={(value) => setPreferences((p) => ({ ...p, [key]: value }))}
@@ -1990,6 +2023,7 @@ export function SettingsScreen({ navigation }) {
           preferences.push &&
           (permissionDenied || settingsPermissionDenied) && (
             <TouchableOpacity
+              testID="btn-settings-privacy"
               accessibilityRole="button"
               accessibilityLabel="Open device notification settings"
               onPress={openPermissionSettings}
@@ -2007,6 +2041,7 @@ export function SettingsScreen({ navigation }) {
             </TouchableOpacity>
           )}{' '}
         <TouchableOpacity
+          testID="btn-help-support"
           accessibilityRole="button"
           style={[
             pageStyles.card,
@@ -2040,6 +2075,14 @@ export function SettingsScreen({ navigation }) {
           </Text>{' '}
           <ChevronRight size={17} color={palette.muted} />{' '}
         </TouchableOpacity>{' '}
+        {__DEV__ ? (
+          <GlowButton
+            variant="secondary"
+            label="Open UI gallery"
+            accessibilityLabel="Open development UI gallery"
+            onPress={() => navigation.navigate('DevUIGallery')}
+          />
+        ) : null}
       </ScrollView>{' '}
     </View>
   );
@@ -2048,7 +2091,7 @@ export function HelpScreen({ navigation }) {
   const { palette } = useChodhiQTheme();
   const card = [pageStyles.card, { backgroundColor: palette.surface, borderColor: palette.border }];
   return (
-    <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
+    <View style={pageStyles.page}>
       {' '}
       <ScreenHeader navigation={navigation} title="Help & support" />{' '}
       <ScrollView contentContainerStyle={pageStyles.content}>
@@ -2077,20 +2120,21 @@ export function HelpScreen({ navigation }) {
             reviewed.{' '}
           </Text>{' '}
         </View>{' '}
-        <TouchableOpacity
-          style={[pageStyles.button, { backgroundColor: palette.primary }]}
+        <AsyncGlowButton
+          variant="primary"
+          label="Contact support"
+          stretch
+          buttonStyle={[pageStyles.button, { backgroundColor: palette.primary }]}
           onPress={() =>
-            Linking.openURL(
+            openExternalUrl(
               `mailto:${brand.supportEmail}?subject=${encodeURIComponent(`${brand.name} support request`)}`,
-            ).catch(() => Alert.alert('Support', `Email ${brand.supportEmail}`))
+              {
+                title: 'Support',
+                fallbackMessage: `Email ${brand.supportEmail}`,
+              },
+            )
           }
-        >
-          {' '}
-          <Text style={[pageStyles.buttonText, { color: palette.onPrimary }]}>
-            {' '}
-            Contact support{' '}
-          </Text>{' '}
-        </TouchableOpacity>{' '}
+        />{' '}
       </ScrollView>{' '}
     </View>
   );
@@ -2098,7 +2142,7 @@ export function HelpScreen({ navigation }) {
 export function BecomeProviderScreen({ navigation }) {
   const { palette } = useChodhiQTheme();
   return (
-    <View style={[pageStyles.page, { backgroundColor: palette.background }]}>
+    <View style={pageStyles.page}>
       {' '}
       <ScreenHeader
         navigation={navigation}
@@ -2117,16 +2161,13 @@ export function BecomeProviderScreen({ navigation }) {
           review. Claim an existing listing or create a new one through the business setup
           flow.{' '}
         </Text>{' '}
-        <TouchableOpacity
+        <GlowButton
+          variant="primary"
+          label="Set up my business"
           accessibilityRole="button"
-          style={[pageStyles.button, { backgroundColor: palette.primary }]}
+          buttonStyle={[pageStyles.button, { backgroundColor: palette.primary }]}
           onPress={() => navigation.replace('ClaimListing')}
-        >
-          {' '}
-          <Text style={{ color: palette.onPrimary, fontWeight: '700' }}>
-            Set up my business
-          </Text>{' '}
-        </TouchableOpacity>{' '}
+        />{' '}
       </View>{' '}
     </View>
   );

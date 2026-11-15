@@ -1,7 +1,7 @@
 import { AppAlert as Alert } from '../components/AppDialog';
 import { MotionScrollView as ScrollView } from '../components/Motion';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppState, Linking, RefreshControl, StyleSheet, View } from 'react-native';
+import { AppState, RefreshControl, StyleSheet, View } from 'react-native';
 import Text from '../components/AppText';
 import { Store } from 'lucide-react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { getDeviceLocation } from '../lib/deviceLocation';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { spacing } from '../theme/theme';
+import { getTabBarContentPadding } from '../navigation/tabBarLayout';
 import {
   HomeBusinessCard,
   HomeCategory,
@@ -27,6 +28,8 @@ import { loadActiveCampaigns, recordCampaignEvent } from '../data/adCampaignRepo
 import { distanceKm, isProviderOpenNow } from '../data/providerDiscovery';
 import { FadeInView } from '../components/Motion';
 import MarketplaceStatusBanner from '../components/MarketplaceStatusBanner';
+import { features } from '../config/features';
+import { openExternalUrl } from '../lib/openExternalUrl';
 
 export default function HomeScreen({ navigation }) {
   const {
@@ -38,6 +41,7 @@ export default function HomeScreen({ navigation }) {
     locationCoordinates,
     unreadCount,
     offline,
+    refreshError,
     lastUpdatedAt,
     marketplaceLoading,
     refreshMarketplace,
@@ -73,12 +77,24 @@ export default function HomeScreen({ navigation }) {
       clearInterval(interval);
     };
   }, [location, refreshMarketplace]);
-  const recordImpression = useCallback((campaign) => {
-    recordCampaignEvent(campaign.id, 'impression').catch(() => {});
+  const recordImpression = useCallback((campaign, placement = 'customer-home') => {
+    const recorded =
+      placement === 'customer-home'
+        ? recordCampaignEvent(campaign.id, 'impression')
+        : recordCampaignEvent(campaign.id, 'impression', placement);
+    recorded.catch(() => {});
   }, []);
-  const openCampaign = useCallback((campaign) => {
-    recordCampaignEvent(campaign.id, 'click').catch(() => {});
-    if (campaign.destinationUrl?.startsWith('https://')) Linking.openURL(campaign.destinationUrl);
+  const openCampaign = useCallback((campaign, placement = 'customer-home') => {
+    const recorded =
+      placement === 'customer-home'
+        ? recordCampaignEvent(campaign.id, 'click')
+        : recordCampaignEvent(campaign.id, 'click', placement);
+    recorded.catch(() => {});
+    if (campaign.destinationUrl?.startsWith('https://'))
+      void openExternalUrl(campaign.destinationUrl, {
+        title: 'Sponsor link unavailable',
+        fallbackMessage: 'This sponsor link could not be opened. Try again later.',
+      });
   }, []);
   const insets = useSafeAreaInsets();
   const useCurrentLocation = useCallback(async () => {
@@ -196,7 +212,7 @@ export default function HomeScreen({ navigation }) {
   const popularTitle = {
     nearby: 'Nearby businesses',
     open: 'Open now',
-    topRated: 'Top rated near you',
+    topRated: locationCoordinates ? 'Top rated near you' : 'Top rated',
     popular: directoryFallback
       ? 'UK businesses to explore'
       : locationCoordinates
@@ -212,14 +228,20 @@ export default function HomeScreen({ navigation }) {
           : 'Businesses to explore',
   }[discoveryMode];
   const featuredCategories = categories.slice(0, 10);
+  const recentlyAddedWithoutDuplicates = recentlyAdded.filter(
+    (provider) =>
+      !discoveryProviders.some(
+        (visibleProvider) => String(visibleProvider.id) === String(provider.id),
+      ),
+  );
   return (
-    <SafeAreaView style={[styles.page, { backgroundColor: '#101817' }]} edges={['top']}>
+    <SafeAreaView style={[styles.page, { backgroundColor: 'transparent' }]} edges={['top']}>
       <ScrollView
-        style={{ backgroundColor: palette.background }}
+        style={{ backgroundColor: 'transparent' }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: 72 + Math.max(insets.bottom, 12) },
+          { paddingBottom: getTabBarContentPadding(insets.bottom) },
         ]}
         refreshControl={
           <RefreshControl
@@ -247,6 +269,7 @@ export default function HomeScreen({ navigation }) {
         />
         <MarketplaceStatusBanner
           offline={offline}
+          refreshError={refreshError}
           loading={marketplaceLoading}
           lastUpdatedAt={lastUpdatedAt}
           onRetry={refreshMarketplace}
@@ -255,7 +278,7 @@ export default function HomeScreen({ navigation }) {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={{ backgroundColor: palette.background }}
+          style={{ backgroundColor: 'transparent' }}
           contentContainerStyle={styles.categoryHorizontal}
         >
           {categories.slice(0, 3).map((category) => (
@@ -280,15 +303,25 @@ export default function HomeScreen({ navigation }) {
               image={themedHero}
               images={[themedHero]}
               location={location}
+              campaign={features.customAds ? campaigns[0] : null}
+              onCampaignImpression={(campaign) => recordImpression(campaign, 'home_hero')}
+              onCampaignPress={(campaign) => openCampaign(campaign, 'home_hero')}
               onPress={() => navigation.navigate('Explore')}
             />
           </FadeInView>
 
           <HomeQuickActions
             palette={palette}
-            onNearby={() => setDiscoveryMode('nearby')}
-            onTopRated={() => setDiscoveryMode('topRated')}
-            onOpenNow={() => setDiscoveryMode('open')}
+            activeMode={discoveryMode}
+            onNearby={() =>
+              setDiscoveryMode((current) => (current === 'nearby' ? 'popular' : 'nearby'))
+            }
+            onTopRated={() =>
+              setDiscoveryMode((current) => (current === 'topRated' ? 'popular' : 'topRated'))
+            }
+            onOpenNow={() =>
+              setDiscoveryMode((current) => (current === 'open' ? 'popular' : 'open'))
+            }
           />
 
           <HomeSectionHeader
@@ -309,7 +342,11 @@ export default function HomeScreen({ navigation }) {
                           ? 'Top businesses people love around you'
                           : 'Real listings from the ChodhiQ directory'
             }
-            onPress={() => navigation.navigate('Explore')}
+            onPress={
+              discoveryMode === 'topRated' && discoveryProviders.length === 0
+                ? undefined
+                : () => navigation.navigate('Explore')
+            }
           />
           {marketplaceLoading ? (
             <MarketplaceSkeleton count={3} />
@@ -324,7 +361,7 @@ export default function HomeScreen({ navigation }) {
                   key={provider.id}
                   palette={palette}
                   provider={provider}
-                  saved={savedIds.includes(provider.id)}
+                  saved={savedIds.includes(String(provider.id))}
                   onSave={() =>
                     session ? toggleSaved(provider.id) : navigation.navigate('Welcome')
                   }
@@ -341,6 +378,7 @@ export default function HomeScreen({ navigation }) {
             <View
               style={[
                 styles.emptyState,
+                discoveryMode === 'topRated' && styles.compactEmptyState,
                 { backgroundColor: palette.surface, borderColor: palette.border },
               ]}
             >
@@ -365,58 +403,77 @@ export default function HomeScreen({ navigation }) {
                       : `No ${categories.find((category) => category.id === selectedCategoryId)?.name || 'business'} listings here yet`}
               </Text>
               <Text style={[styles.emptyBody, { color: palette.text2 }]}>
-                {offline
-                  ? 'Connect to the internet and retry to load business listings.'
-                  : discoveryMode === 'topRated'
-                    ? 'Ratings will appear when customers leave genuine reviews.'
-                    : discoveryMode === 'nearby'
-                      ? locationCoordinates
-                        ? 'No nearby businesses have map locations yet. Browse the UK directory in Search.'
-                        : 'Allow location access or choose an area to see nearby listings.'
-                      : 'Check back soon or try another category.'}
+                {discoveryMode === 'nearby'
+                  ? locationCoordinates
+                    ? 'No nearby business listings are available for this location yet. Browse all businesses or choose another area.'
+                    : 'Allow location access or choose an area to see nearby listings.'
+                  : offline
+                    ? 'You are offline. Showing saved directory data; reconnect and retry to refresh listings.'
+                    : refreshError
+                      ? 'The directory could not be refreshed. Showing the latest available listings; retry to refresh.'
+                      : discoveryMode === 'topRated'
+                        ? 'Ratings will appear when customers leave genuine reviews.'
+                        : 'Check back soon or try another category.'}
               </Text>
             </View>
           )}
 
-          <HomeSectionHeader
-            palette={palette}
-            title="Featured collections"
-            subtitle="Browse categories with local businesses"
-            onPress={() => navigation.navigate('Categories')}
-          />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontal}
-          >
-            <HomeFeaturedCategories
-              palette={palette}
-              categories={featuredCategories}
-              providers={enrichedProviders}
-              onCategory={(category) => navigation.navigate('Explore', { categoryId: category.id })}
-            />
-          </ScrollView>
+          {categories.length > 0 ? (
+            <>
+              <HomeSectionHeader
+                palette={palette}
+                title="Featured collections"
+                subtitle="Browse all categories"
+                onPress={() => navigation.navigate('Categories')}
+              />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.featuredCategoriesScroll}
+                contentContainerStyle={styles.featuredCategoriesContent}
+              >
+                <HomeFeaturedCategories
+                  palette={palette}
+                  categories={featuredCategories}
+                  providers={enrichedProviders}
+                  onCategory={(category) =>
+                    navigation.navigate('Explore', { categoryId: category.id })
+                  }
+                />
+              </ScrollView>
+            </>
+          ) : null}
 
           <HomeSectionHeader
             palette={palette}
             title="Recently added"
-            subtitle="Newly published local businesses"
-            onPress={() => navigation.navigate('Explore')}
+            subtitle={
+              recentlyAddedWithoutDuplicates.length
+                ? 'Newly published local businesses'
+                : recentlyAdded.length
+                  ? 'No other new listings beyond the businesses shown above'
+                  : 'Newly published local businesses'
+            }
+            onPress={
+              recentlyAddedWithoutDuplicates.length
+                ? () => navigation.navigate('Explore')
+                : undefined
+            }
           />
           {marketplaceLoading ? (
             <MarketplaceSkeleton count={3} />
-          ) : recentlyAdded.length ? (
+          ) : recentlyAddedWithoutDuplicates.length ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.horizontal}
             >
-              {recentlyAdded.map((provider) => (
+              {recentlyAddedWithoutDuplicates.map((provider) => (
                 <HomeBusinessCard
                   key={`recent-${provider.id}`}
                   palette={palette}
                   provider={provider}
-                  saved={savedIds.includes(provider.id)}
+                  saved={savedIds.includes(String(provider.id))}
                   onSave={() =>
                     session ? toggleSaved(provider.id) : navigation.navigate('Welcome')
                   }
@@ -440,15 +497,11 @@ export default function HomeScreen({ navigation }) {
             </View>
           ) : null}
 
-          <AdPlacement
-            customCampaign={campaigns[0]}
-            onImpression={recordImpression}
-            onPress={openCampaign}
-          />
+          <AdPlacement onImpression={recordImpression} onPress={openCampaign} />
 
           <HomeCommunityCTA
             palette={palette}
-            onPress={() => navigation.navigate('Community', { compose: true })}
+            onPress={() => navigation.navigate('CommunityTab', { compose: true })}
           />
         </View>
       </ScrollView>
@@ -481,7 +534,10 @@ const styles = StyleSheet.create({
   },
   sectionInset: { width: '100%' },
   horizontal: { paddingRight: spacing.md, paddingBottom: 4 },
+  featuredCategoriesScroll: { marginHorizontal: -18 },
+  featuredCategoriesContent: { paddingHorizontal: 18, paddingBottom: 4 },
   emptyState: { alignItems: 'center', borderWidth: 1, borderRadius: 16, padding: 16, marginTop: 4 },
+  compactEmptyState: { alignItems: 'flex-start', paddingVertical: 10, paddingHorizontal: 12 },
   emptyTitle: { fontSize: 13, fontWeight: '800', textAlign: 'center' },
   emptyBody: { fontSize: 11, lineHeight: 16, textAlign: 'center' },
 });

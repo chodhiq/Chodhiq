@@ -17,7 +17,9 @@ function findSourceMaps(directory) {
 
 const maps = findSourceMaps(root);
 if (maps.length === 0) {
-  console.error('Android export did not produce a Hermes source map; cannot verify bundle contents.');
+  console.error(
+    'Android export did not produce a Hermes source map; cannot verify bundle contents.',
+  );
   process.exit(1);
 }
 
@@ -33,8 +35,16 @@ const included = auditOnlyPackages.filter((name) =>
 );
 
 if (included.length > 0) {
-  console.error('Unexpected audit-only packages in Android JavaScript bundle: ' + included.join(', '));
+  console.error(
+    'Unexpected audit-only packages in Android JavaScript bundle: ' + included.join(', '),
+  );
   process.exit(1);
 }
 
-console.log('Verified ' + sources.length + ' Android source-map entries; no ' + auditOnlyPackages.join(', ') + ' modules are bundled.');
+console.log(
+  'Verified ' +
+    sources.length +
+    ' Android source-map entries; no ' +
+    auditOnlyPackages.join(', ') +
+    ' modules are bundled.',
+);

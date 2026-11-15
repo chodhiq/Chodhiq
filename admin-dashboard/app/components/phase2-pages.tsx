@@ -191,7 +191,7 @@ export function CommunityPage() {
     }
   }
   return (
-    
+
       <Page
         title="Live community feed"
         note="Watch community activity as it happens and remove content using audited administrator controls."
@@ -334,7 +334,7 @@ export function CommunityPage() {
           </section>
         )}
       </Page>
-    
+
   );
 }
 
@@ -399,7 +399,7 @@ export function ActivityPage() {
     </table>
   );
   return (
-    
+
       <Page
         title="Marketplace activity"
         note="Read-only quote request and booking demand visibility."
@@ -418,7 +418,7 @@ export function ActivityPage() {
           </section>
         </div>
       </Page>
-    
+
   );
 }
 
@@ -448,7 +448,7 @@ export function SubscriptionsPage() {
     });
   }, [admin]);
   return (
-    
+
       <Page title="Subscriptions" note="Read-only entitlement state and provider upgrade requests.">
         <div className="columns">
           <section className="panel table">
@@ -486,6 +486,6 @@ export function SubscriptionsPage() {
           </section>
         </div>
       </Page>
-    
+
   );
 }

@@ -1,12 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
-import Constants from 'expo-constants';
 import { features } from '../config/features';
-
-const isExpoGo = Constants.appOwnership === 'expo';
+import {
+  isGoogleAdsNativeModuleError,
+  loadGoogleMobileAds,
+  warnGoogleAdsUnavailable,
+} from '../lib/googleAdsRuntime';
 
 function getAdsConsent() {
-  if (isExpoGo || !features.googleAds) return null;
-  return require('react-native-google-mobile-ads').AdsConsent;
+  if (!features.googleAds) return null;
+  try {
+    return loadGoogleMobileAds()?.AdsConsent ?? null;
+  } catch (error) {
+    warnGoogleAdsUnavailable(error);
+    return null;
+  }
 }
 
 export function useAdvertisingConsent() {
@@ -26,8 +33,14 @@ export function useAdvertisingConsent() {
       const consentInfo = await AdsConsent.gatherConsent();
       setAllowed(Boolean(consentInfo.canRequestAds));
     } catch (consentError) {
-      const previous = await AdsConsent.getConsentInfo().catch(() => null);
-      setAllowed(Boolean(previous?.canRequestAds));
+      try {
+        const previous = await AdsConsent.getConsentInfo();
+        setAllowed(Boolean(previous?.canRequestAds));
+      } catch (infoError) {
+        if (isGoogleAdsNativeModuleError(infoError)) warnGoogleAdsUnavailable(infoError);
+        setAllowed(false);
+      }
+      if (isGoogleAdsNativeModuleError(consentError)) warnGoogleAdsUnavailable(consentError);
       setError(consentError?.message || 'Google privacy choices are temporarily unavailable.');
     } finally {
       setLoaded(true);
@@ -46,6 +59,7 @@ export function useAdvertisingConsent() {
       const consentInfo = await AdsConsent.showPrivacyOptionsForm();
       setAllowed(Boolean(consentInfo.canRequestAds));
     } catch (consentError) {
+      if (isGoogleAdsNativeModuleError(consentError)) warnGoogleAdsUnavailable(consentError);
       setError(consentError?.message || 'Google privacy choices are temporarily unavailable.');
     }
   }, []);

@@ -68,6 +68,12 @@ export async function saveLocalProfile(userId, profile) {
   await write('profile', userId, profile);
   return profile;
 }
+export async function markLocalProfileSynced(userId) {
+  const profile = await read('profile', userId, null);
+  if (!profile) return;
+  delete profile.syncStatus;
+  await write('profile', userId, profile);
+}
 export async function deleteLocalProfile(userId) {
   await AsyncStorage.removeItem(key('profile', userId));
 }
@@ -88,7 +94,7 @@ export async function markLocalSavedItemsImported(userId) {
 }
 export async function createLocalQuote(userId, input) {
   const row = {
-    id: `q-${Date.now()}`,
+    id: input.id || `q-${Date.now()}`,
     provider_id: String(input.providerId),
     message: input.message,
     preferred_contact: input.preferredContact,
@@ -106,6 +112,67 @@ export async function saveLocalReview(userId, review) {
   };
   await write('reviews', userId, [row, ...(await read('reviews', userId))]);
   return row;
+}
+export async function removeLocalReview(reviewId) {
+  const keys = await AsyncStorage.getAllKeys();
+  for (const storageKey of keys.filter((item) => item.startsWith('chodhiq-local:reviews:'))) {
+    const reviews = await read('reviews', storageKey.slice('chodhiq-local:reviews:'.length));
+    await write(
+      'reviews',
+      storageKey.slice('chodhiq-local:reviews:'.length),
+      reviews.filter((review) => review.id !== reviewId),
+    );
+  }
+}
+export async function replaceLocalReviewId(reviewId, remoteId) {
+  const keys = await AsyncStorage.getAllKeys();
+  for (const storageKey of keys.filter((item) => item.startsWith('chodhiq-local:reviews:'))) {
+    const userId = storageKey.slice('chodhiq-local:reviews:'.length);
+    const reviews = await read('reviews', userId);
+    await write(
+      'reviews',
+      userId,
+      reviews.map((review) => (review.id === reviewId ? { ...review, id: remoteId } : review)),
+    );
+  }
+}
+export async function markLocalReviewSynced(reviewId) {
+  const keys = await AsyncStorage.getAllKeys();
+  for (const storageKey of keys.filter((item) => item.startsWith('chodhiq-local:reviews:'))) {
+    const userId = storageKey.slice('chodhiq-local:reviews:'.length);
+    const reviews = await read('reviews', userId);
+    await write(
+      'reviews',
+      userId,
+      reviews.map((review) =>
+        review.id === reviewId ? { ...review, syncStatus: 'sent' } : review,
+      ),
+    );
+  }
+}
+export async function markLocalQuoteSent(quoteId) {
+  const keys = await AsyncStorage.getAllKeys();
+  for (const storageKey of keys.filter((item) => item.startsWith('chodhiq-local:quotes:'))) {
+    const userId = storageKey.slice('chodhiq-local:quotes:'.length);
+    const quotes = await read('quotes', userId);
+    await write(
+      'quotes',
+      userId,
+      quotes.map((quote) => (quote.id === quoteId ? { ...quote, status: 'sent' } : quote)),
+    );
+  }
+}
+export async function removeLocalQuote(quoteId) {
+  const keys = await AsyncStorage.getAllKeys();
+  for (const storageKey of keys.filter((item) => item.startsWith('chodhiq-local:quotes:'))) {
+    const userId = storageKey.slice('chodhiq-local:quotes:'.length);
+    const quotes = await read('quotes', userId);
+    await write(
+      'quotes',
+      userId,
+      quotes.filter((quote) => quote.id !== quoteId),
+    );
+  }
 }
 export async function markLocalNotificationsRead(userId, notificationIds) {
   const ids = new Set(notificationIds || []);
@@ -211,6 +278,26 @@ export async function enqueuePendingOperation(operation, payload) {
   ]);
   return id;
 }
+export async function storeAuthWriteDraft(operation, payload, ownerId) {
+  if (!ownerId) throw new Error('Cannot save an authentication draft without an owning user.');
+  const items = await read('auth-write-drafts', 'shared');
+  const id = `auth-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  await write('auth-write-drafts', 'shared', [
+    ...items,
+    { id, operation, payload, owner_id: ownerId, created_at: new Date().toISOString() },
+  ]);
+  return id;
+}
+export async function loadAuthWriteDrafts() {
+  return read('auth-write-drafts', 'shared');
+}
+export async function removeAuthWriteDraft(id) {
+  await write(
+    'auth-write-drafts',
+    'shared',
+    (await loadAuthWriteDrafts()).filter((item) => item.id !== id),
+  );
+}
 export async function loadPendingOperations() {
   return read('pending', 'shared');
 }
@@ -227,6 +314,43 @@ export async function updatePendingOperation(id, payload) {
     'shared',
     (await read('pending', 'shared')).map((item) => (item.id === id ? { ...item, payload } : item)),
   );
+}
+
+export async function retryPendingOperation(id) {
+  const operations = await loadPendingOperations();
+  const item = operations.find((operation) => operation.id === id);
+  if (!item) return false;
+  const { _sync, ...payload } = item.payload || {};
+  await updatePendingOperation(id, {
+    ...payload,
+    _sync: {
+      status: 'pending',
+      attempts: 0,
+      nextAttemptAt: null,
+      lastError: null,
+      retryVersion: Number(_sync?.retryVersion || 0) + 1,
+    },
+  });
+  return true;
+}
+
+export async function resumeAuthRequiredOperations() {
+  const operations = await loadPendingOperations();
+  const resumable = operations.filter((item) => item.payload?._sync?.status === 'auth_required');
+  await Promise.all(resumable.map((item) => retryPendingOperation(item.id)));
+  return resumable.length;
+}
+
+export async function discardPendingOperation(id) {
+  const operations = await loadPendingOperations();
+  const item = operations.find((operation) => operation.id === id);
+  if (item?.operation === 'community_post' && item.payload?.localId)
+    await removeLocalPost(item.payload.localId);
+  if (item?.operation === 'review_create' && item.payload?.localReviewId)
+    await removeLocalReview(item.payload.localReviewId);
+  if (item?.operation === 'quote_request' && item.payload?.id)
+    await removeLocalQuote(item.payload.id);
+  await removePendingOperation(id);
 }
 
 export async function clearLocalUserData(userId) {

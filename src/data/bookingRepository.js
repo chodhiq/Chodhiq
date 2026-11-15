@@ -54,6 +54,8 @@ export async function createBooking(userId, input) {
       'id,user_id,provider_id,service_id,requested_date,requested_time,status,notes,provider_message,created_at,providers(business_name),services(name)',
     )
     .single();
+  if (error?.code === 'PZH01')
+    throw new Error('Choose a time within the business’s opening hours.');
   if (error?.code === '23P01' || error?.code === '23505')
     throw new Error('This time is already booked. Choose a different date or time.');
   if (error) throw error;

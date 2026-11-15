@@ -1,34 +1,38 @@
-import { MotionTouchable as TouchableOpacity } from './Motion';
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Text from './AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { colors, spacing, typography } from '../theme/theme';
+import { spacing, typography } from '../theme/theme';
 import { useChodhiQTheme } from '../context/ThemeContext';
+import GlassView from './GlassView';
+import GlowIconButton from '../../components/ui/GlowIconButton';
 
 export default function ScreenHeader({ navigation, title, subtitle, right, showBack = true }) {
   const { palette } = useChodhiQTheme();
   const [actionWidth, setActionWidth] = useState(44);
   return (
-    <SafeAreaView
-      edges={['top']}
-      style={[styles.safe, { backgroundColor: palette.surface, borderBottomColor: palette.border }]}
-    >
+    <SafeAreaView edges={['top']} style={[styles.safe, { borderBottomColor: palette.border }]}>
+      <GlassView
+        pointerEvents="none"
+        intensity={44}
+        style={[StyleSheet.absoluteFill, styles.headerGlass, { borderColor: palette.border }]}
+      />
       <View style={styles.row}>
         <View style={[styles.side, { width: actionWidth }]}>
           {showBack ? (
-            <TouchableOpacity
+            <GlowIconButton
               accessibilityRole="button"
               accessibilityLabel="Go back"
+              size={40}
+              variant="secondary"
+              icon={<ArrowLeft size={20} color={palette.text} />}
               style={[
                 styles.backButton,
                 { backgroundColor: palette.surfaceAlt, borderColor: palette.border },
               ]}
               onPress={() => navigation.goBack()}
-            >
-              <ArrowLeft size={20} color={palette.text} />
-            </TouchableOpacity>
+            />
           ) : null}
         </View>
         <View style={styles.copy}>
@@ -51,7 +55,8 @@ export default function ScreenHeader({ navigation, title, subtitle, right, showB
 }
 
 const styles = StyleSheet.create({
-  safe: { backgroundColor: colors.background, borderBottomWidth: 1 },
+  safe: { backgroundColor: 'transparent', borderBottomWidth: 1, overflow: 'hidden' },
+  headerGlass: { borderWidth: 0 },
   row: {
     width: '100%',
     maxWidth: 840,

@@ -314,7 +314,7 @@ export default function CommunityPrivileges() {
     }
   }
   return (
-    
+
       <Page
         title="Community privileges"
         note="Manage spaces and participation. Owner and moderator roles apply only within a community; dashboard access remains limited to platform administrators."
@@ -593,6 +593,6 @@ export default function CommunityPrivileges() {
           </>
         )}
       </Page>
-    
+
   );
 }

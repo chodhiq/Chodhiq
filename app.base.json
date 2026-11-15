@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/chodhiq-official-logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#080A09"
+      "backgroundColor": "#050807"
     },
     "ios": {
       "supportsTablet": false,
@@ -26,7 +26,7 @@
       "blockedPermissions": ["android.permission.RECORD_AUDIO"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/chodhiq-adaptive-foreground.png",
-        "backgroundColor": "#080A09"
+        "backgroundColor": "#050807"
       }
     },
     "web": {

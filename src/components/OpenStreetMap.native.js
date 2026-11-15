@@ -1,11 +1,14 @@
-import React, { useMemo, useState } from 'react';
-import { StyleSheet, View, Pressable } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { PressableScale as Pressable } from './Motion';
 import { WebView } from 'react-native-webview';
 import Text from './AppText';
 import { openStreetMapHtml } from '../lib/openStreetMap';
+import GlassView from './GlassView';
 
 export default function OpenStreetMap({
   providers,
+  selected,
   location,
   onSelect,
   onRegionChange,
@@ -15,18 +18,30 @@ export default function OpenStreetMap({
   const [failed, setFailed] = useState(false);
   const [tileWarning, setTileWarning] = useState(false);
   const [revision, setRevision] = useState(0);
+  const webViewRef = useRef(null);
   const html = useMemo(
     () => openStreetMapHtml(providers, location, mapType),
     [providers, location?.latitude, location?.longitude, mapType],
   );
+  const syncSelectedMarker = useCallback(() => {
+    const selectedId = selected?.id == null ? '' : String(selected.id);
+    webViewRef.current?.injectJavaScript(
+      `window.setSelectedProvider && window.setSelectedProvider(${JSON.stringify(selectedId)});true;`,
+    );
+  }, [selected?.id]);
+  useEffect(() => {
+    syncSelectedMarker();
+  }, [syncSelectedMarker]);
   return (
     <View style={StyleSheet.absoluteFill}>
       <WebView
+        ref={webViewRef}
         key={revision}
         originWhitelist={['about:blank']}
         source={{ html }}
         style={{ flex: 1, backgroundColor: palette.surfaceAlt }}
         javaScriptEnabled
+        onLoadEnd={syncSelectedMarker}
         onError={() => setFailed(true)}
         onRenderProcessGone={() => setFailed(true)}
         onContentProcessDidTerminate={() => setFailed(true)}
@@ -46,7 +61,8 @@ export default function OpenStreetMap({
         }}
       />
       {tileWarning && !failed && (
-        <View
+        <GlassView
+          intensity={48}
           style={{
             position: 'absolute',
             top: 12,
@@ -55,6 +71,7 @@ export default function OpenStreetMap({
             borderRadius: 12,
             padding: 12,
             backgroundColor: palette.surface,
+            borderColor: palette.border,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -72,10 +89,11 @@ export default function OpenStreetMap({
           >
             <Text style={{ color: palette.primary, fontWeight: '700' }}>Retry</Text>
           </Pressable>
-        </View>
+        </GlassView>
       )}
       {failed && (
-        <View
+        <GlassView
+          intensity={48}
           style={{
             position: 'absolute',
             top: '45%',
@@ -84,6 +102,7 @@ export default function OpenStreetMap({
             borderRadius: 18,
             padding: 18,
             backgroundColor: palette.surface,
+            borderColor: palette.border,
             gap: 12,
           }}
         >
@@ -101,7 +120,7 @@ export default function OpenStreetMap({
           >
             <Text style={{ color: palette.primary, fontWeight: '700' }}>Retry map</Text>
           </Pressable>
-        </View>
+        </GlassView>
       )}
     </View>
   );

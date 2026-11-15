@@ -3,27 +3,27 @@ import ImageBackground from './RevealImageBackground';
 import { useIsFocused } from '@react-navigation/native';
 import { useMotionPreferences } from '../hooks/useMotionPreferences';
 import { MotionTouchable as TouchableOpacity } from './Motion';
-import { getMelaPalette } from '../theme/mela';
 import React from 'react';
 import { Image, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Text from './AppText';
 import {
   Bell,
   ChevronRight,
-  Heart,
   LocateFixed,
   Map,
   MapPin,
   Search,
   SlidersHorizontal,
-  Star,
   UserRound,
 } from 'lucide-react-native';
-import { categoryFallback, imageSource } from '../data/assetCatalog';
+import { imageSource } from '../data/assetCatalog';
 import { shadows } from '../theme/theme';
 import * as Icons from 'lucide-react-native';
 import { PressableScale } from './Motion';
 import GlassView from './GlassView';
+import { providerMatchesCategory } from '../data/categoryMatching';
+import ProviderCardGlow from '../../components/ui/ProviderCardGlow';
+import GlowButton from '../../components/ui/GlowButton';
 
 export function HomeHeader({
   palette,
@@ -44,7 +44,7 @@ export function HomeHeader({
   const headerText = palette.text;
   const city = String(location || '').trim();
   return (
-    <View style={[s.header, { backgroundColor: palette.bg }]}>
+    <View style={[s.header, { backgroundColor: 'transparent' }]}>
       <View style={s.top}>
         <Image
           resizeMethod="resize"
@@ -55,6 +55,7 @@ export function HomeHeader({
         />
         <View style={s.actions}>
           <IconButton
+            testID="btn-home-notifications"
             onPress={onNotifications}
             label={`Open notifications${unreadCount ? `, ${unreadCount} unread` : ''}`}
             style={{ backgroundColor: palette.surfaceAlt }}
@@ -67,6 +68,7 @@ export function HomeHeader({
             )}
           </IconButton>
           <TouchableOpacity
+            testID="btn-home-profile"
             accessibilityRole="button"
             accessibilityLabel="Open profile"
             onPress={onProfile}
@@ -92,6 +94,7 @@ export function HomeHeader({
       </View>
       <View style={s.locationRow}>
         <TouchableOpacity
+          testID="btn-home-area"
           accessibilityRole="button"
           accessibilityLabel="Choose your area"
           style={s.locationInline}
@@ -104,6 +107,7 @@ export function HomeHeader({
           <Icons.ChevronDown size={16} color={headerText} />
         </TouchableOpacity>
         <TouchableOpacity
+          testID="btn-home-current-location"
           accessibilityRole="button"
           accessibilityLabel="Use current location"
           disabled={currentLocationLoading}
@@ -123,9 +127,10 @@ export function HomeHeader({
     </View>
   );
 }
-function IconButton({ onPress, children, label, style }) {
+function IconButton({ onPress, children, label, style, testID }) {
   return (
     <TouchableOpacity
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
@@ -138,6 +143,7 @@ function IconButton({ onPress, children, label, style }) {
 export function HomeSearch({ palette, onPress }) {
   return (
     <TouchableOpacity
+      testID="btn-home-search"
       accessibilityRole="button"
       accessibilityLabel="Search for restaurants, salons, services and shops"
       onPress={onPress}
@@ -192,10 +198,21 @@ export function HomeLocationBar({ palette, location, onLocation }) {
     </View>
   );
 }
-export function HomeHero({ palette, mode, image, images = [], location = '', onPress }) {
+export function HomeHero({
+  palette,
+  mode,
+  image,
+  images = [],
+  location = '',
+  onPress,
+  campaign,
+  onCampaignPress,
+  onCampaignImpression,
+}) {
   const { width } = useWindowDimensions();
   const focused = useIsFocused();
   const { foreground, reducedMotion } = useMotionPreferences();
+  const impressedCampaignId = React.useRef(null);
   const heroHeight = Math.min(250, Math.max(220, (Math.min(width, 840) - 36) * 0.55));
   const city = String(location || '').trim();
   const [activeImage, setActiveImage] = React.useState(0);
@@ -204,59 +221,61 @@ export function HomeHero({ palette, mode, image, images = [], location = '', onP
     const timer = setInterval(() => setActiveImage((index) => (index + 1) % images.length), 5000);
     return () => clearInterval(timer);
   }, [images.length, focused, foreground, reducedMotion]);
+  React.useEffect(() => {
+    if (!campaign || !focused || impressedCampaignId.current === campaign.id) return;
+    impressedCampaignId.current = campaign.id;
+    onCampaignImpression?.(campaign);
+  }, [campaign?.id, focused]);
   const warm = mode === 'warm';
   const eyebrow = warm ? 'GOOD PLACES   BRIGHTER DAYS' : `DISCOVER ${city || 'NEAR YOU'}`;
   const firstLine = warm ? 'Explore' : 'Find what';
   const secondLine = warm ? 'your neighborhood' : 'you love nearby';
+  const heroImages = campaign?.image ? [campaign.image] : images.length ? images : [image];
   return (
-    <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={s.hero}>
+    <TouchableOpacity
+      accessibilityLabel={campaign ? `Sponsored: ${campaign.title}` : 'Explore nearby places'}
+      activeOpacity={0.9}
+      onPress={campaign ? () => onCampaignPress?.(campaign) : onPress}
+      style={s.hero}
+    >
       <HeroBackdrop
-        sources={images.length ? images : [image]}
+        sources={heroImages}
         active={activeImage}
         style={[s.heroImage, { height: heroHeight, justifyContent: 'center' }]}
       >
-        <View
-          style={[s.overlay, { backgroundColor: warm ? 'rgba(251,245,234,.72)' : palette.overlay }]}
-        />
         <View style={[s.heroCopy, { padding: 20, maxWidth: '88%' }]}>
-          <Text style={[s.heroEyebrow, { color: warm ? palette.textSecondary : '#FFFFFFD1' }]}>
-            {eyebrow}
+          <Text style={[s.heroEyebrow, { color: campaign ? '#B9F5DD' : '#FFFFFF' }]}>
+            {campaign ? 'SPONSORED' : eyebrow}
           </Text>
           <Text
             adjustsFontSizeToFit
             minimumFontScale={0.82}
             numberOfLines={2}
-            style={[
-              s.heroTitle,
-              { color: warm ? palette.text : '#FFFFFF', fontSize: width < 420 ? 27 : 30 },
-            ]}
+            style={[s.heroTitle, { color: '#FFFFFF', fontSize: width < 420 ? 27 : 30 }]}
           >
-            {firstLine}
-            {`\n`}
-            <Text style={{ color: warm ? palette.primary : '#FFFFFF' }}>{secondLine}</Text>
+            {campaign ? campaign.title : firstLine}
+            {!campaign ? (
+              <>
+                {`\n`}
+                <Text style={{ color: '#B9F5DD' }}>{secondLine}</Text>
+              </>
+            ) : null}
           </Text>
-          <Text
-            numberOfLines={1}
-            style={[s.heroBody, { color: warm ? palette.textSecondary : '#F2F5F3' }]}
-          >
-            Discover places you’ll love, close to home.
+          <Text numberOfLines={campaign ? 2 : 1} style={[s.heroBody, { color: '#F2F5F3' }]}>
+            {campaign ? campaign.subtitle : 'Discover places you’ll love, close to home.'}
           </Text>
-          <View
-            style={[
-              s.heroButton,
-              {
-                backgroundColor: getMelaPalette().primary,
-                height: 34,
-              },
-            ]}
-          >
-            <Text style={{ color: getMelaPalette().onPrimary, fontWeight: '800' }}>
-              Explore now
-            </Text>
-            <ChevronRight size={18} color={getMelaPalette().onPrimary} />
+          <View style={s.heroButtonWrap}>
+            <GlowButton
+              label={campaign ? 'Visit sponsor' : 'Explore now'}
+              variant="primary"
+              size="sm"
+              rightIcon={<ChevronRight size={18} color="#FFFFFF" />}
+              onPress={campaign ? () => onCampaignPress?.(campaign) : onPress}
+              buttonStyle={s.heroButton}
+            />
           </View>
         </View>
-        {images.length > 1 && (
+        {!campaign && images.length > 1 && (
           <View style={s.heroPagination} pointerEvents="none">
             {images.map((_, index) => (
               <View key={index} style={[s.heroDot, index === activeImage && s.heroDotActive]} />
@@ -301,28 +320,36 @@ export function HomeFeatureCards({ palette, onTrending, onDeals }) {
 export function HomeFeaturedCategories({ palette, categories, providers = [], onCategory }) {
   return (
     <View style={s.featuredCategoriesRow}>
-      {categories.map((category) => (
-        <TouchableOpacity
-          key={category.id}
-          onPress={() => onCategory(category)}
-          style={[
-            s.featuredCategory,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-            },
-          ]}
-        >
-          <Text numberOfLines={2} style={[s.featuredCategoryName, { color: palette.text }]}>
-            {category.name}
-          </Text>
-          {providers.filter((provider) => provider.categoryId === category.id).length > 0 && (
-            <Text style={[s.featuredCategoryCount, { color: palette.text2 }]}>
-              {providers.filter((provider) => provider.categoryId === category.id).length} places
+      {categories.map((category) => {
+        const count = providers.filter((provider) =>
+          providerMatchesCategory(provider, category),
+        ).length;
+        return (
+          <TouchableOpacity
+            key={category.id}
+            testID={`btn-category-${category.id}`}
+            onPress={() => onCategory(category)}
+            style={[
+              s.featuredCategory,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+              },
+            ]}
+          >
+            <Text
+              numberOfLines={2}
+              ellipsizeMode="tail"
+              style={[s.featuredCategoryName, { color: palette.text }]}
+            >
+              {category.name}
             </Text>
-          )}
-        </TouchableOpacity>
-      ))}
+            <Text style={[s.featuredCategoryCount, { color: palette.text2 }]}>
+              {count === 0 ? 'No places yet' : count === 1 ? '1 place' : `${count} places`}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
@@ -335,10 +362,12 @@ export function HomeSectionHeader({ palette, title, subtitle, onPress, actionLab
           <Text style={[s.sectionSubtitle, { color: palette.text2 }]}>{subtitle}</Text>
         ) : null}
       </View>
-      <TouchableOpacity onPress={onPress} style={s.viewAll}>
-        <Text style={[s.viewAllText, { color: palette.primary }]}>{actionLabel}</Text>
-        <ChevronRight size={15} color={palette.primary} />
-      </TouchableOpacity>
+      {onPress ? (
+        <TouchableOpacity onPress={onPress} style={s.viewAll}>
+          <Text style={[s.viewAllText, { color: palette.primary }]}>{actionLabel}</Text>
+          <ChevronRight size={15} color={palette.primary} />
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }
@@ -370,6 +399,13 @@ export function HomeCategory({ palette, category, onPress, more = false, active 
       accessibilityRole="button"
       accessibilityLabel={
         more ? 'See more categories' : `Browse ${category?.name || 'all categories'}`
+      }
+      testID={
+        more
+          ? 'btn-more-categories'
+          : `btn-category-${String(category?.name || 'all')
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')}`
       }
       accessibilityState={{ selected: active }}
       style={s.category}
@@ -407,106 +443,23 @@ export function HomeCategory({ palette, category, onPress, more = false, active 
     </TouchableOpacity>
   );
 }
-export function HomeBusinessCard({ palette, provider, saved, onSave, onPress, onCategory }) {
+export function HomeBusinessCard({ provider, saved, onSave, onPress, onCategory }) {
   return (
-    <PressableScale
+    <ProviderCardGlow
+      variant="compact"
+      provider={provider}
+      saved={saved}
+      onSave={onSave}
       onPress={onPress}
-      accessibilityLabel={`View ${provider.name}`}
-      style={[s.business, { backgroundColor: palette.surface, borderColor: palette.border }]}
-    >
-      <View style={s.businessMedia}>
-        {provider.image ? (
-          <Image
-            resizeMethod="resize"
-            source={imageSource(
-              provider.image,
-              categoryFallback(provider.category, provider.categoryId),
-            )}
-            style={s.businessImage}
-          />
-        ) : (
-          <View
-            style={[
-              s.businessImage,
-              s.businessImageEmpty,
-              { backgroundColor: palette.surfaceMuted },
-            ]}
-          >
-            <View style={[s.businessPlaceholderIcon, { backgroundColor: palette.primarySoft }]}>
-              <Icons.Store size={24} color={palette.primary} />
-            </View>
-            <Text numberOfLines={1} style={[s.businessPlaceholderText, { color: palette.text2 }]}>
-              {provider.category}
-            </Text>
-          </View>
-        )}
-        {provider.distance && (
-          <View style={s.distanceBadge}>
-            <MapPin size={10} color="#FFFFFF" />
-            <Text style={s.statusText}>{provider.distance}</Text>
-          </View>
-        )}
-        {typeof provider.openNow === 'boolean' && (
-          <View
-            style={[
-              s.status,
-              {
-                backgroundColor: provider.openNow ? '#E7F8EF' : palette.surfaceMuted,
-              },
-            ]}
-          >
-            <Text style={[s.statusText, { color: provider.openNow ? '#087A3D' : palette.text2 }]}>
-              {provider.openNow ? 'Open' : 'Closed'}
-            </Text>
-          </View>
-        )}
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={
-            saved ? `Remove ${provider.name} from saved` : `Save ${provider.name}`
-          }
-          accessibilityState={{ selected: saved }}
-          onPress={onSave}
-          style={{
-            position: 'absolute',
-            right: 7,
-            top: 7,
-            width: 28,
-            height: 28,
-            borderRadius: 14,
-            backgroundColor: '#FFFFFFE8',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Heart
-            size={15}
-            color={saved ? palette.danger : palette.text2}
-            fill={saved ? palette.danger : 'transparent'}
-          />
-        </TouchableOpacity>
-      </View>
-      <Text numberOfLines={1} style={[s.businessName, { color: palette.text }]}>
-        {provider.name}
-      </Text>
-      <Text numberOfLines={1} onPress={onCategory} style={[s.meta, { color: palette.text2 }]}>
-        {provider.category}
-      </Text>
-      <View style={s.rating}>
-        {provider.reviewCount > 0 && (
-          <Star size={12} color={palette.saffron} fill={palette.saffron} />
-        )}
-        {provider.reviewCount > 0 && Number.isFinite(provider.rating) && (
-          <Text style={[s.ratingText, { color: palette.text }]}>
-            {provider.rating.toFixed(1)} ({provider.reviewCount})
-          </Text>
-        )}
-      </View>
-    </PressableScale>
+      onCategory={onCategory}
+      testID="btn-home-provider"
+      saveTestID="btn-save-business"
+      glowIntensity={0}
+    />
   );
 }
 
-export function HomeQuickActions({ palette, onNearby, onTopRated, onOpenNow }) {
+export function HomeQuickActions({ palette, activeMode, onNearby, onTopRated, onOpenNow }) {
   const items = [
     {
       title: 'Nearby',
@@ -532,20 +485,37 @@ export function HomeQuickActions({ palette, onNearby, onTopRated, onOpenNow }) {
   ];
   return (
     <View style={s.quickRow}>
-      {items.map(({ title, subtitle, Icon, onPress }) => (
-        <TouchableOpacity
-          key={title}
-          accessibilityRole="button"
-          accessibilityLabel={`${title}: ${subtitle}`}
-          onPress={onPress}
-          style={[s.quickCard, { backgroundColor: palette.surfaceAlt }]}
-        >
-          <Icon size={15} color={palette.primary} strokeWidth={2.2} />
-          <Text numberOfLines={1} style={[s.quickTitle, { color: palette.text }]}>
-            {title}
-          </Text>
-        </TouchableOpacity>
-      ))}
+      {items.map(({ title, subtitle, Icon, mode, onPress }) => {
+        const active = activeMode === mode;
+        return (
+          <TouchableOpacity
+            key={title}
+            accessibilityRole="button"
+            accessibilityLabel={`${title}: ${subtitle}`}
+            onPress={onPress}
+            style={[
+              s.quickCard,
+              {
+                backgroundColor: active ? palette.primaryTint : palette.surfaceAlt,
+                borderColor: active ? palette.primary : 'transparent',
+                shadowColor: palette.primary,
+                shadowOpacity: active ? 0.2 : 0,
+                shadowRadius: active ? 9 : 0,
+                shadowOffset: { width: 0, height: 0 },
+                elevation: active ? 3 : 0,
+              },
+            ]}
+          >
+            <Icon size={15} color={active ? palette.primary : palette.text2} strokeWidth={2.2} />
+            <Text
+              numberOfLines={1}
+              style={[s.quickTitle, { color: active ? '#FFFFFF' : palette.text }]}
+            >
+              {title}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
@@ -563,6 +533,7 @@ export function HomeCommunityCTA({ palette, onPress }) {
         </Text>
       </View>
       <TouchableOpacity
+        testID="btn-home-community"
         onPress={onPress}
         style={[s.communityButton, { backgroundColor: palette.primary }]}
       >
@@ -784,19 +755,12 @@ const s = StyleSheet.create({
   heroImage: { width: '100%', justifyContent: 'center' },
   heroRadius: { borderRadius: 20 },
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(5,15,28,.42)' },
-  heroCopy: { padding: 18, maxWidth: '69%', zIndex: 1 },
+  heroCopy: { padding: 18, maxWidth: '88%', zIndex: 1 },
   heroEyebrow: { fontSize: 11, letterSpacing: 1.2, fontWeight: '700', marginBottom: 6 },
   heroTitle: { fontSize: 30, lineHeight: 33, letterSpacing: -0.6, fontWeight: '800' },
   heroBody: { fontSize: 12, lineHeight: 17, marginTop: 6 },
-  heroButton: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    marginTop: 12,
-  },
+  heroButtonWrap: { alignSelf: 'flex-start', marginTop: 12 },
+  heroButton: { alignSelf: 'flex-start' },
   heroPagination: {
     position: 'absolute',
     bottom: 12,
@@ -852,6 +816,19 @@ const s = StyleSheet.create({
     ...shadows.soft,
   },
   businessMedia: { position: 'relative' },
+  businessMain: { width: '100%', alignItems: 'stretch' },
+  businessSaveButton: {
+    position: 'absolute',
+    right: 7,
+    top: 7,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFFE8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  businessCategoryButton: { alignSelf: 'flex-start', maxWidth: '100%' },
   businessImage: {
     width: '100%',
     height: 64,
@@ -871,7 +848,8 @@ const s = StyleSheet.create({
   featureRow: { flexDirection: 'row', gap: 10 },
   featuredCategoriesRow: { flexDirection: 'row', gap: 9 },
   featuredCategory: {
-    width: 150,
+    width: 164,
+    flexShrink: 0,
     minHeight: 82,
     justifyContent: 'center',
     borderWidth: 1,
@@ -879,6 +857,7 @@ const s = StyleSheet.create({
     padding: 12,
   },
   featuredCategoryName: {
+    width: '100%',
     fontSize: 12,
     lineHeight: 15,
     textAlign: 'left',
@@ -890,6 +869,7 @@ const s = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     minHeight: 42,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

@@ -7,7 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import useReducedMotion from '../hooks/useMotionPreferences';
+import useEffectsLevel from '../hooks/useEffectsLevel';
 import { motion } from '../theme/motion';
 import { createImageRevealRegistry, imageIdentity } from '../lib/imageRevealRegistry';
 
@@ -29,22 +29,22 @@ export default forwardRef(function RevealImageBackground(
   },
   ref,
 ) {
-  const reduced = useReducedMotion();
+  const canAnimate = useEffectsLevel() === 'full';
   const key = imageIdentity(source);
-  const ready = reduced || loadedImages.has(key);
+  const ready = !canAnimate || loadedImages.has(key);
   const opacity = useSharedValue(ready ? 1 : 0);
   const scale = useSharedValue(ready ? 1 : motion.image.scale);
   useLayoutEffect(() => {
     cancelAnimation(opacity);
     cancelAnimation(scale);
-    const shown = reduced || loadedImages.has(key);
+    const shown = !canAnimate || loadedImages.has(key);
     opacity.value = shown ? 1 : 0;
     scale.value = shown ? 1 : motion.image.scale;
     return () => {
       cancelAnimation(opacity);
       cancelAnimation(scale);
     };
-  }, [key, reduced, opacity, scale]);
+  }, [key, canAnimate, opacity, scale]);
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [{ scale: scale.value }],
@@ -52,7 +52,7 @@ export default forwardRef(function RevealImageBackground(
   const reveal = () => {
     const alreadyLoaded = loadedImages.has(key);
     loadedImages.mark(key);
-    if (reduced || alreadyLoaded) {
+    if (!canAnimate || alreadyLoaded) {
       opacity.value = 1;
       scale.value = 1;
       return;

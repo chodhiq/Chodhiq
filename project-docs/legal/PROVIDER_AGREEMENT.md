@@ -1,6 +1,6 @@
 # ChodhiQ provider agreement
 
-**Status:** Publication candidate requiring legal approval.  
+**Status:** Publication candidate requiring legal approval.
 **Version:** 1.0 · **Effective:** `{{EFFECTIVE_DATE}}`
 
 This agreement supplements the ChodhiQ Terms and applies to each business or person listing services ("Provider").

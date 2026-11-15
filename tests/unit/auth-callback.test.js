@@ -1,6 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { completeAuthCallback, createAuthCodeExchange } from '../../src/lib/authCallback.js';
+import {
+  AUTH_CALLBACK_URL,
+  completeAuthCallback,
+  createAuthCodeExchange,
+  getAuthCallbackRedirectUrl,
+} from '../../src/lib/authCallback.js';
+
+test('Expo Go uses its runtime deep link for browser OAuth callbacks', () => {
+  const makeRedirectUri = (options) => `exp://192.168.1.2:8081/--/${options.path}`;
+  assert.equal(
+    getAuthCallbackRedirectUrl('android', true, makeRedirectUri),
+    'exp://192.168.1.2:8081/--/auth/callback',
+  );
+});
+
+test('custom builds retain the registered app callback and web uses its web redirect', () => {
+  const makeRedirectUri = (options) => `https://example.test/${options.path}`;
+  assert.equal(getAuthCallbackRedirectUrl('android', false, makeRedirectUri), AUTH_CALLBACK_URL);
+  assert.equal(
+    getAuthCallbackRedirectUrl('web', false, makeRedirectUri),
+    'https://example.test/auth/callback',
+  );
+});
 
 test('a PKCE confirmation exchanges the code and returns the established session', async () => {
   const session = { user: { id: 'customer' } };

@@ -1,10 +1,11 @@
 import { MotionTouchable as TouchableOpacity } from '../components/Motion';
-import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Share, View, FlatList, ScrollView, StyleSheet } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Share, View, FlatList, StyleSheet } from 'react-native';
+import { AppAlert as Alert } from '../components/AppDialog';
 import Text from '../components/AppText';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { HeartOff } from 'lucide-react-native';
-import { colors, radius, shadows, spacing, typography } from '../theme/theme';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Bookmark, Building2, HeartOff } from 'lucide-react-native';
+import { colors, spacing, typography } from '../theme/theme';
 import { ProviderCardRow } from '../components/ProviderCard';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
@@ -12,17 +13,24 @@ import { useFocusEffect } from '@react-navigation/native';
 import CommunityPostCard from '../components/community/PostCard';
 import { resolveCommunityImages } from '../data/communityImages';
 import { supabase } from '../lib/supabase';
+import { FadeInView } from '../components/Motion';
+import TabPills from '../../components/TabPills';
+import GlowButton from '../../components/ui/GlowButton';
+import { getTabBarContentPadding } from '../navigation/tabBarLayout';
 
 export default function SavedScreen({ navigation }) {
   const { providers, savedIds, toggleSaved, session } = useAppState();
   const { palette, communityPalette } = useChodhiQTheme();
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState('businesses');
+  const savedTabs = ['businesses', 'posts'];
   const [savedPosts, setSavedPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState('');
+  const removalRequests = useRef(new Set());
   const savedProviders = useMemo(() => {
-    const saved = new Set(savedIds);
-    return providers.filter((provider) => saved.has(provider.id));
+    const saved = new Set(savedIds.map(String));
+    return providers.filter((provider) => saved.has(String(provider.id)));
   }, [providers, savedIds]);
 
   const loadSavedPosts = useCallback(async () => {
@@ -93,46 +101,60 @@ export default function SavedScreen({ navigation }) {
   const removeSavedPost = useCallback(
     async (postId) => {
       if (!session?.user?.id || !supabase) return;
-      const previous = savedPosts;
-      setSavedPosts((current) => current.filter((post) => post.id !== postId));
-      const { error } = await supabase
-        .from('community_saved_posts')
-        .delete()
-        .eq('post_id', postId)
-        .eq('user_id', session.user.id);
-      if (error) {
-        setSavedPosts(previous);
+      if (removalRequests.current.has(postId)) return;
+      removalRequests.current.add(postId);
+      try {
+        const { error } = await supabase
+          .from('community_saved_posts')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', session.user.id);
+        if (error) throw error;
+        setSavedPosts((current) => current.filter((post) => post.id !== postId));
+        setPostsError('');
+      } catch (error) {
+        console.warn('Unable to remove saved community post.', error);
         setPostsError('Could not remove the saved post. Please try again.');
+      } finally {
+        removalRequests.current.delete(postId);
       }
     },
-    [savedPosts, session?.user?.id],
+    [session?.user?.id],
   );
 
   const renderSavedPost = useCallback(
-    ({ item: post }) => (
-      <CommunityPostCard
-        post={post}
-        palette={communityPalette}
-        providers={providers}
-        session={session}
-        engagement={{ counts: {}, saves: [{ post_id: post.id }] }}
-        onLike={() => {}}
-        onComment={() => navigation.navigate('CommunityTab', { postId: post.id })}
-        onSave={() => removeSavedPost(post.id)}
-        onShare={() => Share.share({ message: post.body || 'A post saved on ChodhiQ' })}
-        onAuthor={() =>
-          post.author_id && navigation.navigate('CommunityProfile', { authorId: post.author_id })
-        }
-        onProvider={() =>
-          post.provider_id && navigation.navigate('ProviderDetail', { id: post.provider_id })
-        }
-      />
+    ({ item: post, index }) => (
+      <FadeInView delay={Math.min(index * 45, 320)}>
+        <CommunityPostCard
+          post={post}
+          palette={communityPalette}
+          providers={providers}
+          session={session}
+          engagement={{ counts: {}, saves: [{ post_id: post.id }] }}
+          onComment={() => navigation.navigate('CommunityTab', { postId: post.id })}
+          onSave={() => removeSavedPost(post.id)}
+          onShare={async () => {
+            try {
+              await Share.share({ message: post.body || 'A post saved on ChodhiQ' });
+            } catch (error) {
+              console.warn('Unable to share saved community post.', error);
+              Alert.alert('Could not share post', 'Please try sharing this post again.');
+            }
+          }}
+          onAuthor={() =>
+            post.author_id && navigation.navigate('CommunityProfile', { authorId: post.author_id })
+          }
+          onProvider={() =>
+            post.provider_id && navigation.navigate('ProviderDetail', { id: post.provider_id })
+          }
+        />
+      </FadeInView>
     ),
     [communityPalette, navigation, providers, removeSavedPost, session],
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: palette.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
       <View style={styles.header}>
         <Text style={[typography.h1, { color: palette.text }]}>Saved</Text>
         <Text style={[typography.caption, { color: palette.text2 }]}>
@@ -140,33 +162,14 @@ export default function SavedScreen({ navigation }) {
         </Text>
       </View>
       <View style={styles.tabsFrame}>
-        <ScrollView
-          style={{ flexGrow: 0, flexShrink: 0 }}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.tabs, { backgroundColor: palette.surfaceAlt }]}
-        >
-          {['businesses', 'events', 'offers', 'posts'].map((item) => (
-            <TouchableOpacity
-              key={item}
-              style={[
-                styles.tab,
-                tab === item && styles.tabActive,
-                tab === item && { backgroundColor: palette.primary },
-              ]}
-              onPress={() => setTab(item)}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  { color: tab === item ? palette.onPrimary : palette.text2 },
-                ]}
-              >
-                {item[0].toUpperCase() + item.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <TabPills
+          tabs={[
+            { id: 'businesses', label: 'Businesses', Icon: Building2 },
+            { id: 'posts', label: 'Posts', Icon: Bookmark },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
       </View>
       <FlatList
         data={tab === 'businesses' ? savedProviders : tab === 'posts' ? savedPosts : []}
@@ -174,11 +177,14 @@ export default function SavedScreen({ navigation }) {
         renderItem={
           tab === 'posts'
             ? renderSavedPost
-            : ({ item: provider }) => (
+            : ({ item: provider, index }) => (
                 <ProviderCardRow
                   provider={provider}
+                  index={index}
                   saved
-                  onSave={() => toggleSaved(provider.id)}
+                  onSave={() =>
+                    session ? toggleSaved(provider.id) : navigation.navigate('Welcome')
+                  }
                   onPress={() => navigation.navigate('ProviderDetail', { id: provider.id })}
                 />
               )
@@ -187,23 +193,51 @@ export default function SavedScreen({ navigation }) {
         maxToRenderPerBatch={6}
         windowSize={7}
         removeClippedSubviews={false}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: getTabBarContentPadding(insets.bottom) },
+        ]}
         ListEmptyComponent={
           tab === 'posts' && postsLoading ? (
             <ActivityIndicator style={styles.loading} color={palette.primary} />
+          ) : tab === 'posts' && !session?.user?.id ? (
+            <View style={styles.empty}>
+              <Text style={[styles.emptyText, { color: palette.text2 }]}>
+                Sign in to see saved posts
+              </Text>
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => navigation.navigate('Welcome')}
+                style={styles.signInButton}
+              >
+                <Text style={{ color: palette.primary, fontWeight: '800' }}>Sign in</Text>
+              </TouchableOpacity>
+            </View>
           ) : tab === 'posts' && postsError ? (
             <TouchableOpacity onPress={loadSavedPosts} style={styles.empty}>
               <Text style={[styles.emptyText, { color: palette.text2 }]}>{postsError}</Text>
               <Text style={{ color: palette.primary, fontWeight: '800' }}>Tap to retry</Text>
             </TouchableOpacity>
           ) : (
-            <View style={styles.empty}>
+            <View
+              style={[
+                styles.emptyCard,
+                { backgroundColor: palette.surface, borderColor: palette.border },
+              ]}
+            >
               <HeartOff size={32} color={palette.muted} />
               <Text style={[styles.emptyText, { color: palette.text2 }]}>
                 {tab === 'businesses'
                   ? 'Nothing saved yet. Tap the heart on any provider to save it here.'
                   : `Saved ${tab} will appear here as you bookmark them.`}
               </Text>
+              {tab === 'businesses' ? (
+                <GlowButton
+                  label="Browse businesses"
+                  variant="ghost"
+                  onPress={() => navigation.navigate('Explore')}
+                />
+              ) : null}
             </View>
           )
         }
@@ -213,7 +247,7 @@ export default function SavedScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: {
     width: '100%',
     maxWidth: 760,
@@ -228,18 +262,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     marginTop: spacing.md,
   },
-  tabs: {
-    borderRadius: radius.pill,
-    padding: 4,
-  },
-  tab: {
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: radius.pill,
-  },
-  tabActive: { ...shadows.soft },
-  tabText: { fontSize: 11, fontWeight: '800' },
   content: {
     width: '100%',
     maxWidth: 760,
@@ -252,6 +274,16 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.xl,
   },
+  emptyCard: {
+    marginTop: spacing.xl,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderRadius: 18,
+    padding: spacing.xl,
+    gap: spacing.md,
+  },
   loading: { marginTop: spacing.xl },
   emptyText: { textAlign: 'center', color: colors.textMuted, fontSize: 14 },
+  signInButton: { padding: spacing.sm },
 });

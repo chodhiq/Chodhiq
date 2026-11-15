@@ -2,7 +2,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const [auditFile, bundleDirectory, auditStatusText] = process.argv.slice(2);
 if (!auditFile || !bundleDirectory || !auditStatusText) {
-  console.error('Usage: node check-android-bundle-audit.cjs <audit-json> <android-export-dir> <npm-exit-code>');
+  console.error(
+    'Usage: node check-android-bundle-audit.cjs <audit-json> <android-export-dir> <npm-exit-code>',
+  );
   process.exit(1);
 }
 const auditStatus = Number(auditStatusText);
@@ -57,22 +59,35 @@ function bundled(packageName) {
 const high = Object.entries(audit.vulnerabilities).filter(([, item]) =>
   ['high', 'critical'].includes(item.severity),
 );
-const blocked = high.filter(([name]) => {
-  const advisories = collectAdvisories(name).filter((item) =>
-    ['high', 'critical'].includes(item.severity),
-  );
-  return advisories.length === 0 || advisories.some((item) => {
-    const id = item.url?.split('/').pop();
-    const packageName = allowed.get(id);
-    return !packageName || bundled(packageName);
-  });
-}).map(([name]) => name);
+const blocked = high
+  .filter(([name]) => {
+    const advisories = collectAdvisories(name).filter((item) =>
+      ['high', 'critical'].includes(item.severity),
+    );
+    return (
+      advisories.length === 0 ||
+      advisories.some((item) => {
+        const id = item.url?.split('/').pop();
+        const packageName = allowed.get(id);
+        return !packageName || bundled(packageName);
+      })
+    );
+  })
+  .map(([name]) => name);
 if (blocked.length) {
-  console.error('High or critical advisories affect Android-bundled dependencies: ' + blocked.join(', '));
+  console.error(
+    'High or critical advisories affect Android-bundled dependencies: ' + blocked.join(', '),
+  );
   process.exit(1);
 }
 if (auditStatus !== 0 && high.length === 0 && audit.metadata.vulnerabilities.total === 0) {
-  console.error('npm audit exited ' + auditStatus + ' without a reported vulnerability; failing closed.');
+  console.error(
+    'npm audit exited ' + auditStatus + ' without a reported vulnerability; failing closed.',
+  );
   process.exit(1);
 }
-console.log('No high or critical advisories affect bundled Android JavaScript (' + high.length + ' dependency-tree entries traced). Known unpatched build-tool advisories are excluded only after source-map verification.');
+console.log(
+  'No high or critical advisories affect bundled Android JavaScript (' +
+    high.length +
+    ' dependency-tree entries traced). Known unpatched build-tool advisories are excluded only after source-map verification.',
+);

@@ -48,9 +48,9 @@ function resolveBuildConfig(profile, overrides = {}) {
 test('direct-install beta can build without pretending legal drafts are published', () => {
   const config = resolveBuildConfig('beta-apk');
   assert.equal(config.android.package, 'com.chodhiq.app');
-  assert.equal(config.owner, 'kevin1002s-team');
-  assert.equal(config.extra.eas.projectId, '3b5b77f3-c89e-4d20-af90-a249a5e8b75c');
-  assert.equal(config.updates.url, 'https://u.expo.dev/3b5b77f3-c89e-4d20-af90-a249a5e8b75c');
+  assert.equal(config.owner, 'dominic2s-team');
+  assert.equal(config.extra.eas.projectId, 'fae32079-52b9-4db9-9f21-7b8c032afea3');
+  assert.equal(config.updates.url, 'https://u.expo.dev/fae32079-52b9-4db9-9f21-7b8c032afea3');
   for (const profile of ['beta-play', 'beta', 'production', 'production-apk']) {
     assert.throws(() => resolveBuildConfig(profile), /EXPO_PUBLIC_TERMS_URL/);
   }
@@ -91,6 +91,17 @@ test('internal beta still rejects missing backend, the wrong backend, and demo m
   assert.throws(
     () => resolveBuildConfig('beta-apk', { EXPO_PUBLIC_DEMO_MODE: 'true' }),
     /cannot enable EXPO_PUBLIC_DEMO_MODE/,
+  );
+});
+
+test('preview builds reject missing Supabase URL or anon key', () => {
+  assert.throws(
+    () => resolveBuildConfig('preview', { EXPO_PUBLIC_SUPABASE_URL: '' }),
+    /EXPO_PUBLIC_SUPABASE_URL/,
+  );
+  assert.throws(
+    () => resolveBuildConfig('preview', { EXPO_PUBLIC_SUPABASE_ANON_KEY: '' }),
+    /EXPO_PUBLIC_SUPABASE_ANON_KEY/,
   );
 });
 
@@ -141,21 +152,18 @@ test(
   },
 );
 
-test('production app config omits Sentry when source-map upload credentials are incomplete', () => {
+test('production app config enables Sentry without requiring source-map upload credentials', () => {
   const config = resolveBuildConfig('production', {
     EXPO_PUBLIC_TERMS_URL: 'https://chodhiq.app/terms',
     EXPO_PUBLIC_PRIVACY_URL: 'https://chodhiq.app/privacy',
     EXPO_PUBLIC_DELETE_ACCOUNT_URL: 'https://chodhiq.app/delete-account',
     EXPO_PUBLIC_SENTRY_DSN: 'https://public@example.ingest.sentry.io/123',
   });
-  assert.equal(
-    config.plugins.some((plugin) =>
-      Array.isArray(plugin)
-        ? plugin[0] === '@sentry/react-native'
-        : plugin === '@sentry/react-native',
-    ),
-    false,
+  const sentryPlugin = config.plugins.find(
+    (plugin) => Array.isArray(plugin) && plugin[0] === '@sentry/react-native',
   );
+  assert.ok(sentryPlugin);
+  assert.equal(sentryPlugin[1].disableAutoUpload, true);
   assert.equal(JSON.parse(read('eas.json')).build.preview.environment, 'preview');
 });
 
@@ -313,14 +321,4 @@ test('offline failures remain visible and do not stop later queued operations', 
   assert.doesNotMatch(sync, /if \(result\.error\) break/);
   assert.match(sync, /prepareQueuedPayload/);
   assert.match(context, /syncStatus/);
-});
-test('preview builds reject missing Supabase URL or anon key', () => {
-  assert.throws(
-    () => resolveBuildConfig('preview', { EXPO_PUBLIC_SUPABASE_URL: '' }),
-    /EXPO_PUBLIC_SUPABASE_URL/,
-  );
-  assert.throws(
-    () => resolveBuildConfig('preview', { EXPO_PUBLIC_SUPABASE_ANON_KEY: '' }),
-    /EXPO_PUBLIC_SUPABASE_ANON_KEY/,
-  );
 });

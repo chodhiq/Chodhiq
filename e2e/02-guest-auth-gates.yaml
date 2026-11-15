@@ -1,0 +1,38 @@
+appId: com.chodhiq.app
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: btn-onboarding-skip
+- tapOn:
+    id: btn-home-search
+- tapOn:
+    text: Search businesses and services...
+- inputText: '${MAESTRO_PROVIDER_QUERY}'
+- assertVisible:
+    text: '${MAESTRO_PROVIDER_NAME}'
+- tapOn:
+    id: btn-save-business
+- assertVisible:
+    id: btn-continue-as-guest
+- assertVisible:
+    text: Welcome back
+- tapOn:
+    text: Go back
+- tapOn:
+    id: tab-community
+- tapOn:
+    text: Share something with your community...
+- inputText: Guest post should require sign-in
+- tapOn:
+    id: btn-post
+- assertVisible: Sign in required
+- tapOn: Cancel
+- scrollUntilVisible:
+    element:
+      text: Checking
+- tapOn:
+    id: btn-post-like
+    index: 0
+- assertVisible: Sign in required
+- tapOn: Cancel

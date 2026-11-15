@@ -1,8 +1,13 @@
 import { supabase } from '../lib/supabase';
 import {
   loadPendingOperations,
+  markLocalQuoteSent,
+  markLocalProfileSynced,
+  markLocalReviewSynced,
+  replaceLocalReviewId,
   removeLocalPost,
   removePendingOperation,
+  loadPendingOperations as reloadPendingOperations,
   updatePendingOperation,
 } from './localDatabase';
 import { recordError } from '../lib/telemetry';
@@ -10,11 +15,13 @@ import { isReadyForSync, prepareQueuedPayload, remotePayload } from './syncPolic
 import { remoteProfilePayload } from './accountSync';
 
 export async function flushPendingOperations(now = Date.now()) {
-  if (!supabase) return { synced: 0, pending: 0, failed: 0 };
+  if (!supabase)
+    return { synced: 0, pending: 0, failed: 0, failedOperations: [], authRequiredOperations: [] };
   const operations = await loadPendingOperations();
   let synced = 0;
   let failed = 0;
   let pending = 0;
+  const syncedOperations = [];
   for (const item of operations) {
     if (!isReadyForSync(item, now)) {
       if (item.payload?._sync?.status === 'failed') failed += 1;
@@ -28,9 +35,9 @@ export async function flushPendingOperations(now = Date.now()) {
         operation_id: String(item.id),
         payload,
       });
-    else if (item.operation === 'quote_request')
+    else if (item.operation === 'quote_request') {
       result = await supabase.from('quote_requests').insert(payload);
-    else if (item.operation === 'saved_item')
+    } else if (item.operation === 'saved_item')
       result = payload.saved
         ? await supabase.from('saved_items').upsert(
             { user_id: payload.user_id, provider_id: payload.provider_id },
@@ -53,8 +60,65 @@ export async function flushPendingOperations(now = Date.now()) {
         }),
         { onConflict: 'id' },
       );
-    else if (item.operation === 'provider_report')
-      result = await supabase.from('provider_reports').insert(payload);
+    else if (item.operation === 'provider_report') {
+      const report = { ...payload };
+      delete report.user_id;
+      result = await supabase.from('provider_reports').insert(report);
+    } else if (item.operation === 'review_create')
+      result = await supabase
+        .from('reviews')
+        .insert({
+          user_id: payload.user_id,
+          provider_id: payload.provider_id,
+          rating: payload.rating,
+          comment: payload.comment,
+        })
+        .select('id')
+        .single();
+    else if (item.operation === 'community_like')
+      result = payload.liked
+        ? await supabase
+            .from('community_post_likes')
+            .upsert(
+              { post_id: payload.post_id, user_id: payload.user_id },
+              { onConflict: 'post_id,user_id', ignoreDuplicates: true },
+            )
+        : await supabase
+            .from('community_post_likes')
+            .delete()
+            .eq('post_id', payload.post_id)
+            .eq('user_id', payload.user_id);
+    else if (item.operation === 'community_saved_post')
+      result = payload.saved
+        ? await supabase
+            .from('community_saved_posts')
+            .upsert(
+              { post_id: payload.post_id, user_id: payload.user_id },
+              { onConflict: 'post_id,user_id', ignoreDuplicates: true },
+            )
+        : await supabase
+            .from('community_saved_posts')
+            .delete()
+            .eq('post_id', payload.post_id)
+            .eq('user_id', payload.user_id);
+    else if (item.operation === 'community_comment')
+      result = await supabase
+        .from('community_comments')
+        .insert({ post_id: payload.post_id, author_id: payload.author_id, body: payload.body });
+    else if (item.operation === 'community_post_report')
+      result = await supabase.from('community_post_reports').insert({
+        post_id: payload.post_id,
+        ...(payload.comment_id ? { comment_id: payload.comment_id } : {}),
+        reporter_id: payload.reporter_id,
+        reason: payload.reason,
+      });
+    else if (item.operation === 'community_block')
+      result = await supabase
+        .from('community_user_blocks')
+        .upsert(
+          { blocker_id: payload.blocker_id, blocked_id: payload.blocked_id },
+          { onConflict: 'blocker_id,blocked_id', ignoreDuplicates: true },
+        );
     else {
       const nextPayload = prepareQueuedPayload(
         item.payload,
@@ -78,10 +142,29 @@ export async function flushPendingOperations(now = Date.now()) {
       } else pending += 1;
       continue;
     }
+    if (item.operation === 'review_create' && item.payload?.localReviewId) {
+      if (result.data?.id) await replaceLocalReviewId(item.payload.localReviewId, result.data.id);
+      await markLocalReviewSynced(result.data?.id || item.payload.localReviewId);
+    }
+    if (item.operation === 'quote_request' && item.payload?.id)
+      await markLocalQuoteSent(item.payload.id);
+    if (item.operation === 'profile_update' && item.payload?.id)
+      await markLocalProfileSynced(item.payload.id);
     if (item.operation === 'community_post' && item.payload?.localId)
       await removeLocalPost(item.payload.localId);
     await removePendingOperation(item.id);
     synced += 1;
+    syncedOperations.push({ id: item.id, operation: item.operation, payload: item.payload });
   }
-  return { synced, pending, failed };
+  const remaining = await reloadPendingOperations();
+  return {
+    synced,
+    pending,
+    failed,
+    syncedOperations,
+    failedOperations: remaining.filter((item) => item.payload?._sync?.status === 'failed'),
+    authRequiredOperations: remaining.filter(
+      (item) => item.payload?._sync?.status === 'auth_required',
+    ),
+  };
 }

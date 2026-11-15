@@ -2,7 +2,7 @@ import { AppAlert as Alert } from '../components/AppDialog';
 import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import AppTextInput from '../components/AppTextInput';
-import { Image, Linking, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import Text from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,25 +13,14 @@ import {
   Layers,
   Search,
   SlidersHorizontal,
-  Star,
   X,
-  Utensils,
-  Store,
-  Scissors,
-  Building2,
-  Hotel,
-  PartyPopper,
-  LayoutGrid,
-  LocateFixed,
   Navigation,
-  Heart,
 } from 'lucide-react-native';
 import ScreenHeader from '../components/ScreenHeader';
 import ChodhiQMap from '../components/ChodhiQMap';
 import GlassView from '../components/GlassView';
 import { EventCard, OfferCard } from '../components/DiscoveryCards';
 import { events, offers } from '../data/discoveryData';
-import { imageSource } from '../data/assetCatalog';
 import { useAppState } from '../context/AppStateContext';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { radius, shadows, spacing } from '../theme/theme';
@@ -40,12 +29,19 @@ import { matchesProviderSearch, providerMatchesCategory } from '../data/category
 import * as ExpoLocation from 'expo-location';
 import { showPermissionRecovery } from '../lib/permissionRecovery';
 import { getDeviceLocation } from '../lib/deviceLocation';
+import { openExternalUrl } from '../lib/openExternalUrl';
+import { getTabBarOverlayHeight } from '../navigation/tabBarLayout';
+import ProviderCardGlow from '../../components/ui/ProviderCardGlow';
+import GlowChip from '../../components/ui/GlowChip';
+import GlowIconButton from '../../components/ui/GlowIconButton';
+import GlowCard from '../../components/GlowCard';
+import GlowButton from '../../components/ui/GlowButton';
 
 export function OffersScreen({ navigation }) {
   const { palette } = useChodhiQTheme();
   return (
     <SafeAreaView
-      style={[styles.page, { backgroundColor: palette.background }]}
+      style={[styles.page, { backgroundColor: 'transparent' }]}
       edges={['left', 'right', 'bottom']}
     >
       <ScreenHeader
@@ -55,7 +51,7 @@ export function OffersScreen({ navigation }) {
       />
       <ScrollView contentContainerStyle={styles.content}>
         {features.customAds ? (
-          offers.map((item) => <OfferCard key={item.id} item={item} />)
+          offers.map((item, index) => <OfferCard key={item.id} item={item} index={index} />)
         ) : (
           <Text style={{ color: palette.text2 }}>
             Community promotions will be available after the initial launch period.
@@ -70,7 +66,7 @@ export function EventsScreen({ navigation }) {
   const { palette } = useChodhiQTheme();
   return (
     <SafeAreaView
-      style={[styles.page, { backgroundColor: palette.background }]}
+      style={[styles.page, { backgroundColor: 'transparent' }]}
       edges={['left', 'right', 'bottom']}
     >
       <ScreenHeader
@@ -79,13 +75,18 @@ export function EventsScreen({ navigation }) {
         subtitle="Culture, community and business across the UK"
       />
       <ScrollView contentContainerStyle={styles.content}>
-        {events.map((item) => (
+        {events.map((item, index) => (
           <EventCard
             key={item.id}
             item={item}
+            index={index}
             onPress={() =>
-              Linking.openURL(
+              openExternalUrl(
                 `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.title + ' ' + item.city)}`,
+                {
+                  title: 'Map unavailable',
+                  fallbackMessage: 'The event location could not be opened in Maps.',
+                },
               )
             }
           />
@@ -106,11 +107,18 @@ export function MapScreen({ navigation, route }) {
     location,
     locationCoordinates,
     setCurrentLocation,
+    marketplaceLoading,
+    refreshMarketplace,
   } = useAppState();
   const { palette } = useChodhiQTheme();
   const insets = useSafeAreaInsets();
+  const mapBottomInset =
+    route?.name === 'MapTab'
+      ? getTabBarOverlayHeight(insets.bottom) + 12
+      : Math.max(8, insets.bottom);
   const { height: windowHeight } = useWindowDimensions();
   const [selected, setSelected] = useState(null);
+  const [bottomCardHeight, setBottomCardHeight] = useState(0);
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeCity, setActiveCity] = useState(null);
   const [query, setQuery] = useState('');
@@ -118,7 +126,6 @@ export function MapScreen({ navigation, route }) {
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [viewport, setViewport] = useState(null);
   const [locating, setLocating] = useState(false);
-  const [layersVisible, setLayersVisible] = useState(false);
   const [mapType, setMapType] = useState('standard');
   const cities = useMemo(
     () =>
@@ -219,10 +226,17 @@ export function MapScreen({ navigation, route }) {
         ? `https://www.google.com/maps/dir/?api=1&destination_place_id=${encodeURIComponent(provider.googlePlaceId)}`
         : provider.googleMapsSearchUrl ||
           (provider.googleMapsUrl?.includes('/search/') ? provider.googleMapsUrl : null);
-    if (url) Linking.openURL(url).catch(() => {});
+    if (url) {
+      void openExternalUrl(url, {
+        title: 'Directions unavailable',
+        fallbackMessage: 'Directions could not be opened. Try again later.',
+      });
+    } else {
+      Alert.alert('Directions unavailable', 'This business does not have a usable map location.');
+    }
   };
   return (
-    <SafeAreaView style={[styles.mapPage, { backgroundColor: palette.background }]} edges={[]}>
+    <SafeAreaView style={[styles.mapPage, { backgroundColor: 'transparent' }]} edges={[]}>
       <View style={[styles.map, { backgroundColor: palette.surfaceAlt, marginTop: insets.top }]}>
         <ChodhiQMap
           providers={mapProviders}
@@ -238,6 +252,7 @@ export function MapScreen({ navigation, route }) {
           mapType={mapType}
         />
         <View
+          pointerEvents="box-none"
           style={[
             styles.mapBrandHeader,
             { backgroundColor: palette.dark ? palette.bg : '#101817' },
@@ -247,6 +262,7 @@ export function MapScreen({ navigation, route }) {
             Chodhi<Text style={{ color: palette.primary }}>Q</Text>
           </Text>
           <TouchableOpacity
+            testID="btn-map-notifications"
             accessibilityRole="button"
             accessibilityLabel="Notifications"
             onPress={() => navigation.navigate('Notifications')}
@@ -257,9 +273,14 @@ export function MapScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
         <View style={styles.mapControls} pointerEvents="box-none">
-          <GlassView intensity={44} style={[styles.mapSearch, { borderRadius: 16 }]}>
+          <GlassView
+            pointerEvents="box-none"
+            intensity={44}
+            style={[styles.mapSearch, { borderRadius: 26 }]}
+          >
             {route?.name !== 'MapTab' && (
               <TouchableOpacity
+                testID="btn-map-back"
                 accessibilityRole="button"
                 accessibilityLabel="Go back"
                 onPress={() => navigation.goBack()}
@@ -270,6 +291,7 @@ export function MapScreen({ navigation, route }) {
             )}
             <Search size={18} color={palette.text2} />
             <AppTextInput
+              showChrome={false}
               accessibilityLabel="Search map providers"
               value={query}
               onChangeText={setQuery}
@@ -280,6 +302,7 @@ export function MapScreen({ navigation, route }) {
             />
             {query ? (
               <TouchableOpacity
+                testID="btn-map-clear"
                 accessibilityRole="button"
                 accessibilityLabel="Clear map search"
                 onPress={() => setQuery('')}
@@ -288,64 +311,50 @@ export function MapScreen({ navigation, route }) {
                 <X size={18} color={palette.text2} />
               </TouchableOpacity>
             ) : null}
-            <TouchableOpacity
+            <GlowIconButton
+              testID="btn-map-filters"
               accessibilityRole="button"
-              accessibilityLabel="Show map filters"
+              accessibilityLabel={filtersVisible ? 'Hide map filters' : 'Show map filters'}
               accessibilityState={{ expanded: filtersVisible }}
               onPress={() => setFiltersVisible((value) => !value)}
-              style={[
-                styles.mapFilterButton,
-                { backgroundColor: filtersVisible ? palette.primarySoft : palette.surfaceAlt },
-              ]}
-            >
-              <SlidersHorizontal size={18} color={palette.primary} />
-            </TouchableOpacity>
+              size={40}
+              variant="ghost"
+              haptic={false}
+              style={styles.mapFilterButton}
+              icon={<SlidersHorizontal size={18} color={palette.primary} />}
+            />
           </GlassView>
           <ScrollView
             horizontal
+            pointerEvents="box-none"
             showsHorizontalScrollIndicator={false}
+            style={styles.mapCategoryScroller}
             contentContainerStyle={styles.mapCategoryRow}
           >
             {[{ id: null, name: 'All', icon: 'grid' }, ...categories].map((category) => {
-              const Icon = mapCategoryIcon(category);
               const active = category.id ? activeCategory === category.id : !activeCategory;
               return (
-                <TouchableOpacity
+                <GlowChip
                   key={category.id || 'all'}
+                  label={category.name}
+                  selected={active}
                   onPress={() =>
                     setActiveCategory(category.id ? (active ? null : category.id) : null)
                   }
                   style={[
-                    styles.mapCategoryCard,
+                    styles.mapCategoryChip,
                     {
                       backgroundColor: active ? palette.primary : palette.surface,
                       borderColor: active ? palette.primary : palette.border,
                     },
                   ]}
-                >
-                  <View
-                    style={[
-                      styles.mapCategoryIcon,
-                      { backgroundColor: active ? palette.primary : palette.surfaceAlt },
-                    ]}
-                  >
-                    <Icon size={20} color={active ? palette.onPrimary : palette.text} />
-                  </View>
-                  <Text
-                    numberOfLines={2}
-                    style={[
-                      styles.mapCategoryLabel,
-                      { color: active ? palette.onPrimary : palette.text },
-                    ]}
-                  >
-                    {category.name}
-                  </Text>
-                </TouchableOpacity>
+                />
               );
             })}
           </ScrollView>
           {filtersVisible ? (
             <View
+              pointerEvents="box-none"
               style={[
                 styles.mapFilterPanel,
                 { backgroundColor: palette.surface, borderColor: palette.border },
@@ -362,6 +371,7 @@ export function MapScreen({ navigation, route }) {
                 </View>
                 {(activeCity || activeCategory || query) && (
                   <TouchableOpacity
+                    testID="btn-map-reset"
                     accessibilityRole="button"
                     accessibilityLabel="Reset all map filters"
                     onPress={() => {
@@ -374,7 +384,11 @@ export function MapScreen({ navigation, route }) {
                   </TouchableOpacity>
                 )}
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <ScrollView
+                horizontal
+                pointerEvents="box-none"
+                showsHorizontalScrollIndicator={false}
+              >
                 <View style={styles.mapCityRow}>
                   <MapFilterChip
                     label="Everywhere"
@@ -395,28 +409,29 @@ export function MapScreen({ navigation, route }) {
               </ScrollView>
             </View>
           ) : null}
-          <View style={styles.mapFloatingRow}>
-            <View style={[styles.mapResultBadge, { backgroundColor: palette.surface }]}>
-              <MapPin size={15} color={palette.primary} />
+          {mapProviders.length > 0 ? (
+            <GlassView pointerEvents="box-none" intensity={44} style={styles.mapResultBadge}>
+              <MapPin size={14} color={palette.primary} />
               <Text style={[styles.mapResultText, { color: palette.text }]}>
                 {visibleProviders.length} {visibleProviders.length === 1 ? 'result' : 'results'} in
                 this area
               </Text>
-            </View>
-            <TouchableOpacity
-              disabled={locating}
-              onPress={useCurrentLocation}
-              style={[styles.currentLocationButton, { backgroundColor: palette.surface }]}
-            >
-              <LocateFixed size={16} color={palette.primary} />
-              <Text style={{ color: palette.primary, fontWeight: '800', fontSize: 12 }}>
-                {locating ? 'Locating…' : 'Use current location'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+            </GlassView>
+          ) : null}
         </View>
-        <View style={[styles.mapSideControls, { bottom: Math.max(205, windowHeight * 0.29) }]}>
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.mapSideControls,
+            {
+              bottom: bottomCardHeight
+                ? bottomCardHeight + mapBottomInset
+                : Math.max(205, windowHeight * 0.29),
+            },
+          ]}
+        >
           <TouchableOpacity
+            testID="btn-map-type"
             accessibilityRole="button"
             accessibilityLabel={
               mapType === 'standard' ? 'Switch to satellite map' : 'Switch to standard map'
@@ -427,6 +442,7 @@ export function MapScreen({ navigation, route }) {
             <Layers size={20} color={palette.text} />
           </TouchableOpacity>
           <TouchableOpacity
+            testID="btn-map-current-location"
             disabled={locating}
             accessibilityRole="button"
             accessibilityLabel="Go to current location"
@@ -436,43 +452,85 @@ export function MapScreen({ navigation, route }) {
             <Navigation size={20} color={palette.text} />
           </TouchableOpacity>
         </View>
-        {selected ? (
+        {marketplaceLoading || providers.length === 0 ? (
           <View
+            pointerEvents="box-none"
+            style={[
+              styles.mapEmptyCard,
+              { backgroundColor: palette.surface, bottom: mapBottomInset },
+            ]}
+          >
+            <ActivityIndicator color={palette.primary} />
+            <Text style={[styles.mapEmptyTitle, { color: palette.text }]}>
+              {marketplaceLoading ? 'Loading businesses' : 'No businesses available'}
+            </Text>
+            <Text style={[styles.mapEmptyText, { color: palette.text2 }]}>
+              {marketplaceLoading
+                ? 'Business locations are being refreshed.'
+                : 'Retry to check for available businesses.'}
+            </Text>
+            <TouchableOpacity
+              testID="btn-map-retry"
+              accessibilityRole="button"
+              onPress={refreshMarketplace}
+            >
+              <Text style={[styles.mapResetText, { color: palette.primary }]}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : selected ? (
+          <View
+            pointerEvents="box-none"
             style={[
               styles.mapBottomArea,
-              { bottom: Math.max(8, insets.bottom), maxHeight: windowHeight * 0.48 },
+              { bottom: mapBottomInset, maxHeight: windowHeight * 0.48 },
             ]}
+            onLayout={({ nativeEvent }) => setBottomCardHeight(nativeEvent.layout.height)}
           >
             <MapSelectedCard
               provider={providersById.get(selected.id) || selected}
-              palette={palette}
-              saved={savedIds.includes(selected.id)}
+              saved={savedIds.includes(String(selected.id))}
               onSave={() => (session ? toggleSaved(selected.id) : navigation.navigate('Welcome'))}
               onDirections={() => directions(selected)}
               onPress={() => navigation.navigate('ProviderDetail', { id: selected.id })}
             />
+          </View>
+        ) : nearCards.length > 1 ? (
+          <View
+            pointerEvents="box-none"
+            style={[
+              styles.mapBottomArea,
+              { bottom: mapBottomInset, maxHeight: windowHeight * 0.48 },
+            ]}
+            onLayout={({ nativeEvent }) => setBottomCardHeight(nativeEvent.layout.height)}
+          >
             <ScrollView
               horizontal
+              pointerEvents="box-none"
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.nearbyCarousel}
-              style={{ maxHeight: 145 }}
+              style={{ maxHeight: 196 }}
             >
               {nearCards.map((provider) => (
                 <MapNearbyCard
                   key={provider.id}
                   provider={providersById.get(provider.id) || provider}
                   palette={palette}
-                  selected={provider.id === selected.id}
+                  saved={savedIds.includes(String(provider.id))}
+                  selected={provider.id === selected?.id}
                   onPress={() => setSelected(provider)}
+                  onSave={() =>
+                    session ? toggleSaved(provider.id) : navigation.navigate('Welcome')
+                  }
                 />
               ))}
             </ScrollView>
           </View>
         ) : mapProviders.length > 0 ? (
           <View
+            pointerEvents="box-none"
             style={[
               styles.mapEmptyCard,
-              { backgroundColor: palette.surface, bottom: Math.max(8, insets.bottom) },
+              { backgroundColor: palette.surface, bottom: mapBottomInset },
             ]}
           >
             <Text style={[styles.mapEmptyTitle, { color: palette.text }]}>
@@ -493,29 +551,29 @@ export function MapScreen({ navigation, route }) {
           </View>
         ) : providers.length > 0 ? (
           <View
-            style={[
-              styles.mapEmptyCard,
-              { backgroundColor: palette.surface, bottom: Math.max(8, insets.bottom) },
-            ]}
+            pointerEvents="box-none"
+            style={[styles.mapEmptyPosition, { bottom: Math.max(112, mapBottomInset + 84) }]}
           >
-            <Text style={[styles.mapEmptyTitle, { color: palette.text }]}>
-              Map locations unavailable
-            </Text>
-            <Text style={[styles.mapEmptyText, { color: palette.text2 }]}>
-              These businesses don't have map coordinates yet. You can still browse the UK directory
-              in Search.
-            </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Explore')}>
-              <Text style={[styles.mapResetText, { color: palette.primary }]}>
-                Browse businesses in Search
+            <GlowCard variant="map" contentStyle={styles.mapEmptyContent}>
+              <Text style={[styles.mapEmptyTitle, { color: palette.text }]}>No map pins yet</Text>
+              <Text style={[styles.mapEmptyText, { color: palette.text2 }]}>
+                These businesses don&apos;t have a location yet. Browse them in Search.
               </Text>
-            </TouchableOpacity>
+              <GlowButton
+                label="Browse in Search"
+                variant="ghost"
+                size="sm"
+                onPress={() => navigation.navigate('Explore')}
+                buttonStyle={styles.mapBrowseButton}
+              />
+            </GlowCard>
           </View>
         ) : (
           <View
+            pointerEvents="box-none"
             style={[
               styles.mapEmptyCard,
-              { backgroundColor: palette.surface, bottom: Math.max(8, insets.bottom) },
+              { backgroundColor: palette.surface, bottom: mapBottomInset },
             ]}
           >
             <Text style={[styles.mapEmptyTitle, { color: palette.text }]}>No providers found</Text>
@@ -557,17 +615,6 @@ function MapFilterChip({ label, active, onPress, palette }) {
       </Text>
     </TouchableOpacity>
   );
-}
-
-function mapCategoryIcon(category) {
-  const value = `${category.id || ''} ${category.name || ''}`.toLowerCase();
-  if (/restaurant|food|cater|bakery/.test(value)) return Utensils;
-  if (/shop|grocery|store|retail/.test(value)) return Store;
-  if (/beauty|salon|hair/.test(value)) return Scissors;
-  if (/property|home|house/.test(value)) return Building2;
-  if (/hotel|stay|travel/.test(value)) return Hotel;
-  if (/event|party/.test(value)) return PartyPopper;
-  return LayoutGrid;
 }
 
 function hasCoordinates(provider) {
@@ -620,142 +667,36 @@ function businessOpenNow(provider) {
   return close < open ? minutes >= open || minutes < close : minutes >= open && minutes < close;
 }
 
-function MapSelectedCard({ provider, palette, saved, onSave, onDirections, onPress }) {
-  const image = provider.image ? imageSource(provider.image) : null;
-  const openNow = businessOpenNow(provider);
-  const distance = provider.distance || null;
+function MapSelectedCard({ provider, saved, onSave, onDirections, onPress }) {
   return (
-    <View style={[styles.selectedBusinessCard, { backgroundColor: palette.surface }]}>
-      <View style={styles.selectedHandle} />
-      <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.selectedCardBody}>
-        {image ? (
-          <Image source={image} style={styles.selectedBusinessImage} />
-        ) : (
-          <View
-            style={[
-              styles.selectedBusinessImage,
-              styles.missingImage,
-              { backgroundColor: palette.surfaceAlt },
-            ]}
-          >
-            <Store size={28} color={palette.muted} />
-          </View>
-        )}
-        <View style={styles.selectedBusinessCopy}>
-          <Text numberOfLines={1} style={[styles.selectedBusinessName, { color: palette.text }]}>
-            {provider.name}
-          </Text>
-          <Text numberOfLines={1} style={[styles.mapSecondary, { color: palette.text2 }]}>
-            {provider.category}
-          </Text>
-          <View style={styles.mapMetaRow}>
-            {provider.reviewCount > 0 && Number.isFinite(provider.rating) && (
-              <>
-                <Star size={15} fill={palette.saffron} color={palette.saffron} />
-                <Text style={[styles.mapRatingText, { color: palette.text }]}>
-                  {provider.rating.toFixed(1)} ({provider.reviewCount})
-                </Text>
-              </>
-            )}
-            {distance && (
-              <Text style={[styles.mapSecondary, { color: palette.text2 }]}>· {distance}</Text>
-            )}
-          </View>
-          {!!provider.address && (
-            <Text numberOfLines={1} style={[styles.mapSecondary, { color: palette.text2 }]}>
-              {provider.address}
-            </Text>
-          )}
-          {typeof openNow === 'boolean' && (
-            <View
-              style={[
-                styles.openStatus,
-                { backgroundColor: openNow ? palette.primarySoft : palette.surfaceAlt },
-              ]}
-            >
-              <Text
-                style={{
-                  color: openNow ? palette.primary : palette.text2,
-                  fontSize: 11,
-                  fontWeight: '800',
-                }}
-              >
-                {openNow ? 'Open' : 'Closed'}
-              </Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.selectedActions}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={
-              saved ? `Remove ${provider.name} from saved` : `Save ${provider.name}`
-            }
-            onPress={onSave}
-            style={styles.mapActionButton}
-          >
-            <Heart
-              size={19}
-              color={saved ? palette.danger : palette.text2}
-              fill={saved ? palette.danger : 'transparent'}
-            />
-          </TouchableOpacity>
-          {(hasCoordinates(provider) || provider.address || provider.baseCity) && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={`Directions to ${provider.name}`}
-              onPress={onDirections}
-              style={[styles.mapActionButton, { backgroundColor: palette.primarySoft }]}
-            >
-              <Navigation size={19} color={palette.primary} />
-            </TouchableOpacity>
-          )}
-        </View>
-      </TouchableOpacity>
-    </View>
+    <ProviderCardGlow
+      variant="map"
+      provider={{ ...provider, openNow: businessOpenNow(provider) }}
+      saved={saved}
+      selected
+      onPress={onPress}
+      onSave={onSave}
+      onDirections={
+        hasCoordinates(provider) || provider.address || provider.baseCity ? onDirections : undefined
+      }
+      saveTestID="btn-map-save"
+      directionsTestID="btn-map-directions"
+    />
   );
 }
 
-function MapNearbyCard({ provider, palette, selected, onPress }) {
+function MapNearbyCard({ provider, palette: _palette, saved, selected, onPress, onSave }) {
   return (
-    <TouchableOpacity
+    <ProviderCardGlow
+      variant="map"
+      mapMode="nearby"
+      provider={provider}
+      saved={saved}
+      selected={selected}
       onPress={onPress}
-      style={[
-        styles.nearbyCard,
-        {
-          backgroundColor: palette.surface,
-          borderColor: selected ? palette.primary : palette.border,
-          borderWidth: selected ? 2 : 1,
-        },
-      ]}
-    >
-      {provider.image ? (
-        <Image source={imageSource(provider.image)} style={styles.nearbyImage} />
-      ) : (
-        <View
-          style={[styles.nearbyImage, styles.missingImage, { backgroundColor: palette.surfaceAlt }]}
-        >
-          <Store size={20} color={palette.muted} />
-        </View>
-      )}
-      <Text numberOfLines={1} style={[styles.nearbyName, { color: palette.text }]}>
-        {provider.name}
-      </Text>
-      <View style={styles.nearbyMeta}>
-        <MapPin size={12} color={palette.text2} />
-        <Text style={[styles.nearbyMetaText, { color: palette.text2 }]}>
-          {provider.distance || provider.baseCity}
-        </Text>
-        {provider.reviewCount > 0 && Number.isFinite(provider.rating) && (
-          <>
-            <Star size={12} color={palette.saffron} fill={palette.saffron} />
-            <Text style={[styles.nearbyMetaText, { color: palette.text2 }]}>
-              {provider.rating.toFixed(1)}
-            </Text>
-          </>
-        )}
-      </View>
-    </TouchableOpacity>
+      onSave={onSave}
+      saveTestID="btn-map-save"
+    />
   );
 }
 
@@ -805,7 +746,7 @@ const styles = StyleSheet.create({
   },
   mapSearch: {
     height: 52,
-    borderRadius: 16,
+    borderRadius: 26,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -813,34 +754,17 @@ const styles = StyleSheet.create({
     ...shadows.soft,
   },
   mapControlButton: { width: 28, height: 36, alignItems: 'center', justifyContent: 'center' },
-  mapSearchInput: { flex: 1, height: 46, fontSize: 13, paddingVertical: 0 },
+  mapSearchInput: { flex: 1, height: 46, fontSize: 13, paddingVertical: 0, paddingHorizontal: 0 },
   mapFilterButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mapCategoryRow: { gap: 8, paddingTop: 10, paddingRight: 16 },
-  mapCategoryCard: {
-    width: 98,
-    minHeight: 84,
-    borderRadius: 18,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-    gap: 4,
-    ...shadows.soft,
-  },
-  mapCategoryIcon: {
-    width: 52,
-    height: 46,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mapCategoryLabel: { fontSize: 11, lineHeight: 14, textAlign: 'center', fontWeight: '700' },
+  mapCategoryScroller: { marginHorizontal: -16 },
+  mapCategoryRow: { gap: 8, paddingTop: 10, paddingHorizontal: 16 },
+  mapCategoryChip: { maxWidth: 152 },
 
   mapFilterPanel: { marginTop: 10, borderRadius: 16, borderWidth: 1, padding: 13, ...shadows.soft },
   mapFilterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -859,26 +783,12 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 10,
     borderRadius: radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    minHeight: 34,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
     flexDirection: 'row',
     alignItems: 'center',
-    ...shadows.soft,
-  },
-  mapFloatingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-    gap: 8,
-  },
-  currentLocationButton: {
-    minHeight: 42,
-    borderRadius: 24,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
+    gap: 6,
     ...shadows.soft,
   },
   mapSideControls: { position: 'absolute', right: 16, bottom: 250, gap: 8 },
@@ -891,44 +801,7 @@ const styles = StyleSheet.create({
     ...shadows.soft,
   },
   mapBottomArea: { position: 'absolute', left: 12, right: 12, gap: 10 },
-  selectedBusinessCard: { borderRadius: 22, padding: 12, ...shadows.lift },
-  selectedHandle: {
-    width: 42,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#9CA3AF66',
-    alignSelf: 'center',
-    marginBottom: 10,
-  },
-  selectedCardBody: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  selectedBusinessImage: { width: 110, height: 104, borderRadius: 14 },
-  missingImage: { alignItems: 'center', justifyContent: 'center' },
-  selectedBusinessCopy: { flex: 1, gap: 4, minWidth: 0 },
-  selectedBusinessName: { fontSize: 17, fontWeight: '900' },
-  mapSecondary: { fontSize: 11, lineHeight: 15 },
-  mapMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
-  mapRatingText: { fontSize: 12, fontWeight: '700' },
-  openStatus: {
-    alignSelf: 'flex-start',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginTop: 2,
-  },
-  selectedActions: { justifyContent: 'space-between', alignSelf: 'stretch' },
-  mapActionButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   nearbyCarousel: { paddingVertical: 3, gap: 8, paddingRight: 8 },
-  nearbyCard: { width: 142, borderRadius: 14, padding: 6, gap: 5, ...shadows.soft },
-  nearbyImage: { width: '100%', height: 72, borderRadius: 9 },
-  nearbyName: { fontSize: 11, fontWeight: '800' },
-  nearbyMeta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  nearbyMetaText: { fontSize: 10, flexShrink: 1 },
   mapResultText: { fontSize: 11, fontWeight: '800' },
   mapEmptyCard: {
     position: 'absolute',
@@ -942,4 +815,7 @@ const styles = StyleSheet.create({
   },
   mapEmptyTitle: { fontSize: 14, fontWeight: '900' },
   mapEmptyText: { fontSize: 11, marginBottom: 5 },
+  mapEmptyPosition: { position: 'absolute', left: 16, right: 16 },
+  mapEmptyContent: { gap: 8, padding: 16 },
+  mapBrowseButton: { alignSelf: 'flex-start', paddingHorizontal: 8 },
 });

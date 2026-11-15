@@ -21,6 +21,9 @@
     "verify:all": "powershell -ExecutionPolicy Bypass -File workspace-scripts/verify-all.ps1",
     "format": "prettier --write App.js src tests scripts",
     "format:check": "prettier --check App.js src tests scripts",
+    "lint": "eslint App.js app.config.js src components screens eslint.config.js",
+    "test:buttons": "jest --runInBand",
+    "test:ci": "npm run lint && npm run test:buttons && npm test",
     "quality:check": "node scripts/code-quality-check.cjs",
     "accessibility:check": "node scripts/accessibility-check.cjs",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.checked-js.json --noEmit",
@@ -35,12 +38,14 @@
     "verify:release": "npm run launch:config && npm run format:check && npm run quality:check && npm run accessibility:check && npm run typecheck && npm test && npm run security:check && expo export --platform web --output-dir dist-verify --clear",
     "verify:launch": "npm run launch:config && npm run verify:all",
     "test:community:local": "node scripts/verify-community-local.mjs",
-    "test:community:upgrade:local": "node scripts/rehearse-community-upgrade-local.mjs"
+    "test:community:upgrade:local": "node scripts/rehearse-community-upgrade-local.mjs",
+    "e2e": "maestro test e2e"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/poppins": "^0.4.1",
-    "@expo/metro-runtime": "~58.0.15",
+    "@expo/metro-runtime": "~58.0.17",
+    "@expo/vector-icons": "^15.0.2",
     "@gorhom/bottom-sheet": "^5.2.14",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "9.2.1",
@@ -50,36 +55,39 @@
     "@react-navigation/native-stack": "^6.9.26",
     "@sentry/react-native": "~8.28.0",
     "@supabase/supabase-js": "^2.45.0",
-    "expo": "^58.0.19",
-    "expo-auth-session": "~58.0.14",
+    "expo": "~58.0.23",
+    "expo-auth-session": "~58.0.17",
     "expo-blur": "~58.0.5",
     "expo-clipboard": "~58.0.4",
     "expo-constants": "~58.0.13",
-    "expo-dev-client": "~58.0.15",
+    "expo-dev-client": "~58.0.18",
     "expo-device": "~58.0.5",
     "expo-document-picker": "~58.0.4",
+    "expo-font": "~58.0.11",
     "expo-haptics": "~58.0.7",
-    "expo-image-manipulator": "~58.0.15",
+    "expo-image-manipulator": "~58.0.16",
     "expo-image-picker": "~58.0.10",
+    "expo-intent-launcher": "~58.0.3",
     "expo-linear-gradient": "~58.0.3",
-    "expo-linking": "~58.0.14",
-    "expo-location": "~58.0.19",
-    "expo-notifications": "~58.1.6",
+    "expo-linking": "~58.0.16",
+    "expo-location": "~58.0.20",
+    "expo-network": "~58.0.4",
+    "expo-notifications": "~58.1.8",
     "expo-secure-store": "~58.0.2",
-    "expo-sqlite": "~58.0.14",
+    "expo-sqlite": "~58.0.15",
     "expo-status-bar": "~58.0.4",
-    "expo-updates": "~58.0.18",
-    "expo-web-browser": "~58.0.6",
+    "expo-updates": "~58.0.21",
+    "expo-web-browser": "~58.0.7",
     "lucide-react-native": "^1.30.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "react-native": "0.88.0",
+    "react-native": "0.88.1",
     "react-native-gesture-handler": "~3.3.0",
     "react-native-google-mobile-ads": "17.4.0",
     "react-native-maps": "1.29.11",
     "react-native-reanimated": "4.7.1",
-    "react-native-safe-area-context": "~5.10.1",
-    "react-native-screens": "~4.30.0",
+    "react-native-safe-area-context": "~5.11.1",
+    "react-native-screens": "~4.30.1",
     "react-native-svg": "15.16.0",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "^0.21.4",
@@ -87,10 +95,38 @@
     "react-native-worklets": "0.13.0"
   },
   "devDependencies": {
+    "@react-native/jest-preset": "^0.88.1",
+    "@testing-library/react-native": "^14.1.0",
     "@types/react": "~19.3.0",
     "babel-preset-expo": "~58.0.0",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~58.0.4",
+    "jest": "^30.5.2",
+    "jest-expo": "~58.0.14",
     "prettier": "3.6.2",
     "supabase": "2.114.0",
     "typescript": "~6.0.3"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "roots": [
+      "<rootDir>/__tests__/buttons"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/Chodhiq/",
+      "<rootDir>/business-dashboard/",
+      "<rootDir>/admin-dashboard/"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.ts"
+    ],
+    "transform": {
+      "^.+\\.[jt]sx?$": "<rootDir>/jest.transformer.cjs"
+    },
+    "testMatch": [
+      "<rootDir>/__tests__/buttons/**/*.test.ts?(x)"
+    ],
+    "clearMocks": true,
+    "restoreMocks": true
   }
 }

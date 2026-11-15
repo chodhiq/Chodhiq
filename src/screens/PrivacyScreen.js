@@ -3,7 +3,7 @@ import { AppAlert as Alert } from '../components/AppDialog';
 import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import React, { useState } from 'react';
 import AppTextInput from '../components/AppTextInput';
-import { Linking, Share, StyleSheet, View } from 'react-native';
+import { Share, StyleSheet, View } from 'react-native';
 
 import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import { radius, spacing } from '../theme/theme';
 import { useAdvertisingConsent } from '../hooks/useAdvertisingConsent';
 import { legalLinks } from '../config/legal';
 import { features } from '../config/features';
+import { openExternalUrl } from '../lib/openExternalUrl';
 
 export default function PrivacyScreen({ navigation }) {
   const { session, deleteAccount } = useAppState();
@@ -79,7 +80,7 @@ export default function PrivacyScreen({ navigation }) {
   };
   const card = { backgroundColor: palette.surface, borderColor: palette.border };
   return (
-    <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]}>
+    <SafeAreaView style={[styles.page, { backgroundColor: 'transparent' }]}>
       <ScreenHeader navigation={navigation} title="Privacy & your data" />
       <ScrollView contentContainerStyle={styles.content}>
         {legalLinks.privacy ? (
@@ -89,7 +90,12 @@ export default function PrivacyScreen({ navigation }) {
               styles.action,
               { backgroundColor: palette.surface, borderColor: palette.border },
             ]}
-            onPress={() => void Linking.openURL(legalLinks.privacy)}
+            onPress={() =>
+              void openExternalUrl(legalLinks.privacy, {
+                title: 'Privacy policy unavailable',
+                fallbackMessage: 'The Privacy Policy could not be opened. Try again later.',
+              })
+            }
           >
             <Text style={[styles.actionText, { color: palette.primary }]}>Read privacy policy</Text>
           </TouchableOpacity>
@@ -101,7 +107,12 @@ export default function PrivacyScreen({ navigation }) {
               styles.action,
               { backgroundColor: palette.surface, borderColor: palette.border },
             ]}
-            onPress={() => void Linking.openURL(legalLinks.terms)}
+            onPress={() =>
+              void openExternalUrl(legalLinks.terms, {
+                title: 'Terms unavailable',
+                fallbackMessage: 'The Terms of Service could not be opened. Try again later.',
+              })
+            }
           >
             <Text style={[styles.actionText, { color: palette.primary }]}>
               Read terms of service
@@ -115,7 +126,13 @@ export default function PrivacyScreen({ navigation }) {
               styles.action,
               { backgroundColor: palette.surface, borderColor: palette.border },
             ]}
-            onPress={() => void Linking.openURL(legalLinks.deletion)}
+            onPress={() =>
+              void openExternalUrl(legalLinks.deletion, {
+                title: 'Deletion information unavailable',
+                fallbackMessage:
+                  'Account deletion information could not be opened. Try again later.',
+              })
+            }
           >
             <Text style={[styles.actionText, { color: palette.primary }]}>
               Account deletion information
@@ -183,6 +200,7 @@ export default function PrivacyScreen({ navigation }) {
           </View>
         </View>
         <TouchableOpacity
+          testID="btn-export-data"
           accessibilityRole="button"
           accessibilityLabel="Export my ChodhiQ account data"
           disabled={busy}
@@ -216,6 +234,7 @@ export default function PrivacyScreen({ navigation }) {
               ]}
             />
             <TouchableOpacity
+              testID="btn-delete-account"
               accessibilityRole="button"
               disabled={busy || confirmation !== 'DELETE'}
               onPress={remove}

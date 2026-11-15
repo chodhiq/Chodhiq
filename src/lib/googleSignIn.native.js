@@ -12,14 +12,16 @@ export async function getNativeGoogleIdToken() {
         'Google sign-in is not configured for this app build. EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is missing.',
       );
     }
-    GoogleSignin.configure({
-      webClientId: GOOGLE_WEB_CLIENT_ID,
-      offlineAccess: false,
-    });
-    configured = true;
   }
 
   try {
+    if (!configured) {
+      GoogleSignin.configure({
+        webClientId: GOOGLE_WEB_CLIENT_ID,
+        offlineAccess: false,
+      });
+      configured = true;
+    }
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
     // Clear Google's saved app account so each sign-in asks the user to choose.
     await GoogleSignin.signOut();
@@ -40,6 +42,14 @@ export async function getNativeGoogleIdToken() {
     }
     if (error?.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
       throw new Error('Update Google Play services on this device, then try again.');
+    }
+    if (
+      error instanceof TypeError &&
+      /undefined is not a function|is not a function/i.test(error.message)
+    ) {
+      throw new Error(
+        'Google sign-in is incompatible with this installed app build. Install a fresh Android build that includes the current Google sign-in module, then try again.',
+      );
     }
     throw error;
   }

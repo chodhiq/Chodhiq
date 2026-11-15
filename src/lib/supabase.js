@@ -3,11 +3,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Linking, Platform } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
+import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import { withAuthTimeout } from './authOperations';
+import { isExpoGo } from './notificationRuntime';
 import {
   completeAuthCallback,
+  getAuthCallbackRedirectUrl,
   isSafeAppLink,
   createAuthCodeExchange,
   EMAIL_CONFIRMATION_URL,
@@ -15,7 +18,6 @@ import {
 
 WebBrowser.maybeCompleteAuthSession();
 
-const AUTH_CALLBACK_URL = 'chodhiq://auth/callback';
 const RESET_LINK = 'chodhiq://auth/reset';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -159,21 +161,39 @@ export async function updatePassword(password) {
 
 export async function signInWithOAuth(provider) {
   if (!supabase) throw new Error('Supabase is not configured.');
-  if (provider === 'google' && Platform.OS === 'android') {
+  const useExpoGoGoogleBrowser =
+    provider === 'google' &&
+    Platform.OS === 'android' &&
+    Constants.executionEnvironment === 'storeClient' &&
+    Constants.appOwnership === 'expo';
+  if (provider === 'google' && Platform.OS === 'android' && !useExpoGoGoogleBrowser) {
     // Do not silently fall back to browser OAuth if native account selection
     // fails or is cancelled.
-    const { getNativeGoogleIdToken } = await import('./googleSignIn');
-    const token = await getNativeGoogleIdToken();
-    const { data, error } = await withAuthTimeout(
-      supabase.auth.signInWithIdToken({ provider: 'google', token }),
-    );
-    if (error) throw error;
-    return data.session;
+    let stage = 'Google account selection';
+    try {
+      const { getNativeGoogleIdToken } = await import('./googleSignIn');
+      const token = await getNativeGoogleIdToken();
+      stage = 'Google token exchange';
+      if (typeof supabase.auth.signInWithIdToken !== 'function') {
+        throw new Error('The installed Supabase client does not support Google ID-token sign-in.');
+      }
+      const { data, error } = await withAuthTimeout(
+        supabase.auth.signInWithIdToken({ provider: 'google', token }),
+      );
+      if (error) throw error;
+      return data.session;
+    } catch (error) {
+      if (/undefined is not a function|is not a function/i.test(String(error?.message || error))) {
+        throw new Error(
+          `Google sign-in failed during ${stage} because this installed app is missing a required function. Rebuild and reinstall the Android app, then try again.`,
+        );
+      }
+      throw error;
+    }
   }
   // Keep the native redirect identical to the URL registered in Supabase. Expo can
   // otherwise produce a triple-slash URI that Android opens but Supabase rejects.
-  const redirectTo =
-    Platform.OS === 'web' ? makeRedirectUri({ path: 'auth/callback' }) : AUTH_CALLBACK_URL;
+  const redirectTo = getAuthCallbackRedirectUrl(Platform.OS, isExpoGo, makeRedirectUri);
   const { data, error } = await withAuthTimeout(
     supabase.auth.signInWithOAuth({
       provider,

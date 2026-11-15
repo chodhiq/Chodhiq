@@ -46,7 +46,7 @@ export default function EmailConfirmationScreen({ navigation, route }) {
   }, [code, confirmed, error, errorDescription, navigation, completeConfirmation]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: palette.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
       <View style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 20 }}>
         <Text style={{ color: palette.text, fontSize: 24, fontWeight: '700' }}>ChodhiQ</Text>
         {busy ? (

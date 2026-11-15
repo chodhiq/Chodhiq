@@ -1,6 +1,6 @@
 # ChodhiQ retention schedule
 
-**Status:** Working schedule aligned to the published beta Privacy page; record-specific periods and implementation evidence remain to be confirmed for wider launch.  
+**Status:** Working schedule aligned to the published beta Privacy page; record-specific periods and implementation evidence remain to be confirmed for wider launch.
 **Version:** 1.0 · **Effective:** 14 October 2026 (published beta page)
 
 The published beta notice states that personal data is deleted within 14 days after an account deletion request, except for limited records the law requires ChodhiQ to keep. It also states that no routine Supabase database backups are currently kept. These are the current public commitments; verify the live configuration and deletion workflow continue to meet them. The notice does not state a separate active-use period for each record category, so this schedule does not invent one.

@@ -6,7 +6,15 @@ import { keyboardScrollAdjustment } from '../lib/keyboardGeometry';
 
 // Only focus/keyboard/layout events measure inputs; typing never triggers measurements.
 const KeyboardAwareScrollView = forwardRef(function KeyboardAwareScrollView(
-  { horizontal, contentContainerStyle, onScroll, onLayout, onContentSizeChange, ...props },
+  {
+    horizontal,
+    contentContainerStyle,
+    onScroll,
+    onLayout,
+    onContentSizeChange,
+    scrollEventThrottle = 32,
+    ...props
+  },
   ref,
 ) {
   const focused = useIsFocused();
@@ -84,7 +92,7 @@ const KeyboardAwareScrollView = forwardRef(function KeyboardAwareScrollView(
     });
     const hidden = Keyboard.addListener('keyboardDidHide', () => {
       keyboardTop.current = Infinity;
-      setOverlap(0);
+      if (mounted.current) setOverlap(0);
     });
     return () => {
       mounted.current = false;
@@ -99,6 +107,7 @@ const KeyboardAwareScrollView = forwardRef(function KeyboardAwareScrollView(
         {...props}
         horizontal
         ref={ref}
+        scrollEventThrottle={scrollEventThrottle}
         onScroll={onScroll}
         onLayout={onLayout}
         contentContainerStyle={contentContainerStyle}
@@ -114,7 +123,7 @@ const KeyboardAwareScrollView = forwardRef(function KeyboardAwareScrollView(
         {...props}
         ref={attach}
         automaticallyAdjustKeyboardInsets={false}
-        scrollEventThrottle={32}
+        scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={[
           contentContainerStyle,
           {

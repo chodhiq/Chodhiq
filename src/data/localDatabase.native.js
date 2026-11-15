@@ -32,6 +32,7 @@ async function openDatabase() {
     CREATE TABLE IF NOT EXISTS provider_reports (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL, provider_id TEXT NOT NULL, reason TEXT NOT NULL, details TEXT, created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS community_posts (id TEXT PRIMARY KEY NOT NULL, author_id TEXT NOT NULL, provider_id TEXT, post_type TEXT NOT NULL, body TEXT NOT NULL, image_url TEXT, created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS pending_operations (id TEXT PRIMARY KEY NOT NULL, operation TEXT NOT NULL, payload TEXT NOT NULL, created_at TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS auth_write_drafts (id TEXT PRIMARY KEY NOT NULL, operation TEXT NOT NULL, payload TEXT NOT NULL, owner_id TEXT, created_at TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS idx_saved_user ON saved_items(user_id);
     CREATE INDEX IF NOT EXISTS idx_quotes_user ON quote_requests(user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_posts_created ON community_posts(created_at DESC);
@@ -41,6 +42,9 @@ async function openDatabase() {
     await db.execAsync('ALTER TABLE community_posts ADD COLUMN region_key TEXT');
   if (!communityColumns.some((column) => column.name === 'location_city'))
     await db.execAsync('ALTER TABLE community_posts ADD COLUMN location_city TEXT');
+  const authDraftColumns = await db.getAllAsync('PRAGMA table_info(auth_write_drafts)');
+  if (!authDraftColumns.some((column) => column.name === 'owner_id'))
+    await db.execAsync('ALTER TABLE auth_write_drafts ADD COLUMN owner_id TEXT');
 
   const seeded = await db.getFirstAsync(
     "SELECT value FROM app_meta WHERE key = 'catalog_seed_version'",
@@ -175,6 +179,14 @@ export async function saveLocalProfile(userId, profile) {
   );
   return profile;
 }
+export async function markLocalProfileSynced(userId) {
+  const db = await getLocalDatabase();
+  const row = await db.getFirstAsync('SELECT payload FROM profiles WHERE user_id = ?', userId);
+  if (!row) return;
+  const profile = parse(row.payload, {});
+  delete profile.syncStatus;
+  await db.runAsync('UPDATE profiles SET payload = ? WHERE user_id = ?', json(profile), userId);
+}
 
 export async function deleteLocalProfile(userId) {
   const db = await getLocalDatabase();
@@ -219,7 +231,7 @@ export async function markLocalSavedItemsImported(userId) {
 export async function createLocalQuote(userId, input) {
   const db = await getLocalDatabase();
   const row = {
-    id: `q-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: input.id || `q-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     provider_id: String(input.providerId),
     message: input.message,
     preferred_contact: input.preferredContact,
@@ -255,6 +267,45 @@ export async function saveLocalReview(userId, review) {
     new Date().toISOString(),
   );
   return row;
+}
+
+export async function removeLocalReview(reviewId) {
+  const db = await getLocalDatabase();
+  await db.runAsync('DELETE FROM reviews WHERE id = ?', reviewId);
+}
+export async function markLocalQuoteSent(quoteId) {
+  const db = await getLocalDatabase();
+  await db.runAsync("UPDATE quote_requests SET status = 'sent' WHERE id = ?", quoteId);
+}
+export async function removeLocalQuote(quoteId) {
+  const db = await getLocalDatabase();
+  await db.runAsync('DELETE FROM quote_requests WHERE id = ?', quoteId);
+}
+
+export async function replaceLocalReviewId(reviewId, remoteId) {
+  const db = await getLocalDatabase();
+  const row = await db.getFirstAsync('SELECT user_id, payload FROM reviews WHERE id = ?', reviewId);
+  if (!row) return;
+  const review = parse(row.payload, {});
+  review.id = remoteId;
+  await db.runAsync('DELETE FROM reviews WHERE id = ?', reviewId);
+  await db.runAsync(
+    'INSERT OR REPLACE INTO reviews (id, user_id, provider_id, payload, created_at) VALUES (?, ?, ?, ?, ?)',
+    remoteId,
+    row.user_id,
+    String(review.providerId),
+    json(review),
+    new Date().toISOString(),
+  );
+}
+
+export async function markLocalReviewSynced(reviewId) {
+  const db = await getLocalDatabase();
+  const row = await db.getFirstAsync('SELECT payload FROM reviews WHERE id = ?', reviewId);
+  if (!row) return;
+  const review = parse(row.payload, {});
+  review.syncStatus = 'sent';
+  await db.runAsync('UPDATE reviews SET payload = ? WHERE id = ?', json(review), reviewId);
 }
 
 export async function markLocalNotificationsRead(userId, notificationIds) {
@@ -395,6 +446,33 @@ export async function enqueuePendingOperation(operation, payload) {
   );
   return id;
 }
+export async function storeAuthWriteDraft(operation, payload, ownerId) {
+  if (!ownerId) throw new Error('Cannot save an authentication draft without an owning user.');
+  const db = await getLocalDatabase();
+  const id = `auth-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  await db.runAsync(
+    'INSERT INTO auth_write_drafts (id, operation, payload, owner_id, created_at) VALUES (?, ?, ?, ?, ?)',
+    id,
+    operation,
+    json(payload),
+    ownerId,
+    new Date().toISOString(),
+  );
+  return id;
+}
+export async function loadAuthWriteDrafts() {
+  const db = await getLocalDatabase();
+  return (await db.getAllAsync('SELECT * FROM auth_write_drafts ORDER BY created_at')).map(
+    (row) => ({
+      ...row,
+      payload: parse(row.payload, {}),
+    }),
+  );
+}
+export async function removeAuthWriteDraft(id) {
+  const db = await getLocalDatabase();
+  await db.runAsync('DELETE FROM auth_write_drafts WHERE id = ?', id);
+}
 export async function loadPendingOperations() {
   const db = await getLocalDatabase();
   const rows = await db.getAllAsync('SELECT * FROM pending_operations ORDER BY created_at');
@@ -407,6 +485,43 @@ export async function removePendingOperation(id) {
 export async function updatePendingOperation(id, payload) {
   const db = await getLocalDatabase();
   await db.runAsync('UPDATE pending_operations SET payload = ? WHERE id = ?', json(payload), id);
+}
+
+export async function retryPendingOperation(id) {
+  const operations = await loadPendingOperations();
+  const item = operations.find((operation) => operation.id === id);
+  if (!item) return false;
+  const { _sync, ...payload } = item.payload || {};
+  await updatePendingOperation(id, {
+    ...payload,
+    _sync: {
+      status: 'pending',
+      attempts: 0,
+      nextAttemptAt: null,
+      lastError: null,
+      retryVersion: Number(_sync?.retryVersion || 0) + 1,
+    },
+  });
+  return true;
+}
+
+export async function resumeAuthRequiredOperations() {
+  const operations = await loadPendingOperations();
+  const resumable = operations.filter((item) => item.payload?._sync?.status === 'auth_required');
+  await Promise.all(resumable.map((item) => retryPendingOperation(item.id)));
+  return resumable.length;
+}
+
+export async function discardPendingOperation(id) {
+  const operations = await loadPendingOperations();
+  const item = operations.find((operation) => operation.id === id);
+  if (item?.operation === 'community_post' && item.payload?.localId)
+    await removeLocalPost(item.payload.localId);
+  if (item?.operation === 'review_create' && item.payload?.localReviewId)
+    await removeLocalReview(item.payload.localReviewId);
+  if (item?.operation === 'quote_request' && item.payload?.id)
+    await removeLocalQuote(item.payload.id);
+  await removePendingOperation(id);
 }
 
 export async function clearLocalUserData(userId) {

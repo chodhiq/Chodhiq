@@ -4,46 +4,20 @@ import AppTextInput from './AppTextInput';
 import { Image, StyleSheet, View } from 'react-native';
 
 import Text from './AppText';
-import {
-  ArrowLeft,
-  BadgeCheck,
-  Bookmark,
-  ChevronRight,
-  MapPin,
-  Search,
-  SlidersHorizontal,
-  Star,
-} from 'lucide-react-native';
-import { categoryFallback, imageSource } from '../data/assetCatalog';
+import { ChevronRight, MapPin, Search, SlidersHorizontal } from 'lucide-react-native';
+import { imageSource } from '../data/assetCatalog';
 import { shadows } from '../theme/theme';
-import { providerCardLabels } from '../data/categoryMatching';
 import GlassView from './GlassView';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import useEffectsLevel from '../hooks/useEffectsLevel';
+import ProviderCardGlow from '../../components/ui/ProviderCardGlow';
+import GlowIconButton from '../../components/ui/GlowIconButton';
 
-export function ExploreHeader({ onBack, palette }) {
+export function ExploreHeader({ palette }) {
   return (
     <View style={s.header}>
-      <TouchableOpacity
-        accessibilityRole="button"
-        accessibilityLabel="Back to Home"
-        onPress={onBack}
-        style={[s.headerBack, { backgroundColor: palette.surfaceAlt }]}
-      >
-        <ArrowLeft size={19} color={palette.text} />
-      </TouchableOpacity>
       <Text style={[s.title, { color: palette.text }]}>Search</Text>
     </View>
-  );
-}
-function CircleButton({ palette, onPress, children, label }) {
-  return (
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      style={[s.circleButton, { backgroundColor: palette.surface, borderColor: palette.border }]}
-    >
-      {children}
-    </TouchableOpacity>
   );
 }
 export function ExploreSearch({ palette, value, onChange, onFilters }) {
@@ -56,6 +30,8 @@ export function ExploreSearch({ palette, value, onChange, onFilters }) {
       />
       <Search size={19} color={palette.text2} />
       <AppTextInput
+        showChrome={false}
+        testID="input-explore-search"
         accessibilityLabel="Search businesses and services"
         value={value}
         onChangeText={onChange}
@@ -63,14 +39,17 @@ export function ExploreSearch({ palette, value, onChange, onFilters }) {
         placeholderTextColor={palette.muted}
         style={[s.input, { color: palette.text }]}
       />
-      <TouchableOpacity
+      <GlowIconButton
+        testID="btn-explore-search-filters"
         accessibilityRole="button"
         accessibilityLabel="Open search filters"
         onPress={onFilters}
-        style={[s.filterButton, { backgroundColor: palette.primarySoft }]}
-      >
-        <SlidersHorizontal size={18} color={palette.primary} />
-      </TouchableOpacity>
+        size={40}
+        variant="ghost"
+        haptic={false}
+        style={s.filterButton}
+        icon={<SlidersHorizontal size={18} color={palette.primary} />}
+      />
     </View>
   );
 }
@@ -104,104 +83,48 @@ export function SegmentedTabs({ palette, value, onChange }) {
     </View>
   );
 }
-export function ExploreBusinessCard({ palette, provider, saved, onSave, onPress }) {
+export function ExploreBusinessCard({ provider, saved, onSave, onPress, index = 0 }) {
   return (
-    <TouchableOpacity
+    <ProviderCardGlow
+      variant="row"
+      provider={provider}
+      saved={saved}
+      onSave={onSave}
       onPress={onPress}
-      style={[
-        s.card,
-        { backgroundColor: palette.surface, borderColor: palette.border },
-        provider.isDataVerified && s.dataVerifiedGlow,
-      ]}
-    >
-      <View style={s.imageWrap}>
-        <Image
-          resizeMethod="resize"
-          source={imageSource(
-            provider.image,
-            categoryFallback(provider.category, provider.categoryId),
-          )}
-          style={s.image}
-        />
-      </View>
-      <View style={s.cardCopy}>
-        <View style={s.nameRow}>
-          <Text numberOfLines={1} style={[s.name, { color: palette.text }]}>
-            {provider.name}
-          </Text>
-          {provider.isVerified && <BadgeCheck size={15} color="#4C8DFF" />}
-          {!provider.isVerified && provider.isDataVerified && (
-            <View style={s.dataCheckedBadge}>
-              <BadgeCheck size={12} color="#08724F" />
-              <Text style={s.dataCheckedText}>Data checked</Text>
-            </View>
-          )}
-        </View>
-        <Text numberOfLines={1} style={[s.category, { color: palette.text2 }]}>
-          {provider.category}
-        </Text>
-        <View style={s.metaRow}>
-          <Star
-            size={12}
-            color={provider.reviewCount > 0 ? palette.saffron : palette.muted}
-            fill={provider.reviewCount > 0 ? palette.saffron : 'transparent'}
-          />
-          <Text style={[s.meta, { color: palette.text }]}>
-            {provider.reviewCount > 0 ? `${provider.rating} (${provider.reviewCount})` : 'New'}
-            {provider.distance ? ` · ${provider.distance}` : ''}
-          </Text>
-        </View>
-        {providerCardLabels(provider).length > 0 && (
-          <View style={s.tags}>
-            {providerCardLabels(provider).map((label) => (
-              <Text
-                key={label}
-                style={[s.tag, { backgroundColor: palette.surfaceAlt, color: palette.text2 }]}
-              >
-                {label}
-              </Text>
-            ))}
-          </View>
-        )}
-      </View>
-      <TouchableOpacity
-        accessibilityRole="button"
-        accessibilityLabel={saved ? `Remove ${provider.name} from saved` : `Save ${provider.name}`}
-        accessibilityState={{ selected: saved }}
-        onPress={onSave}
-        style={[s.save, { backgroundColor: palette.surface }]}
-      >
-        <Bookmark
-          size={19}
-          color={saved ? palette.primary : palette.text2}
-          fill={saved ? palette.primary : 'transparent'}
-        />
-      </TouchableOpacity>
-    </TouchableOpacity>
+      index={index}
+      testID={`btn-explore-result-${provider.id}`}
+      saveTestID="btn-save-business"
+    />
   );
 }
 
-export function ExploreEventCard({ palette, item, onPress }) {
+export function ExploreEventCard({ palette, item, onPress, index = 0 }) {
+  const entrance =
+    useEffectsLevel() === 'full'
+      ? FadeInDown.delay(Math.min(index, 8) * 36).duration(230)
+      : undefined;
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={[s.card, { backgroundColor: palette.surface, borderColor: palette.border }]}
-    >
-      <Image resizeMethod="resize" source={imageSource(item.image)} style={s.image} />
-      <View style={s.cardCopy}>
-        <Text numberOfLines={1} style={[s.name, { color: palette.text }]}>
-          {item.title}
-        </Text>
-        <Text style={[s.category, { color: palette.text2 }]}>
-          {item.date} · {item.organiser}
-        </Text>
-        <View style={s.metaRow}>
-          <MapPin size={12} color={palette.text2} />
-          <Text style={[s.meta, { color: palette.text2 }]}>{item.city}, UK</Text>
+    <Animated.View entering={entrance}>
+      <TouchableOpacity
+        onPress={onPress}
+        style={[s.card, { backgroundColor: palette.surface, borderColor: palette.border }]}
+      >
+        <Image resizeMethod="resize" source={imageSource(item.image)} style={s.image} />
+        <View style={s.cardCopy}>
+          <Text numberOfLines={1} style={[s.name, { color: palette.text }]}>
+            {item.title}
+          </Text>
+          <Text style={[s.category, { color: palette.text2 }]}>
+            {item.date} · {item.organiser}
+          </Text>
+          <View style={s.metaRow}>
+            <MapPin size={12} color={palette.text2} />
+            <Text style={[s.meta, { color: palette.text2 }]}>{item.city}, UK</Text>
+          </View>
         </View>
-      </View>
-      <ChevronRight size={19} color={palette.text2} />
-    </TouchableOpacity>
+        <ChevronRight size={19} color={palette.text2} />
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 export function ExploreEmpty({ palette, onClear }) {
@@ -220,32 +143,8 @@ export function ExploreEmpty({ palette, onClear }) {
 }
 
 const s = StyleSheet.create({
-  header: {
-    height: 48,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  headerBack: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,.10)',
-  },
+  header: { height: 48, marginBottom: 12, justifyContent: 'center' },
   title: { fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
-
-  circleButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.soft,
-  },
 
   search: {
     position: 'relative',
@@ -262,9 +161,9 @@ const s = StyleSheet.create({
   },
   input: { flex: 1, fontSize: 14 },
   filterButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -294,6 +193,7 @@ const s = StyleSheet.create({
   },
   tabText: { fontSize: 11, fontWeight: '800' },
   card: {
+    position: 'relative',
     minHeight: 96,
     borderWidth: 1,
     borderRadius: 16,
@@ -302,6 +202,7 @@ const s = StyleSheet.create({
     marginBottom: 12,
     ...shadows.soft,
   },
+  cardMain: { flex: 1, flexDirection: 'row', minWidth: 0 },
   dataVerifiedGlow: {
     borderColor: '#5EE0AD',
     shadowColor: '#16A36A',

@@ -1,19 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Text from '../components/AppText';
 import ScreenHeader from '../components/ScreenHeader';
+import { FadeInView } from '../components/Motion';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { resolveCommunityImages } from '../data/communityImages';
+import { formatDate } from '../lib/dateTime';
 import { imageSource } from '../data/assetCatalog';
+import GlowButton from '../../components/ui/GlowButton';
+import { GlowListItem, GlowProfileCard } from '../../components/ui/GlowSurfaces';
 export default function CommunityProfileScreen({ navigation, route }) {
   const { palette } = useChodhiQTheme();
   const authorId = route.params?.authorId;
@@ -70,7 +67,7 @@ export default function CommunityProfileScreen({ navigation, route }) {
   }, [load]);
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: palette.background }}
+      style={{ flex: 1, backgroundColor: 'transparent' }}
       edges={['left', 'right', 'bottom']}
     >
       <ScreenHeader navigation={navigation} title="Community profile" />
@@ -80,9 +77,14 @@ export default function CommunityProfileScreen({ navigation, route }) {
         ) : error ? (
           <View>
             <Text style={{ color: palette.text }}>{error}</Text>
-            <TouchableOpacity accessibilityRole="button" onPress={load} style={styles.button}>
-              <Text style={{ color: palette.primary }}>Retry</Text>
-            </TouchableOpacity>
+            <GlowButton
+              variant="primary"
+              label="Retry"
+              onPress={() => {
+                void load();
+              }}
+              buttonStyle={styles.retryButton}
+            />
           </View>
         ) : !member ? (
           <Text style={{ color: palette.text2 }}>
@@ -90,72 +92,71 @@ export default function CommunityProfileScreen({ navigation, route }) {
           </Text>
         ) : (
           <>
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: palette.surface, borderColor: palette.border },
-              ]}
-            >
-              {member.avatar_url ? (
-                <Image source={imageSource(member.avatar_url)} style={styles.avatar} />
-              ) : (
-                <Text style={{ color: palette.primary, fontSize: 30, fontWeight: '700' }}>
-                  {member.display_name?.[0] || 'C'}
+            <FadeInView>
+              <GlowProfileCard
+                contentStyle={styles.cardContent}
+                style={[
+                  styles.card,
+                  { backgroundColor: palette.surface, borderColor: palette.border },
+                ]}
+              >
+                {member.avatar_url ? (
+                  <Image source={imageSource(member.avatar_url)} style={styles.avatar} />
+                ) : (
+                  <Text style={{ color: palette.primary, fontSize: 30, fontWeight: '700' }}>
+                    {member.display_name?.[0] || 'C'}
+                  </Text>
+                )}
+                <Text style={{ color: palette.text, fontSize: 22, fontWeight: '700' }}>
+                  {member.display_name}
                 </Text>
-              )}
-              <Text style={{ color: palette.text, fontSize: 22, fontWeight: '700' }}>
-                {member.display_name}
-              </Text>
-              {!!member.joined_year && (
-                <Text style={{ color: palette.text2 }}>
-                  Community member since {member.joined_year}
-                </Text>
-              )}
-            </View>
+                {!!member.joined_year && (
+                  <Text style={{ color: palette.text2 }}>
+                    Community member since {member.joined_year}
+                  </Text>
+                )}
+              </GlowProfileCard>
+            </FadeInView>
             <Text style={{ color: palette.text, fontWeight: '700', fontSize: 18 }}>
               Community posts
             </Text>
             {!posts.length && (
               <Text style={{ color: palette.text2 }}>No posts visible to you.</Text>
             )}
-            {posts.map((post) => (
-              <View
-                key={post.id}
-                style={[
-                  styles.card,
-                  { backgroundColor: palette.surface, borderColor: palette.border },
-                ]}
-              >
-                <Text style={{ color: palette.text2 }}>
-                  {new Date(post.created_at).toLocaleDateString()}
-                </Text>
-                <Text style={{ color: palette.text, lineHeight: 24 }}>{post.body}</Text>
-                {post.image_url && (
-                  <Image
-                    source={imageSource(post.image_url)}
-                    resizeMode="contain"
-                    style={{ width: '100%', height: 250 }}
-                  />
-                )}
-              </View>
+            {posts.map((post, index) => (
+              <FadeInView key={post.id} delay={index * 45}>
+                <GlowListItem
+                  contentStyle={styles.postContent}
+                  style={[
+                    styles.card,
+                    { backgroundColor: palette.surface, borderColor: palette.border },
+                  ]}
+                >
+                  <Text style={{ color: palette.text2 }}>{formatDate(post.created_at)}</Text>
+                  <Text style={{ color: palette.text, lineHeight: 24 }}>{post.body}</Text>
+                  {post.image_url && (
+                    <Image
+                      source={imageSource(post.image_url)}
+                      resizeMode="contain"
+                      style={{ width: '100%', height: 250 }}
+                    />
+                  )}
+                </GlowListItem>
+              </FadeInView>
             ))}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <TouchableOpacity
-                accessibilityRole="button"
+              <GlowButton
+                variant="secondary"
+                label="Previous"
                 disabled={!page}
                 onPress={() => setPage((value) => value - 1)}
-                style={styles.button}
-              >
-                <Text style={{ color: page ? palette.primary : palette.text2 }}>Previous</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                accessibilityRole="button"
+              />
+              <GlowButton
+                variant="secondary"
+                label="Next"
                 disabled={!more}
                 onPress={() => setPage((value) => value + 1)}
-                style={styles.button}
-              >
-                <Text style={{ color: more ? palette.primary : palette.text2 }}>Next</Text>
-              </TouchableOpacity>
+              />
             </View>
           </>
         )}
@@ -165,7 +166,9 @@ export default function CommunityProfileScreen({ navigation, route }) {
 }
 const styles = StyleSheet.create({
   content: { padding: 20, gap: 18, paddingBottom: 40 },
-  card: { padding: 18, borderWidth: 1, borderRadius: 16, gap: 12 },
+  card: { borderRadius: 18, marginBottom: 0 },
+  cardContent: { padding: 18, gap: 12, alignItems: 'center' },
+  postContent: { padding: 16, gap: 12 },
   avatar: { width: 72, height: 72, borderRadius: 36 },
-  button: { padding: 14, minHeight: 44 },
+  retryButton: { minWidth: 120, marginTop: 14 },
 });

@@ -1,5 +1,4 @@
 import { motion } from '../theme/motion';
-import { devicePerformance } from '../lib/devicePerformance';
 import React, {
   createContext,
   forwardRef,
@@ -10,8 +9,12 @@ import React, {
   useRef,
 } from 'react';
 import { Modal, Platform, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useIsFocused } from '@react-navigation/native';
-import useReducedMotion, { useMotionPreferences } from '../hooks/useMotionPreferences';
+import ScreenSurface from '../../components/ui/Screen';
+import { useMotionPreferences } from '../hooks/useMotionPreferences';
+import useEffectsLevel from '../hooks/useEffectsLevel';
+import { safePress } from '../lib/safePress';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -30,10 +33,27 @@ import Animated, {
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
+function accessibleLabelFrom(children) {
+  if (typeof children === 'string' || typeof children === 'number') return String(children);
+  return React.Children.toArray(children)
+    .map((child) => {
+      if (!React.isValidElement(child)) return accessibleLabelFrom(child);
+      return (
+        child.props?.accessibilityLabel ||
+        child.props?.label ||
+        accessibleLabelFrom(child.props?.children)
+      );
+    })
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+}
+
 function useAmbientMotion() {
-  const { reducedMotion, foreground } = useMotionPreferences();
+  const effectsLevel = useEffectsLevel();
+  const { foreground } = useMotionPreferences();
   const focused = useIsFocused();
-  return reducedMotion || devicePerformance.lowMemory || !foreground || !focused;
+  return effectsLevel !== 'full' || !foreground || !focused;
 }
 
 const MotionViewport = createContext(null);
@@ -95,7 +115,8 @@ export const MotionScrollView = forwardRef(function MotionScrollView(
 export function FadeInView({ children, delay = 0, distance, duration, style, onLayout }) {
   const viewport = useContext(MotionViewport);
   const nativeViewport = !!viewport && Platform.OS !== 'web';
-  const reducedMotion = useReducedMotion();
+  const effectsLevel = useEffectsLevel();
+  const reducedMotion = effectsLevel !== 'full';
   const elapsed = duration ?? (nativeViewport ? motion.section.duration : motion.entrance.duration);
   const travel = distance ?? (nativeViewport ? motion.section.distance : motion.entrance.distance);
   const opacity = useSharedValue(reducedMotion || elapsed === 0 ? 1 : 0);
@@ -156,38 +177,98 @@ export function FadeInView({ children, delay = 0, distance, duration, style, onL
 }
 
 export const MotionTouchable = forwardRef(function MotionTouchable(
-  { children, style, onPressIn, onPressOut, disabled, activeOpacity = 0.92, ...props },
+  {
+    children,
+    style,
+    onPressIn,
+    onPressOut,
+    disabled,
+    busy = false,
+    haptic = true,
+    activeOpacity = 0.92,
+    accessibilityLabel,
+    accessibilityRole,
+    accessibilityState,
+    featureKey,
+    ...props
+  },
   ref,
 ) {
-  const reducedMotion = useReducedMotion();
+  const effectsLevel = useEffectsLevel();
+  const [actionStatus, setActionStatus] = React.useState('idle');
+  const statusTimer = useRef(null);
+  const animationEnabled = effectsLevel !== 'off';
   const baseTransforms = StyleSheet.flatten(style)?.transform || [];
   const scale = useSharedValue(1);
   useEffect(() => {
-    if (reducedMotion || disabled) {
+    if (!animationEnabled || disabled) {
       cancelAnimation(scale);
       scale.value = 1;
     }
     return () => cancelAnimation(scale);
-  }, [reducedMotion, disabled, scale]);
+  }, [animationEnabled, disabled, scale]);
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [...baseTransforms, { scale: scale.value }],
   }));
   const animate = (value) => {
-    if (!reducedMotion && !disabled)
+    if (animationEnabled && !disabled)
       scale.value = withTiming(value, {
         duration: value === 1 ? motion.press.outDuration : motion.press.inDuration,
       });
   };
+  const buttonName =
+    props.testID || accessibilityLabel || accessibleLabelFrom(children) || 'Action';
+  const onActionStatusChange = useCallback((status) => {
+    if (statusTimer.current) clearTimeout(statusTimer.current);
+    statusTimer.current = null;
+    setActionStatus(status);
+    if (status === 'success' || status === 'error') {
+      statusTimer.current = setTimeout(() => {
+        statusTimer.current = null;
+        setActionStatus('idle');
+      }, 1800);
+    }
+  }, []);
+  const safeOnPress = React.useMemo(
+    () =>
+      safePress(props.onPress, {
+        buttonName,
+        featureKey,
+        onStatusChange: onActionStatusChange,
+      }),
+    [buttonName, featureKey, onActionStatusChange, props.onPress],
+  );
+  useEffect(
+    () => () => {
+      if (statusTimer.current) clearTimeout(statusTimer.current);
+    },
+    [],
+  );
   return (
     <AnimatedTouchable
       ref={ref}
-      accessibilityRole="button"
       {...props}
-      disabled={disabled}
+      accessibilityRole={accessibilityRole || 'button'}
+      accessibilityLabel={accessibilityLabel || accessibleLabelFrom(children) || 'Action'}
+      accessibilityState={{
+        ...accessibilityState,
+        disabled: disabled || actionStatus === 'loading' || accessibilityState?.disabled,
+        busy: busy || actionStatus === 'loading' || accessibilityState?.busy,
+      }}
+      accessibilityHint={
+        actionStatus === 'error' ? 'The action failed. Try again.' : props.accessibilityHint
+      }
+      disabled={disabled || actionStatus === 'loading'}
+      onPress={safeOnPress}
       activeOpacity={activeOpacity}
-      style={[style, animatedStyle]}
+      style={[style, { minWidth: 44, minHeight: 44 }, animatedStyle]}
       onPressIn={(event) => {
         animate(motion.press.scale);
+        if (!disabled && haptic) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch((error) => {
+            console.warn('Unable to trigger button haptic feedback.', error);
+          });
+        }
         onPressIn?.(event);
       }}
       onPressOut={(event) => {
@@ -208,15 +289,17 @@ export const MotionModal = forwardRef(function MotionModal(
   { animationType = 'fade', ...props },
   ref,
 ) {
-  const reduced = useReducedMotion();
+  const effectsLevel = useEffectsLevel();
+  const reduced = effectsLevel !== 'full';
   return <Modal {...props} ref={ref} animationType={reduced ? 'none' : animationType} />;
 });
 
 // Native stack handles detail/form transitions; tabs fade out and in on the UI thread.
-export function withScreenMotion(Screen) {
+export function withScreenMotion(Screen, variant = 'default') {
   function MotionScreen(props) {
     const focused = useIsFocused();
-    const reduced = useReducedMotion();
+    const effectsLevel = useEffectsLevel();
+    const reduced = effectsLevel !== 'full';
     const opacity = useSharedValue(reduced ? 1 : 0);
     const y = useSharedValue(reduced ? 0 : motion.entrance.distance);
     useEffect(() => {
@@ -248,9 +331,11 @@ export function withScreenMotion(Screen) {
       transform: [{ translateY: y.value }],
     }));
     return (
-      <Animated.View style={[{ flex: 1 }, animatedStyle]}>
-        <Screen {...props} />
-      </Animated.View>
+      <ScreenSurface variant={variant} edges={[]}>
+        <Animated.View style={[{ flex: 1 }, animatedStyle]}>
+          <Screen {...props} />
+        </Animated.View>
+      </ScreenSurface>
     );
   }
   MotionScreen.displayName = `Motion(${Screen.displayName || Screen.name})`;

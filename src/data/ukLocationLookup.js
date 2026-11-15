@@ -28,9 +28,13 @@ export async function suggestUkPostcodes(query, signal) {
 }
 
 export async function lookupUkPostcode(postcode, signal) {
-  const response = await fetch(`${POSTCODE_API}/postcodes/${encodeURIComponent(postcode)}`, {
-    signal,
-  });
+  const normalized = String(postcode || '')
+    .trim()
+    .replace(/\s+/g, '');
+  const lookup = async (type) =>
+    fetch(`${POSTCODE_API}/${type}/${encodeURIComponent(normalized)}`, { signal });
+  let response = await lookup('postcodes');
+  if (response.status === 404) response = await lookup('terminated_postcodes');
   if (!response.ok) throw new Error('That postcode could not be found.');
   const payload = await response.json();
   if (payload.status !== 200 || !payload.result)

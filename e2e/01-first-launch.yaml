@@ -1,0 +1,24 @@
+appId: com.chodhiq.app
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: btn-onboarding-skip
+- tapOn:
+    id: btn-onboarding-skip
+- assertVisible:
+    id: tab-home
+- assertVisible:
+    id: btn-home-search
+
+# Reset app state to cover the separate Continue as guest entry point as well.
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: btn-continue-as-guest
+- tapOn:
+    id: btn-continue-as-guest
+- assertVisible:
+    id: tab-home
+- assertVisible:
+    id: btn-home-search

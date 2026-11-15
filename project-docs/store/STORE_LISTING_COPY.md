@@ -2,9 +2,9 @@
 
 ## Shared positioning
 
-**App name:** ChodhiQ  
-**Category:** Lifestyle (primary); Business or Social Networking only if the final store taxonomy and feature emphasis justify it.  
-**Audience:** UK adults looking for local businesses, with an initial focus on the Malayalee community.  
+**App name:** ChodhiQ
+**Category:** Lifestyle (primary); Business or Social Networking only if the final store taxonomy and feature emphasis justify it.
+**Audience:** UK adults looking for local businesses, with an initial focus on the Malayalee community.
 **Launch version:** 1.0.0
 
 ## Apple App Store
@@ -35,9 +35,9 @@ Provider verification means that specified evidence has been reviewed; it is not
 
 **Keywords (under 100 bytes; validate in App Store Connect):** local,business,services,quotes,bookings,reviews,Malayalee,Kerala,UK,community
 
-**Support URL:** `https://chodhiq.co.uk/`  
-**Marketing URL:** `https://chodhiq.co.uk/`  
-**Privacy Policy URL:** `https://chodhiq.co.uk/privacy.html`  
+**Support URL:** `https://chodhiq.co.uk/`
+**Marketing URL:** `https://chodhiq.co.uk/`
+**Privacy Policy URL:** `https://chodhiq.co.uk/privacy.html`
 **Privacy Choices URL:** `https://chodhiq.co.uk/delete-account.html`
 
 **Review notes:**

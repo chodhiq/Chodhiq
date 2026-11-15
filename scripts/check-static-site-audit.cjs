@@ -93,7 +93,7 @@ for (const [name] of highOrCritical) {
       const expectedPackage = allowedUnbundledAdvisories.get(id);
       return expectedPackage !== undefined && !packageIsBundled(expectedPackage);
     });
-    if (!isOnlyKnownUnbundled) blocked.push(name);
+  if (!isOnlyKnownUnbundled) blocked.push(name);
 }
 
 if (blocked.length > 0) {
@@ -101,8 +101,14 @@ if (blocked.length > 0) {
   process.exit(1);
 }
 
-if (auditStatus !== 0 && highOrCritical.length === 0 && audit.metadata.vulnerabilities.total === 0) {
-  console.error(`npm audit exited ${auditStatus} without a reported vulnerability; failing closed.`);
+if (
+  auditStatus !== 0 &&
+  highOrCritical.length === 0 &&
+  audit.metadata.vulnerabilities.total === 0
+) {
+  console.error(
+    `npm audit exited ${auditStatus} without a reported vulnerability; failing closed.`,
+  );
   process.exit(1);
 }
 

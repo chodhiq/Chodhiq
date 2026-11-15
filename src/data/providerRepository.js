@@ -9,6 +9,7 @@ function mapCategory(row) {
 function mapProvider(row) {
   return {
     id: row.id,
+    listingType: row.listing_type || 'provider',
     publishedAt: row.created_at || null,
     name: row.business_name,
     category: row.categories?.name || 'Service provider',
@@ -60,6 +61,7 @@ export async function loadMarketplace({ onCached } = {}) {
       ...cached,
       reviews: null,
       reviewsError: 'Reviews need an internet connection. Check your connection and retry.',
+      refreshError: 'The directory service is not configured.',
     };
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
@@ -76,6 +78,7 @@ export async function loadMarketplace({ onCached } = {}) {
           .select(
             [
               'id,business_name,description,base_city,base_postcode,service_areas',
+              'listing_type',
               'languages_spoken,years_experience,price_range,phone,whatsapp,website',
               'google_place_id,cover_image_url,portfolio_urls,is_verified',
               'data_verification_status,data_verified_at,avg_rating,review_count,created_at',
@@ -86,7 +89,7 @@ export async function loadMarketplace({ onCached } = {}) {
           .abortSignal(controller.signal),
         supabase
           .from('reviews')
-          .select('id,provider_id,user_id,rating,comment,created_at')
+          .select('id,provider_id,user_id,rating,comment,created_at,providers(business_name)')
           .order('created_at', { ascending: false }),
         supabase.from('review_replies').select('review_id,body').abortSignal(controller.signal),
         supabase
@@ -162,6 +165,7 @@ export async function loadMarketplace({ onCached } = {}) {
         }),
       ),
       reviewsError: null,
+      refreshError: null,
       offline: false,
       lastUpdatedAt,
     };
@@ -171,6 +175,7 @@ export async function loadMarketplace({ onCached } = {}) {
       ...cached,
       reviews: null,
       reviewsError: 'Reviews could not be loaded. Check your connection and retry.',
+      refreshError: error?.message || 'The directory could not be refreshed.',
     };
   } finally {
     clearTimeout(timeout);

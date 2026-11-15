@@ -20,15 +20,17 @@ import {
 } from 'lucide-react-native';
 import Text from './MelaText';
 import { addBreadcrumb } from '../../lib/sentryUtils';
+import { formatDate } from '../../lib/dateTime';
 import { imageSource } from '../../data/assetCatalog';
 import { REGION_LABELS } from '../RegionEmblem';
 import { offerProgress, phoneParts, postVariant } from './melaFeedUtils';
-import useReducedMotion from './useReducedMotion';
+import useEffectsLevel from '../../hooks/useEffectsLevel';
+import GlowCard from '../../../components/GlowCard';
 
 function PhonePill({ number, palette }) {
   const [revealed, setRevealed] = useState(false);
   const opacity = useRef(new Animated.Value(0)).current;
-  const reduced = useReducedMotion();
+  const reduced = useEffectsLevel() !== 'full';
   return (
     <TouchableOpacity
       accessibilityRole="button"
@@ -80,7 +82,7 @@ function OfferRing({ post, palette }) {
       accessibilityLabel={`Offer ${offer.remaining ? `expires in ${offer.label}` : 'expired'}`}
       style={styles.ring}
     >
-      <Svg width={48} height={48} viewBox="0 0 48 48">
+      <Svg pointerEvents="none" width={48} height={48} viewBox="0 0 48 48">
         <Circle cx={24} cy={24} r={19} stroke={palette.border} strokeWidth={3} fill="none" />
         <Circle
           cx={24}
@@ -101,7 +103,7 @@ function OfferRing({ post, palette }) {
 }
 
 function Upvote({ liked, count, onPress, palette, disabled }) {
-  const reduced = useReducedMotion();
+  const reduced = useEffectsLevel() !== 'full';
   const fill = useRef(new Animated.Value(liked ? 1 : 0)).current;
   const pop = useRef(new Animated.Value(1)).current;
   const burst = useRef(new Animated.Value(1)).current;
@@ -149,6 +151,7 @@ function Upvote({ liked, count, onPress, palette, disabled }) {
   }, [count, reduced, roll]);
   return (
     <TouchableOpacity
+      testID="btn-like-post"
       accessibilityRole="button"
       accessibilityLabel={`${liked ? 'Remove upvote' : 'Upvote'}, ${count} votes`}
       disabled={disabled}
@@ -236,6 +239,7 @@ export default function PostCard({
   onAuthor,
   onBlock,
   newHere = false,
+  visible = true,
 }) {
   const [imageOpen, setImageOpen] = useState(false);
   const [imageRatio, setImageRatio] = useState(1);
@@ -273,7 +277,7 @@ export default function PostCard({
     </TouchableOpacity>
   ) : null;
   return (
-    <View
+    <GlowCard
       style={[
         styles.card,
         {
@@ -282,6 +286,8 @@ export default function PostCard({
           borderLeftWidth: 1,
         },
       ]}
+      visible={visible}
+      contentStyle={styles.cardContent}
     >
       {imageOpen && (
         <Modal
@@ -319,6 +325,7 @@ export default function PostCard({
       <View style={styles.content}>
         <View style={styles.head}>
           <TouchableOpacity
+            testID="btn-post-author"
             accessibilityRole="button"
             accessibilityLabel={`View ${name} profile`}
             onPress={onAuthor}
@@ -363,6 +370,7 @@ export default function PostCard({
           </View>
           {variant === 'provider_offer' && <OfferRing post={post} palette={palette} />}
           <TouchableOpacity
+            testID="btn-post-options"
             accessibilityRole="button"
             accessibilityLabel="Post options"
             style={styles.action}
@@ -428,15 +436,15 @@ export default function PostCard({
         </Text>
       )}
       <View style={styles.actions}>
-        <Upvote
-          disabled={!!counts.is_updating}
-          liked={liked}
-          count={Number(counts.like_count || 0)}
-          palette={palette}
-          onPress={() => {
-            onLike();
-          }}
-        />
+        {onLike ? (
+          <Upvote
+            disabled={!!counts.is_updating}
+            liked={liked}
+            count={Number(counts.like_count || 0)}
+            palette={palette}
+            onPress={onLike}
+          />
+        ) : null}
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={`Comments, ${Number(counts.comment_count || 0)}`}
@@ -475,7 +483,7 @@ export default function PostCard({
           <Share2 size={20} color={palette.text2} />
         </TouchableOpacity>
       </View>
-    </View>
+    </GlowCard>
   );
 }
 
@@ -508,7 +516,7 @@ function relativeDate(value) {
       ? '1 day ago'
       : days < 30
         ? `${days} days ago`
-        : new Date(value).toLocaleDateString();
+        : formatDate(value);
 }
 
 const styles = StyleSheet.create({
@@ -519,6 +527,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     overflow: 'hidden',
   },
+  cardContent: { padding: 0, gap: 0 },
   content: { padding: 17 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: {

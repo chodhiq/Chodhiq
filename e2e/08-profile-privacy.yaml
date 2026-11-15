@@ -1,0 +1,65 @@
+appId: com.chodhiq.app
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: btn-sign-in
+- tapOn:
+    id: input-email
+- inputText: '${MAESTRO_EMAIL}'
+- tapOn:
+    id: input-password
+- inputText: '${MAESTRO_PASSWORD}'
+- tapOn:
+    id: btn-sign-in
+- assertVisible:
+    id: tab-home
+- tapOn:
+    id: tab-profile
+- assertVisible:
+    id: btn-change-profile-picture
+
+- tapOn:
+    id: btn-profile-saved
+- assertVisible: Saved
+- tapOn:
+    id: tab-profile
+- tapOn:
+    id: btn-profile-reviews
+- assertVisible: My reviews
+- tapOn:
+    text: Go back
+- tapOn:
+    id: tab-profile
+- tapOn:
+    id: btn-profile-bookings
+- assertVisible: My bookings
+- tapOn:
+    text: Go back
+- tapOn:
+    id: tab-profile
+- tapOn: Account & preferences
+- tapOn:
+    id: btn-profile-settings
+- assertVisible: Settings
+- tapOn:
+    id: switch-email
+- tapOn:
+    id: switch-marketing
+- tapOn:
+    text: Go back
+- tapOn:
+    id: tab-profile
+- tapOn:
+    id: btn-profile-privacy
+- assertVisible: Privacy & your data
+- tapOn:
+    text: Type DELETE to confirm account deletion
+- inputText: DELETE
+- tapOn:
+    id: btn-delete-account
+- assertVisible: Permanently delete account?
+- tapOn: Keep account
+- assertVisible: Privacy & your data
+- tapOn:
+    id: btn-export-data

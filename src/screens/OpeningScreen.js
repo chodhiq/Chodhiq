@@ -1,12 +1,20 @@
-import React, { useRef, useState } from 'react';
+/* eslint-disable react-hooks/immutability -- Reanimated shared values are intentionally updated for the slide transition. */
+import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, ImageBackground, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowRight } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Animated, {
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import Text from '../components/AppText';
 import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import { useChodhiQTheme } from '../context/ThemeContext';
+import useEffectsLevel from '../hooks/useEffectsLevel';
 
 const pages = [
   {
@@ -32,8 +40,18 @@ const pages = [
 export default function OpeningScreen({ navigation }) {
   const { palette } = useChodhiQTheme();
   const { width } = useWindowDimensions();
+  const canAnimate = useEffectsLevel() === 'full';
   const listRef = useRef(null);
   const [pageIndex, setPageIndex] = useState(0);
+  const contentOpacity = useSharedValue(1);
+  const contentTransitionStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
+
+  useEffect(() => {
+    contentOpacity.value = canAnimate ? 0 : 1;
+    if (canAnimate) contentOpacity.value = withTiming(1, { duration: 220 });
+    return () => cancelAnimation(contentOpacity);
+  }, [canAnimate, contentOpacity, pageIndex]);
+
   const goGuest = () => {
     AsyncStorage.setItem('chodhiq-onboarding-complete', 'true').catch((error) =>
       console.warn('Could not save onboarding completion.', error.message),
@@ -41,7 +59,7 @@ export default function OpeningScreen({ navigation }) {
     navigation.replace('MainTabs');
   };
   const goToPage = (index) => {
-    listRef.current?.scrollToOffset({ offset: index * width, animated: true });
+    listRef.current?.scrollToOffset({ offset: index * width, animated: canAnimate });
     setPageIndex(index);
   };
   const nextPage = () => {
@@ -53,7 +71,7 @@ export default function OpeningScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={[s.safeArea, { backgroundColor: palette.background }]}>
+    <SafeAreaView style={[s.safeArea, { backgroundColor: 'transparent' }]}>
       <FlatList
         ref={listRef}
         style={s.list}
@@ -77,6 +95,7 @@ export default function OpeningScreen({ navigation }) {
               accessibilityLabel={item.label}
             />
             <LinearGradient
+              pointerEvents="none"
               colors={['rgba(8,10,9,0.16)', 'rgba(8,10,9,0.13)', '#080A09']}
               locations={[0, 0.42, 0.83]}
               style={StyleSheet.absoluteFill}
@@ -84,6 +103,7 @@ export default function OpeningScreen({ navigation }) {
             <View style={s.header}>
               <Text style={[s.brand, { color: palette.text }]}>ChodhiQ</Text>
               <TouchableOpacity
+                testID="btn-onboarding-skip"
                 accessibilityRole="button"
                 onPress={goGuest}
                 style={s.skip}
@@ -93,7 +113,7 @@ export default function OpeningScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            <View style={s.bottomContent}>
+            <Animated.View style={[s.bottomContent, contentTransitionStyle]}>
               <Text style={[s.eyebrow, { color: palette.primary }]}>ASK · CONNECT · GROW</Text>
               <Text style={[s.title, { color: palette.text }]}>{item.title}</Text>
               <Text style={[s.body, { color: palette.textSecondary }]}>{item.body}</Text>
@@ -121,6 +141,7 @@ export default function OpeningScreen({ navigation }) {
               </View>
 
               <TouchableOpacity
+                testID="btn-onboarding-continue"
                 accessibilityRole="button"
                 onPress={nextPage}
                 activeOpacity={0.86}
@@ -133,6 +154,7 @@ export default function OpeningScreen({ navigation }) {
               </TouchableOpacity>
               <View style={s.footerLinks}>
                 <TouchableOpacity
+                  testID="btn-sign-in"
                   accessibilityRole="button"
                   onPress={() => navigation.navigate('Welcome', { initialMode: 'signin' })}
                   hitSlop={8}
@@ -140,13 +162,18 @@ export default function OpeningScreen({ navigation }) {
                   <Text style={[s.footerLink, { color: palette.textSecondary }]}>Sign in</Text>
                 </TouchableOpacity>
                 <View style={[s.footerDivider, { backgroundColor: palette.border }]} />
-                <TouchableOpacity accessibilityRole="button" onPress={goGuest} hitSlop={8}>
+                <TouchableOpacity
+                  testID="btn-continue-as-guest"
+                  accessibilityRole="button"
+                  onPress={goGuest}
+                  hitSlop={8}
+                >
                   <Text style={[s.footerLink, { color: palette.textSecondary }]}>
                     Continue as guest
                   </Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </Animated.View>
           </View>
         )}
       />

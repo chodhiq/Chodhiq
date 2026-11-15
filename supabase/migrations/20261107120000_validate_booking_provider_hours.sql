@@ -1,4 +1,4 @@
-begin;
+﻿begin;
 
 create or replace function public.validate_booking_request_datetime()
 returns trigger
@@ -88,3 +88,4 @@ before insert on public.bookings
 for each row execute function public.validate_booking_request_datetime();
 
 commit;
+

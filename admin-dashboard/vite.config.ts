@@ -12,8 +12,12 @@ const { d1, r2 } = hostingConfig;
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
 const localBindingConfig = {
+  name: "chodhiq-admin-dashboard",
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
+  routes: [{ pattern: "admin.chodhiq.co.uk", custom_domain: true }],
+  workers_dev: false,
+  preview_urls: false,
   d1_databases: d1
     ? [
         {

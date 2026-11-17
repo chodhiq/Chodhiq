@@ -26,6 +26,8 @@
 }
 
 .route-view { animation: admin-route-in 200ms var(--ease-out) both; }
+.route-view { view-transition-name: admin-route; }
+.admin-transition-active .route-view { animation: none; }
 .page { animation: none; }
 .metrics > *, .table tbody tr { animation: admin-page-in var(--dur-base) var(--ease-out) both; }
 .metrics > :nth-child(2), .table tbody tr:nth-child(2) { animation-delay: 28ms; }
@@ -200,4 +202,12 @@ button:not(:disabled):hover, .toolbar a:hover { filter: brightness(1.025); }
   .toast {
     animation: none !important;
   }
+  ::view-transition-group(admin-route),
+  ::view-transition-old(admin-route),
+  ::view-transition-new(admin-route) { animation: none !important; }
 }
+
+::view-transition-group(admin-route) { animation-duration: 200ms; }
+::view-transition-old(admin-route) { animation: admin-route-out 120ms ease-out both; }
+::view-transition-new(admin-route) { animation: admin-route-in 200ms var(--ease-out) both; }
+@keyframes admin-route-out { to { opacity: 0; transform: translateY(-4px); } }

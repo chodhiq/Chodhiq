@@ -231,6 +231,19 @@ body,
   background: var(--c) !important;
 }
 
+.author-profile-details {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.35fr) minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 16px 0 0;
+}
+.author-profile-details dt { min-width: 0; color: var(--muted); }
+.author-profile-details dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 520px) {
+  .author-profile-details { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .author-profile-details dd { margin-bottom: 8px; }
+}
+
 .shell {
   grid-template-columns: 196px minmax(0, 1fr) !important;
 }

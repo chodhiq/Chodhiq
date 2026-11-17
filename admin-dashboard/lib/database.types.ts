@@ -59,9 +59,9 @@ export interface ReportRow {
   status: ReportStatus;
   created_at: string;
   updated_at?: string;
-  providers?: { business_name: string } | null;
-  community_posts?: { body: string; status: CommunityPostStatus } | null;
-  community_comments?: { body: string; status: CommunityPostStatus } | null;
+  providers?: { business_name: string; owner_id?: string | null } | null;
+  community_posts?: { body: string; status: CommunityPostStatus; author_id?: string } | null;
+  community_comments?: { body: string; status: CommunityPostStatus; author_id?: string } | null;
 }
 
 export interface VerificationRequestRow {

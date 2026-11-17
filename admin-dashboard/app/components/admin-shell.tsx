@@ -507,8 +507,28 @@ export function AdminFrame({ children }: { children: ReactNode }) {
       timeZone: 'Europe/London',
     }).format(new Date()),
   );
-  const currentPermission = path.startsWith('/providers/') ? NAV_PERMISSION['/providers'] : NAV_PERMISSION[path];
+  const authorProfileRoute = path.startsWith('/community/authors/');
+  const currentPermission = authorProfileRoute ? undefined : path.startsWith('/providers/') ? NAV_PERMISSION['/providers'] : NAV_PERMISSION[path];
+  const authorProfileDenied = authorProfileRoute && !can(admin.adminLevel, 'community.moderate') && !can(admin.adminLevel, 'reports.resolve');
   useEffect(() => { const timer = window.setInterval(() => { if (!document.hidden) void refreshAlerts(); }, 30_000); return () => window.clearInterval(timer); }, [refreshAlerts]);
+  useEffect(() => {
+    const animateSelectedList = (event: globalThis.MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const tab = target.closest('.pills button, [role="tablist"] button, .tabs button');
+      if (!tab) return;
+      if (tab.getAttribute('aria-pressed') === 'true' || tab.getAttribute('aria-selected') === 'true' || tab.classList.contains('on')) return;
+      const page = tab.closest('.page');
+      const list = page?.querySelector<HTMLElement>('.panel.moderation, [role="tabpanel"], .table');
+      if (!list) return;
+      list.classList.remove('filter-list-enter');
+      void list.offsetWidth;
+      list.classList.add('filter-list-enter');
+      window.setTimeout(() => list.classList.remove('filter-list-enter'), 200);
+    };
+    document.addEventListener('click', animateSelectedList, true);
+    return () => document.removeEventListener('click', animateSelectedList, true);
+  }, []);
   useEffect(() => {
     const start = () => {
       if (progressTimer.current) clearTimeout(progressTimer.current);
@@ -528,7 +548,7 @@ export function AdminFrame({ children }: { children: ReactNode }) {
       if (progressTimer.current) clearTimeout(progressTimer.current);
     };
   }, [path]);
-  useEffect(() => setTitle(routeTitles[path] || (path.startsWith('/providers/') ? 'Provider dossier' : 'Admin operations')), [path]);
+  useEffect(() => setTitle(routeTitles[path] || (path.startsWith('/providers/') ? 'Provider dossier' : path.startsWith('/community/authors/') ? 'Author profile' : 'Admin operations')), [path]);
   useEffect(() => {
     const timer = window.setTimeout(() => {
       document.querySelector<HTMLElement>('.page-identity h1')?.focus({ preventScroll: true });
@@ -664,7 +684,7 @@ export function AdminFrame({ children }: { children: ReactNode }) {
           </details>
         </header>
           <div className="route-view" key={path} data-route={path}>
-            {currentPermission && !can(admin.adminLevel, currentPermission) ? <section className="panel" role="alert"><h2>Administrator role required</h2><p>Your admin level does not include this page.</p></section> : children}
+            {authorProfileDenied || (currentPermission && !can(admin.adminLevel, currentPermission)) ? <section className="panel" role="alert"><h2>Administrator role required</h2><p>Your admin level does not include this page.</p></section> : children}
           </div>
       </section>
       {admin.toast && <Toast message={admin.toast.message} tone={admin.toast.type} />}

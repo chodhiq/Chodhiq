@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { sendNotification } from '../../lib/notify-user';
 import { useCounts, type CountDef } from '../../lib/use-counts';
 import { useUrlFilter } from '../../lib/url-filter';
+import { useFilterListMotion } from '../../lib/motion';
 
 type Application = {
   id: string;
@@ -45,6 +46,7 @@ export default function Applications() {
     [error, setError] = useState(''),
     [busy, setBusy] = useState(false),
     [notes, setNotes] = useState<Record<string, string>>({});
+  const listMotion = useFilterListMotion(!loading);
   const requestId = useRef(0);
   const load = useCallback(
     async (quiet = false) => {
@@ -166,6 +168,7 @@ export default function Applications() {
               disabled={busy}
               aria-pressed={status === value}
               onClick={() => {
+                if (status !== value) listMotion.trigger();
                 setStatus(value);
                 setPage(0);
               }}
@@ -184,7 +187,7 @@ export default function Applications() {
         ) : !rows.length ? (
           <EmptyState title="No applications with this status." />
         ) : (
-          <section className="panel moderation">
+          <section className={`panel moderation ${listMotion.className || ''}`}>
             {rows.map((row) => (
               <article key={row.id}>
                 <h3>{row.business_name}</h3>

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { range, useAdminActions } from '../../lib/admin';
 import { LoadError, Pager, Skeleton, Status } from './ui';
+import Link from './admin-link';
 type Comment = {
   id: string;
   body: string;
@@ -113,7 +114,7 @@ export function CommunityComments({ postId }: { postId: string }) {
                     <Status value={row.status} />
                     <p>{row.body}</p>
                     <small>
-                      Author {row.author_id} | {new Date(row.created_at).toLocaleString('en-GB')}
+                      Author <Link href={`/community/authors/${row.author_id}`}>{row.author_id}</Link> | {new Date(row.created_at).toLocaleString('en-GB')}
                       {row.parent_comment_id ? ' | Reply' : ''}
                     </small>
                     <label className="field" htmlFor={'comment-note-' + row.id}>

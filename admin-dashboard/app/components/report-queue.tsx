@@ -42,7 +42,7 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
   const requestId = useRef(0);
   const table = kind === 'provider' ? 'provider_reports' : 'community_post_reports';
   const rowMotion = useFirstLoadRows(!loading && rows.length > 0);
-  const listMotion = useFilterListMotion();
+  const listMotion = useFilterListMotion(!loading);
 
   const load = useCallback(async () => {
     const activeRequest = ++requestId.current;
@@ -52,8 +52,8 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
       .from(table)
       .select(
         kind === 'provider'
-          ? '*,providers(business_name)'
-          : '*,community_posts(body,status),community_comments(body,status)',
+          ? '*,providers(business_name,owner_id)'
+          : '*,community_posts(author_id,body,status),community_comments(author_id,body,status)',
         { count: 'exact' },
       )
       .eq('status', status)
@@ -257,7 +257,7 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
               aria-pressed={status === value}
               className={status === value ? 'on' : ''}
               onClick={() => {
-                listMotion.trigger();
+                if (status !== value) listMotion.trigger();
                 setStatus(value);
                 setPage(0);
                 setSelected([]);
@@ -334,6 +334,11 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
             </label>
             {rows.map((report) => {
               const commentReport = kind === 'community' && Boolean(report.comment_id);
+              const subjectAuthorId = kind === 'provider'
+                ? report.providers?.owner_id
+                : commentReport
+                  ? report.community_comments?.author_id
+                  : report.community_posts?.author_id;
               const reportedBody = commentReport
                 ? report.community_comments?.body
                 : report.community_posts?.body;
@@ -372,7 +377,8 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
                   <p>{report.details || report.reason}</p>
                   <small>
                     Report {report.id.slice(0, 8)} · Reporter{' '}
-                    {report.reporter_id?.slice(0, 8) || 'anonymous'} ·{' '}
+                    {report.reporter_id ? <Link href={`/community/authors/${report.reporter_id}`}>{report.reporter_id.slice(0, 8)}</Link> : 'anonymous'}
+                    {subjectAuthorId && <> · Reported author <Link href={`/community/authors/${subjectAuthorId}`}>{subjectAuthorId.slice(0, 8)}</Link></>} ·{' '}
                     {new Date(report.created_at).toLocaleString('en-GB', {
                       timeZone: 'Europe/London',
                     })}

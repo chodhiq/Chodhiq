@@ -53,7 +53,7 @@ export function CommunityPage() {
   const requestId = useRef(0);
   const loadingRequest = useRef(false);
   const rowMotion = useFirstLoadRows(!loading && rows.length > 0);
-  const listMotion = useFilterListMotion();
+  const listMotion = useFilterListMotion(!loading);
   useEffect(() => {
     const timer = setTimeout(() => {
       setQuery(cleanSearch(search));
@@ -283,9 +283,8 @@ export function CommunityPage() {
                 )}
                 <p className="post-body">{row.body}</p>
                 <small>
-                  {row.providers?.business_name ||
-                    row.author_name ||
-                    `User ${row.author_id?.slice(0, 8) || 'unknown'}`}{' '}
+                  {row.providers?.business_name ? <>{row.providers.business_name} · </> : null}
+                  {row.author_id ? <Link href={`/community/authors/${row.author_id}`}>{row.author_name || `User ${row.author_id.slice(0, 8)}`}</Link> : `User ${row.author_name || 'unknown'}`}{' '}
                   ·{' '}
                   {new Date(row.created_at || 0).toLocaleString('en-GB', {
                     timeZone: 'Europe/London',
@@ -293,9 +292,7 @@ export function CommunityPage() {
                 </small>
                 <div className="post-context">
                   <small>Reference: {row.id}</small>
-                  {row.author_id && (
-                    <Link href={'/users?user=' + row.author_id}>Manage author account</Link>
-                  )}
+                  {row.author_id && <Link href={`/community/authors/${row.author_id}`}>Manage author account</Link>}
                 </div>
                 <label className="field moderation-reason" htmlFor={'reason-' + row.id}>
                   Moderation reason

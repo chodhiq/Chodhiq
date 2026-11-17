@@ -25,7 +25,7 @@
   --ease-in-out: cubic-bezier(.65,0,.35,1);
 }
 
-.route-view { animation: admin-route-in 240ms var(--ease-out) both; }
+.route-view { animation: admin-route-in 200ms var(--ease-out) both; }
 .page { animation: none; }
 .metrics > *, .table tbody tr { animation: admin-page-in var(--dur-base) var(--ease-out) both; }
 .metrics > :nth-child(2), .table tbody tr:nth-child(2) { animation-delay: 28ms; }
@@ -34,7 +34,7 @@
 .metrics > :nth-child(n+5), .table tbody tr:nth-child(n+7) { animation: none; }
 .nav-group a { transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease; }
 @keyframes admin-page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes admin-route-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes admin-route-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto; animation: none !important; transition: none !important; }
 }
@@ -119,9 +119,9 @@ button:not(:disabled):hover, .toolbar a:hover { filter: brightness(1.025); }
   animation: admin-shimmer 1.3s linear infinite;
 }
 @keyframes admin-shimmer { to { background-position: -200% 0; } }
-.dashboard-stat, .panel.table tbody tr, .nav-group a { transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease; }
+.dashboard-stat, .panel.table tbody tr, .nav-group a { transition: background-color 180ms var(--ease-out), border-color 180ms var(--ease-out), color 180ms var(--ease-out), transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out); }
 .dashboard-stat:hover { transform: translateY(-2px); }
-.dashboard-stat:active { transform: translateY(0); }
+.dashboard-stat:active { transform: translateY(1px); }
 .panel.table tbody tr { content-visibility: auto; contain-intrinsic-size: auto 56px; }
 .page .metrics { min-height: 154px; }
 .metrics > *, .table tbody tr { animation: none; }
@@ -138,11 +138,27 @@ button:not(:disabled):hover, .toolbar a:hover { filter: brightness(1.025); }
   animation: admin-overlay-in 180ms ease-out both;
 }
 .confirm-modal {
-  animation: admin-dialog-in 220ms var(--ease-out) both;
+  animation: admin-dialog-in 200ms var(--ease-out) both;
 }
 .toast {
-  animation: admin-toast-in 240ms var(--ease-out) both;
+  animation: admin-toast-life 3000ms var(--ease-out) both;
 }
+.nav-badge { animation: admin-badge-in 180ms var(--ease-out) both; }
+.pills button, .page button, .page a, .toolbar button { transition-duration: 180ms; transition-timing-function: var(--ease-out); }
+.first-load-rows > tr:nth-child(-n+10), .first-load-rows > article:nth-of-type(-n+10), .first-load-rows > button:nth-child(-n+10) { animation: admin-row-in 200ms var(--ease-out) both; }
+.first-load-rows > tr:nth-child(1), .first-load-rows > article:nth-of-type(1), .first-load-rows > button:nth-child(1) { animation-delay: 0ms; }
+.first-load-rows > tr:nth-child(2), .first-load-rows > article:nth-of-type(2), .first-load-rows > button:nth-child(2) { animation-delay: 20ms; }
+.first-load-rows > tr:nth-child(3), .first-load-rows > article:nth-of-type(3), .first-load-rows > button:nth-child(3) { animation-delay: 40ms; }
+.first-load-rows > tr:nth-child(4), .first-load-rows > article:nth-of-type(4), .first-load-rows > button:nth-child(4) { animation-delay: 60ms; }
+.first-load-rows > tr:nth-child(5), .first-load-rows > article:nth-of-type(5), .first-load-rows > button:nth-child(5) { animation-delay: 80ms; }
+.first-load-rows > tr:nth-child(6), .first-load-rows > article:nth-of-type(6), .first-load-rows > button:nth-child(6) { animation-delay: 100ms; }
+.first-load-rows > tr:nth-child(7), .first-load-rows > article:nth-of-type(7), .first-load-rows > button:nth-child(7) { animation-delay: 120ms; }
+.first-load-rows > tr:nth-child(8), .first-load-rows > article:nth-of-type(8), .first-load-rows > button:nth-child(8) { animation-delay: 140ms; }
+.first-load-rows > tr:nth-child(9), .first-load-rows > article:nth-of-type(9), .first-load-rows > button:nth-child(9) { animation-delay: 160ms; }
+.first-load-rows > tr:nth-child(10), .first-load-rows > article:nth-of-type(10), .first-load-rows > button:nth-child(10) { animation-delay: 180ms; }
+.filter-list-enter { animation: admin-row-in 180ms var(--ease-out) both; }
+.modal-backdrop.closing { animation: admin-overlay-out 180ms ease-out both; pointer-events: none; }
+.confirm-modal.closing { animation: admin-dialog-out 180ms var(--ease-out) both; pointer-events: none; }
 @keyframes admin-popover-in {
   from { opacity: 0; transform: translateY(-5px) scale(.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -151,15 +167,31 @@ button:not(:disabled):hover, .toolbar a:hover { filter: brightness(1.025); }
   from { opacity: 0; }
   to { opacity: 1; }
 }
+@keyframes admin-overlay-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes admin-dialog-in {
-  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  from { opacity: 0; transform: scale(.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
-@keyframes admin-toast-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes admin-dialog-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.97); } }
+@keyframes admin-toast-life {
+  0% { opacity: 0; transform: translateY(8px); }
+  7% { opacity: 1; transform: translateY(0); }
+  92% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(8px); }
+}
+@keyframes admin-badge-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes admin-row-in { from { opacity: 0; } to { opacity: 1; } }
+.load-error { animation: admin-toast-in 180ms var(--ease-out) both; }
+@keyframes admin-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@property --admin-count { syntax: '<integer>'; inherits: false; initial-value: 0; }
+@keyframes admin-count-up { to { --admin-count: var(--admin-count-target); } }
+.count-up { counter-reset: admin-count var(--admin-count); animation: admin-count-up 220ms var(--ease-out) both; }
+.count-up::before { content: counter(admin-count); }
+@media (prefers-reduced-motion: reduce) {
+  .count-up { --admin-count: var(--admin-count-target); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .modal-backdrop.closing { display: none !important; }
   .route-view,
   .account-menu[open] > .account-menu-panel,
   .admin-alerts[open] > .admin-alerts-menu,

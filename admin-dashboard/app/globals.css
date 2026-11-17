@@ -753,6 +753,10 @@ td:first-child {
   font-size: 9px;
 }
 .document {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   width: 100%;
   border: 1px solid var(--l);
   background: white;
@@ -763,8 +767,8 @@ td:first-child {
   font-size: 8px;
 }
 .document span {
-  float: right;
   color: var(--g);
+  overflow-wrap: anywhere;
 }
 .dossier textarea {
   width: 100%;

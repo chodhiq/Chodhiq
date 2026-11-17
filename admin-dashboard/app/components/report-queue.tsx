@@ -9,6 +9,8 @@ import { supabase } from '../../lib/supabase';
 import { sendNotification } from '../../lib/notify-user';
 import { useDebouncedValue } from '../../lib/use-debounced-value';
 import { useCounts, type CountDef } from '../../lib/use-counts';
+import { useUrlFilter } from '../../lib/url-filter';
+import { useFilterListMotion, useFirstLoadRows } from '../../lib/motion';
 import { EmptyState, LoadError, Page, Pager, Search, Skeleton, Status } from './ui';
 
 const COMMUNITY_REPORT_COUNTS = [
@@ -29,8 +31,9 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
-  const [status, setStatus] = useState<ReportStatus>('open');
+  const [status, setStatus] = useUrlFilter<ReportStatus>('status', ['open', 'reviewing', 'resolved', 'dismissed'], 'open', 'report-results');
   const [search, setSearch] = useState('');
+  const [ownerRequestsOnly, setOwnerRequestsOnly] = useState(false);
   const debouncedSearch = useDebouncedValue(search);
   const [resolutionNote, setResolutionNote] = useState('');
   const [loading, setLoading] = useState(true);
@@ -38,6 +41,8 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
   const [error, setError] = useState('');
   const requestId = useRef(0);
   const table = kind === 'provider' ? 'provider_reports' : 'community_post_reports';
+  const rowMotion = useFirstLoadRows(!loading && rows.length > 0);
+  const listMotion = useFilterListMotion();
 
   const load = useCallback(async () => {
     const activeRequest = ++requestId.current;
@@ -54,6 +59,9 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
       .eq('status', status)
       .order('created_at', { ascending: false })
       .range(...range(page));
+    if (kind === 'provider' && ownerRequestsOnly)
+      request = request.eq('reason', 'owner_removal_request');
+    else if (kind === 'provider') request = request.order('reason', { ascending: true });
     const cleaned = cleanSearch(debouncedSearch);
     if (cleaned) request = request.ilike('reason', `%${cleaned}%`);
     const result = await request;
@@ -64,7 +72,7 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
       setTotal(result.count ?? 0);
     }
     setLoading(false);
-  }, [kind, page, debouncedSearch, status, table]);
+  }, [kind, page, debouncedSearch, status, table, ownerRequestsOnly]);
   useEffect(() => {
     let active = true;
     const run = async () => {
@@ -180,6 +188,32 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
     setProcessing(false);
   }
 
+  async function hideListing(report: ReportRow) {
+    if (kind !== 'provider' || processing || !report.provider_id) return;
+    if (resolutionNote.trim().length < 8) {
+      admin.notify('Enter a resolution note of at least 8 characters.', 'error');
+      return;
+    }
+    if (!(await admin.confirmAction({
+      title: 'Hide listing and resolve request',
+      message: 'Hide this listing from the directory and close the removal request?',
+      confirmLabel: 'Hide listing',
+    }))) return;
+    setProcessing(true);
+    const result = await admin.act(
+      'provider_report_hidden', 'provider_report', report.id,
+      () => supabase.rpc('admin_hide_reported_listing', {
+        report_id: report.id,
+        expected_status: report.status,
+        expected_updated_at: report.updated_at ?? null,
+        resolution_note: resolutionNote.trim(),
+      }),
+      { server_audited: true, reason: resolutionNote.trim(), previous_status: report.status, new_status: 'resolved' },
+    );
+    if (result.ok) { setResolutionNote(''); await load(); }
+    setProcessing(false);
+  }
+
   async function moderatePost(report: ReportRow, next: 'published' | 'removed') {
     if (!report.post_id || processing) return;
     if (next === 'removed' && resolutionNote.trim().length < 8) {
@@ -209,16 +243,21 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
       <Page
         title={kind === 'provider' ? 'Provider-report queue' : 'Reported community content'}
         note="Realtime moderation with server-validated transitions and audited decisions."
-        stats={[{label:'Open',value:show('open'),tone:'amber'},{label:'Reviewing',value:show('reviewing'),tone:'purple'},{label:'Resolved',value:show('resolved'),tone:'green'}]}
+        stats={[
+          { label: 'Open', value: show('open'), tone: 'amber', href: `${kind === 'provider' ? '/moderation/providers' : '/moderation/community'}?status=open` },
+          { label: 'Reviewing', value: show('reviewing'), tone: 'purple', href: `${kind === 'provider' ? '/moderation/providers' : '/moderation/community'}?status=reviewing` },
+          { label: 'Resolved', value: show('resolved'), tone: 'green', href: `${kind === 'provider' ? '/moderation/providers' : '/moderation/community'}?status=resolved` },
+        ]}
       >
         <div className="report-workbench">
-          <section className="report-filter-panel" aria-label="Report filters">
+          <section className="report-filter-panel" id="report-results" aria-label="Report filters">
         <div className="pills" aria-label="Report status filter">
           {(['open', 'reviewing', 'resolved', 'dismissed'] as ReportStatus[]).map((value) => (
             <button
               aria-pressed={status === value}
               className={status === value ? 'on' : ''}
               onClick={() => {
+                listMotion.trigger();
                 setStatus(value);
                 setPage(0);
                 setSelected([]);
@@ -238,6 +277,12 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
             setPage(0);
           }}
         />
+        {kind === 'provider' && (
+          <label className="select-all">
+            <input type="checkbox" checked={ownerRequestsOnly} onChange={(event) => { setOwnerRequestsOnly(event.target.checked); setPage(0); }} />
+            Owner removal requests only (shown first by default)
+          </label>
+        )}
           </section>
           <section className="report-decision-panel" aria-label="Moderation decision note">
         <label className="field" htmlFor={`${kind}-resolution-note`}>
@@ -275,7 +320,7 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
             onAction={search ? () => setSearch('') : undefined}
           />
         ) : (
-          <section className="panel moderation">
+          <section className={`panel moderation ${rowMotion || ''} ${listMotion.className || ''}`}>
             <label className="select-all">
               <input
                 className="bulk-check"
@@ -310,7 +355,7 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
                         }
                       />
                     </label>
-                    <span className="tag">{commentReport ? 'comment' : report.reason}</span>
+                    <span className="tag">{commentReport ? 'comment' : report.reason === 'owner_removal_request' ? 'Owner requests removal' : report.reason}</span>
                     <Status value={report.status} />
                   </div>
                   <h3>
@@ -376,6 +421,11 @@ export function ReportQueue({ kind }: { kind: 'provider' | 'community' }) {
                     >
                       {commentReport ? 'Remove comment & resolve' : 'Resolve'}
                     </button>
+                    {kind === 'provider' && report.reason === 'owner_removal_request' && (
+                      <button className="danger" disabled={processing || !['open', 'reviewing'].includes(report.status)} onClick={() => void hideListing(report)}>
+                        Hide listing
+                      </button>
+                    )}
                   </footer>
                 </article>
               );

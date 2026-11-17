@@ -12,7 +12,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import { isSupabaseConfigured, supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { cleanSearch, useAdmin, useAdminActions, useAdminAuth } from '../../lib/admin';
 import { signInErrorMessage, withAuthTimeout } from '../../lib/auth-operations';
 import { brand } from '../../lib/brand';
@@ -319,8 +319,8 @@ function AdminAlerts({ counts }: { counts: Record<string, number | null> }) {
   }, []);
   const total = Object.values(counts).reduce<number>((sum, count) => sum + (count ?? 0), 0);
   const entries = [
-    ['/applications', 'Business applications', counts.applications], ['/verification', 'Verification', counts.verification],
-    ['/moderation/community', 'Community reports', counts.communityReports], ['/moderation/providers', 'Provider reports', counts.providerReports],
+    ['/applications?status=pending', 'Business applications', counts.applications], ['/verification?status=pending', 'Verification', counts.verification],
+    ['/moderation/community?status=open', 'Community reports', counts.communityReports], ['/moderation/providers?status=open', 'Provider reports', counts.providerReports],
   ] as const;
   return <details className="admin-alerts" ref={root} onToggle={event => setExpanded(event.currentTarget.open)}><summary aria-label={`Admin alerts, ${total} waiting`} aria-haspopup="true" aria-expanded={expanded}>♧<NavBadge value={total} /></summary><div className="admin-alerts-menu" role="menu"><b>Waiting for review</b>{entries.map(([href, label, value]) => <Link key={href} role="menuitem" href={href} onClick={() => root.current?.removeAttribute('open')}><span>{label}</span><NavBadge value={value} /></Link>)}</div></details>;
 }
@@ -328,8 +328,21 @@ function AdminAlerts({ counts }: { counts: Record<string, number | null> }) {
 function ConfirmationModal() {
   const admin = useAdminActions();
   const [text, setText] = useState('');
+  const [displayRequest, setDisplayRequest] = useState(admin.confirmation);
+  const [closing, setClosing] = useState(false);
   const dialog = useRef<HTMLElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (admin.confirmation) {
+      setDisplayRequest(admin.confirmation);
+      setClosing(false);
+      return;
+    }
+    if (!displayRequest) return;
+    setClosing(true);
+    const timer = window.setTimeout(() => setDisplayRequest(null), 180);
+    return () => window.clearTimeout(timer);
+  }, [admin.confirmation, displayRequest]);
   useEffect(() => {
     if (!admin.confirmation) return;
     previousFocus.current = document.activeElement as HTMLElement | null;
@@ -368,14 +381,14 @@ function ConfirmationModal() {
       setText('');
     };
   }, [admin, admin.confirmation, admin.settleConfirmation]);
-  const request = admin.confirmation;
+  const request = displayRequest;
   if (!request) return null;
   const enabled = !request.requiredText || text === request.requiredText;
   return (
-    <div className="modal-backdrop" role="presentation" aria-hidden="false">
+    <div className={`modal-backdrop ${closing ? 'closing' : ''}`} role="presentation" aria-hidden={closing}>
       <section
         ref={dialog}
-        className="confirm-modal"
+        className={`confirm-modal ${closing ? 'closing' : ''}`}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="confirm-title"
@@ -415,12 +428,20 @@ export function AdminGate({ children }: { children: ReactNode }) {
     () => typeof window !== 'undefined' && window.location.hash.includes('type=recovery'),
   );
   useEffect(() => {
+    if (!admin.configurationReady || !admin.configured) return;
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setRecovering(true);
     });
     return () => data.subscription.unsubscribe();
-  }, []);
-  if (!isSupabaseConfigured)
+  }, [admin.configurationReady, admin.configured]);
+  if (!admin.configurationReady)
+    return (
+      <main className="loading">
+        <span>S</span>
+        <p>Connecting to secure services…</p>
+      </main>
+    );
+  if (!admin.configured)
     return (
       <main className="auth-page">
         <section className="auth-card">
@@ -561,7 +582,7 @@ export function AdminFrame({ children }: { children: ReactNode }) {
                       onClick={() => setMobileOpen(false)}
                       aria-label={label}
                       key={href}
-                      href={href}
+                      href={href === '/applications' ? '/applications?status=pending' : href === '/verification' ? '/verification?status=pending' : href === '/moderation/community' ? '/moderation/community?status=open' : href === '/moderation/providers' ? '/moderation/providers?status=open' : href}
                       aria-current={
                         path === href || (href === '/providers' && path.startsWith('/providers/'))
                           ? 'page'

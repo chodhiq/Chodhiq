@@ -126,7 +126,7 @@ select {
   }
   .admin-sidebar .sidebar-scroll nav {
     display: block;
-    overflow-x: hidden;
+    overflow: visible;
   }
   .admin-sidebar .nav-group a span {
     display: block;
@@ -279,6 +279,18 @@ body,
 
 .sidebar-scroll {
   padding: 12px 10px !important;
+  scroll-padding-block: 12px;
+  overflow-x: hidden;
+  overflow-y: auto !important;
+}
+
+.sidebar-scroll nav {
+  padding-block: 4px;
+  overflow: visible;
+}
+
+.sidebar-scroll .nav-group a {
+  scroll-margin-block: 12px;
 }
 
 .nav-group {

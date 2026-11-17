@@ -19,6 +19,13 @@ interface Provider {
   owner_id: string | null;
   business_name: string;
   category_id: string | null;
+  listing_type?: string;
+  street_address?: string | null;
+  website?: string | null;
+  source_url?: string | null;
+  subcategory?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   base_city: string | null;
   base_postcode: string | null;
   phone: string | null;
@@ -39,6 +46,7 @@ interface Related {
   quotes: Array<{ id: string }>;
   verifications: Array<{ id: string; status: string; submitted_at: string }>;
   entitlement: { plan_code: string } | null;
+  placeSource: { attribution_text: string; source: string } | null;
   errors: string[];
 }
 
@@ -54,8 +62,14 @@ export default function ProviderDetail() {
     quotes: [],
     verifications: [],
     entitlement: null,
+    placeSource: null,
     errors: [],
   });
+  const [placeReason, setPlaceReason] = useState('');
+  const [placeMessage, setPlaceMessage] = useState('');
+  const [pinLatitude, setPinLatitude] = useState('');
+  const [pinLongitude, setPinLongitude] = useState('');
+  const [pinReason, setPinReason] = useState('');
   const [loading, setLoading] = useState(true),
     [saving, setSaving] = useState(false),
     [error, setError] = useState(''),
@@ -75,6 +89,7 @@ export default function ProviderDetail() {
       quoteResult,
       verificationResult,
       entitlementResult,
+      placeSourceResult,
     ] = await Promise.all([
       supabase.from('providers').select('*').eq('id', id).maybeSingle(),
       supabase.from('categories').select('id,name').eq('is_active', true).order('sort_order'),
@@ -101,12 +116,15 @@ export default function ProviderDetail() {
         .select('plan_code')
         .eq('provider_id', id)
         .maybeSingle(),
+      supabase.from('place_sources').select('attribution_text,source').eq('listing_id', id).maybeSingle(),
     ]);
     if (providerResult.error) setError('The provider dossier could not be loaded.');
     else if (!providerResult.data) setNotFound(true);
     else {
       setProvider(providerResult.data as Provider);
       setDraft(providerResult.data as Provider);
+      setPinLatitude(providerResult.data.latitude == null ? '' : String(providerResult.data.latitude));
+      setPinLongitude(providerResult.data.longitude == null ? '' : String(providerResult.data.longitude));
     }
     setCategories((categoryResult.data ?? []) as Category[]);
     const relatedErrors = [
@@ -115,6 +133,7 @@ export default function ProviderDetail() {
       quoteResult,
       verificationResult,
       entitlementResult,
+      placeSourceResult,
     ]
       .filter((result) => result.error)
       .map((result) => result.error!.message);
@@ -123,6 +142,7 @@ export default function ProviderDetail() {
       quotes: (quoteResult.data ?? []) as Related['quotes'],
       verifications: (verificationResult.data ?? []) as Related['verifications'],
       entitlement: entitlementResult.data as Related['entitlement'],
+      placeSource: placeSourceResult.data as Related['placeSource'],
       errors: relatedErrors,
     });
     setLoading(false);
@@ -207,6 +227,45 @@ export default function ProviderDetail() {
     setSaving(false);
   }
 
+  async function savePlace() {
+    if (!provider || !draft || saving || provider.listing_type !== 'place') return;
+    if (placeReason.trim().length < 8) { setPlaceMessage('Reason must be at least 8 characters.'); return; }
+    if (draft.website?.trim() && !/^https:\/\//i.test(draft.website.trim())) { setPlaceMessage('Website must start with https://.'); return; }
+    const changes = {
+      business_name: draft.business_name.trim(), category_id: draft.category_id,
+      street_address: draft.street_address?.trim() || null, base_postcode: draft.base_postcode?.trim() || null,
+      base_city: draft.base_city?.trim() || null, phone: draft.phone?.trim() || null,
+      website: draft.website?.trim() || null, description: draft.description?.trim() || null,
+      subcategory: draft.subcategory?.trim() || null,
+    };
+    setSaving(true); setPlaceMessage('');
+    const result = await supabase.rpc('admin_update_place', { provider_id: id, changes, reason: placeReason.trim() });
+    if (result.error) setPlaceMessage(`Could not save place: ${result.error.message}`);
+    else { setPlaceMessage('Place details saved.'); setPlaceReason(''); await load(); }
+    setSaving(false);
+  }
+
+  async function movePlacePin() {
+    if (!provider || saving || provider.listing_type !== 'place') return;
+    if (pinReason.trim().length < 8) {
+      setPlaceMessage('Move pin reason must be at least 8 characters.');
+      return;
+    }
+    const latitude = Number(pinLatitude), longitude = Number(pinLongitude);
+    if (!Number.isFinite(latitude) || latitude < 49 || latitude > 61 || !Number.isFinite(longitude) || longitude < -9 || longitude > 2) {
+      setPlaceMessage('Enter latitude 49–61 and longitude -9–2.'); return;
+    }
+    setSaving(true); setPlaceMessage('');
+    const result = await supabase.rpc('admin_set_place_coordinates', {
+      provider_id: id,
+      latitude,
+      longitude,
+      reason: pinReason.trim(),
+    });
+    if (result.error) setPlaceMessage(`Could not move pin: ${result.error.message}`);
+    else { setPlaceMessage('Map pin moved.'); setPinReason(''); await load(); }
+    setSaving(false);
+  }
   async function visibility() {
     if (!provider || saving) return;
     const suspended = provider.verification_status === 'suspended';
@@ -226,7 +285,7 @@ export default function ProviderDetail() {
       return;
     setSaving(true);
     const fields = suspended
-      ? { verification_status: previous, is_verified: previous === 'approved' }
+      ? { verification_status: previous, is_verified: previous === 'verified' }
       : {
           verification_status: 'suspended',
           is_verified: false,
@@ -310,91 +369,50 @@ export default function ProviderDetail() {
             <small>Entitlement</small>
           </article>
         </div>
+        {provider.listing_type === 'place' && (
+          <section className="panel">
+            <h3>Source information</h3>
+            {provider.source_url ? <p><a href={provider.source_url} target="_blank" rel="noreferrer">Open source record</a></p> : <p>No source URL is recorded.</p>}
+            {related.placeSource?.attribution_text && <p>{related.placeSource.attribution_text}</p>}
+          </section>
+        )}
         <div className="columns">
           <section className="panel form-grid">
-            <h3>Edit provider</h3>
-            <label htmlFor="provider-name">
-              Business name
-              <input
-                id="provider-name"
-                required
-                value={draft.business_name}
-                onChange={(event) => setDraft({ ...draft, business_name: event.target.value })}
-              />
-            </label>
-            <label htmlFor="provider-category">
-              Category
-              <select
-                id="provider-category"
-                value={draft.category_id || ''}
-                onChange={(event) => setDraft({ ...draft, category_id: event.target.value })}
-              >
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label htmlFor="provider-city">
-              Base city
-              <input
-                id="provider-city"
-                value={draft.base_city || ''}
-                onChange={(event) => setDraft({ ...draft, base_city: event.target.value })}
-              />
-            </label>
-            <label htmlFor="provider-postcode">
-              Postcode
-              <input
-                id="provider-postcode"
-                value={draft.base_postcode || ''}
-                onChange={(event) => setDraft({ ...draft, base_postcode: event.target.value })}
-              />
-            </label>
-            <label htmlFor="provider-phone">
-              Phone
-              <input
-                id="provider-phone"
-                type="tel"
-                autoComplete="tel"
-                value={draft.phone || ''}
-                onChange={(event) => setDraft({ ...draft, phone: event.target.value })}
-              />
-            </label>
-            <label htmlFor="provider-description">
-              Description
-              <textarea
-                id="provider-description"
-                maxLength={2000}
-                value={draft.description || ''}
-                onChange={(event) => setDraft({ ...draft, description: event.target.value })}
-              />
-            </label>
-            <label htmlFor="provider-rank">
-              Sponsored rank
-              <input
-                id="provider-rank"
-                type="number"
-                min="0"
-                max="10"
-                step="1"
-                value={draft.sponsored_rank ?? 0}
-                onChange={(event) =>
-                  setDraft({ ...draft, sponsored_rank: Number(event.target.value) })
-                }
-              />
-            </label>
-            <button className="primary" disabled={!dirty || saving} onClick={() => void save()}>
-              {saving ? 'Saving…' : 'Save audited changes'}
-            </button>
-            <button className="danger" disabled={saving} onClick={() => void visibility()}>
-              {provider.verification_status === 'suspended'
-                ? 'Restore marketplace listing'
-                : 'Suspend marketplace listing'}
-            </button>
-          </section>
-          <section className="panel">
+            <h3>{provider.listing_type === 'place' ? 'Edit place' : 'Edit provider'}</h3>
+            {provider.listing_type === 'place' ? (
+              <>
+                <label>Business name<input value={draft.business_name} onChange={(event) => setDraft({ ...draft, business_name: event.target.value })} /></label>
+                <label>Category<select value={draft.category_id || ''} onChange={(event) => setDraft({ ...draft, category_id: event.target.value })}>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+                <label>Street address<input value={draft.street_address || ''} onChange={(event) => setDraft({ ...draft, street_address: event.target.value })} /></label>
+                <label>Postcode<input value={draft.base_postcode || ''} onChange={(event) => setDraft({ ...draft, base_postcode: event.target.value })} /></label>
+                <label>City<input value={draft.base_city || ''} onChange={(event) => setDraft({ ...draft, base_city: event.target.value })} /></label>
+                <label>Phone<input type="tel" value={draft.phone || ''} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} /></label>
+                <label>Website (HTTPS)<input type="url" value={draft.website || ''} onChange={(event) => setDraft({ ...draft, website: event.target.value })} /></label>
+                <label>Description<textarea value={draft.description || ''} onChange={(event) => setDraft({ ...draft, description: event.target.value })} /></label>
+                <label>Subcategory<input value={draft.subcategory || ''} onChange={(event) => setDraft({ ...draft, subcategory: event.target.value })} /></label>
+                <label>Required reason<textarea required minLength={8} value={placeReason} onChange={(event) => setPlaceReason(event.target.value)} /></label>
+                <button className="primary" disabled={saving || placeReason.trim().length < 8} onClick={() => void savePlace()}>Save audited place changes</button>
+                <p role="status">{placeMessage}</p>
+                <h3>Move pin</h3>
+                <label>Latitude (49 to 61)<input type="number" min="49" max="61" step="any" value={pinLatitude} onChange={(event) => setPinLatitude(event.target.value)} /></label>
+                <label>Longitude (-9 to 2)<input type="number" min="-9" max="2" step="any" value={pinLongitude} onChange={(event) => setPinLongitude(event.target.value)} /></label>
+                <label>Required move reason<textarea required minLength={8} value={pinReason} onChange={(event) => setPinReason(event.target.value)} /></label>
+                <button disabled={saving || pinReason.trim().length < 8} onClick={() => void movePlacePin()}>Move pin</button>
+              </>
+            ) : (
+              <>
+                <label>Business name<input value={draft.business_name} onChange={(event) => setDraft({ ...draft, business_name: event.target.value })} /></label>
+                <label>Category<select value={draft.category_id || ''} onChange={(event) => setDraft({ ...draft, category_id: event.target.value })}>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+                <label>Base city<input value={draft.base_city || ''} onChange={(event) => setDraft({ ...draft, base_city: event.target.value })} /></label>
+                <label>Postcode<input value={draft.base_postcode || ''} onChange={(event) => setDraft({ ...draft, base_postcode: event.target.value })} /></label>
+                <label>Phone<input value={draft.phone || ''} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} /></label>
+                <label>Description<textarea value={draft.description || ''} onChange={(event) => setDraft({ ...draft, description: event.target.value })} /></label>
+                <label>Sponsored rank<input type="number" min="0" max="10" step="1" value={draft.sponsored_rank ?? 0} onChange={(event) => setDraft({ ...draft, sponsored_rank: Number(event.target.value) })} /></label>
+                <button className="primary" disabled={!dirty || saving} onClick={() => void save()}>{saving ? 'Saving…' : 'Save audited changes'}</button>
+                <button className="danger" disabled={saving} onClick={() => void visibility()}>{provider.verification_status === 'suspended' ? 'Restore marketplace listing' : 'Suspend marketplace listing'}</button>
+              </>
+            )}
+          </section>          <section className="panel">
             <h3>Verification history</h3>
             {related.verifications.length ? (
               related.verifications.map((item) => (

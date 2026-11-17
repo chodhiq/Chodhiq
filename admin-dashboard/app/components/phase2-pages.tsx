@@ -8,6 +8,8 @@ import { EmptyState, LoadError, Page, Pager, Skeleton, Status } from './ui';
 import { range, useAdmin } from '../../lib/admin';
 import { supabase } from '../../lib/supabase';
 import { useCounts, type CountDef } from '../../lib/use-counts';
+import { useUrlFilter, useUrlSection } from '../../lib/url-filter';
+import { useFilterListMotion, useFirstLoadRows } from '../../lib/motion';
 
 const COMMUNITY_COUNTS = [
   { key: 'posts', table: 'community_posts' },
@@ -44,12 +46,14 @@ export function CommunityPage() {
   const [loading, setLoading] = useState(true),
     [error, setError] = useState(''),
     [live, setLive] = useState(false);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useUrlFilter('status', ['all', 'published', 'under_review', 'removed'], 'all', 'community-results');
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const requestId = useRef(0);
   const loadingRequest = useRef(false);
+  const rowMotion = useFirstLoadRows(!loading && rows.length > 0);
+  const listMotion = useFilterListMotion();
   useEffect(() => {
     const timer = setTimeout(() => {
       setQuery(cleanSearch(search));
@@ -195,7 +199,7 @@ export function CommunityPage() {
       <Page
         title="Live community feed"
         note="Watch community activity as it happens and remove content using audited administrator controls."
-        stats={[{label:'Posts',value:show('posts')},{label:'Open reports',value:show('reported'),tone:'amber'},{label:'Removed',value:show('removed')}]}
+        stats={[{label:'Posts',value:show('posts'),href:'/community?status=all'},{label:'Open reports',value:show('reported'),tone:'amber',href:'/moderation/community?status=open'},{label:'Removed',value:show('removed'),href:'/community?status=removed'}]}
       >
         <div className="community-live-toolbar">
           <span className={live ? 'live-indicator on' : 'live-indicator'}>
@@ -208,11 +212,11 @@ export function CommunityPage() {
           <b>{`${total} posts`}</b>
         </div>
         <div className="feed-navigation">
-          <Link href="/moderation/community">Reported posts & comments</Link>
+          <Link href="/moderation/community?status=open">Reported posts & comments</Link>
           <Link href="/community/privileges">Spaces & member privileges</Link>
           <Link href="/audit">Moderation history</Link>
         </div>
-        <div className="feed-filters">
+        <div className="feed-filters" id="community-results">
           <label className="field">
             Search posts
             <input
@@ -227,6 +231,7 @@ export function CommunityPage() {
             <select
               value={filter}
               onChange={(event) => {
+                listMotion.trigger();
                 setFilter(event.target.value);
                 setPage(0);
               }}
@@ -248,7 +253,7 @@ export function CommunityPage() {
             detail="New posts will appear here automatically. Try clearing filters if you expected a post."
           />
         ) : (
-          <section className="panel moderation community-feed-admin">
+          <section className={`panel moderation community-feed-admin ${rowMotion || ''} ${listMotion.className || ''}`}>
             {rows.map((row) => (
               <article id={`post-${row.id}`} key={row.id}>
                 <div>
@@ -340,6 +345,8 @@ export function CommunityPage() {
 
 export function ActivityPage() {
   const admin = useAdmin();
+  const [sectionsReady, setSectionsReady] = useState(false);
+  useUrlSection('section', ['all', 'quotes', 'bookings'], { all: 'activity-results', quotes: 'quote-results', bookings: 'booking-results' }, sectionsReady);
   const [quotes, setQuotes] = useState<Row[]>([]),
     [bookings, setBookings] = useState<Row[]>([]),
     [quotePage, setQuotePage] = useState(0),
@@ -368,6 +375,7 @@ export function ActivityPage() {
       if (bookingsResult.error) admin.notify(bookingsResult.error.message, 'error');
       else setBookings((bookingsResult.data || []) as unknown as Row[]);
       setCounts([quotesResult.count || 0, bookingsResult.count || 0]);
+      setSectionsReady(true);
     });
   }, [admin, bookingPage, quotePage]);
   const table = (rows: Row[], booking = false) => (
@@ -403,15 +411,15 @@ export function ActivityPage() {
       <Page
         title="Marketplace activity"
         note="Read-only quote request and booking demand visibility."
-        stats={[{label:'Total requests',value:counts[0]+counts[1]},{label:'Quotes',value:counts[0],tone:'purple'},{label:'Bookings',value:counts[1],tone:'green'}]}
+        stats={[{label:'Total requests',value:counts[0]+counts[1],href:'/activity?section=all'},{label:'Quotes',value:counts[0],tone:'purple',href:'/activity?section=quotes'},{label:'Bookings',value:counts[1],tone:'green',href:'/activity?section=bookings'}]}
       >
-        <div className="columns activity-grid">
-          <section className="panel table">
+        <div className="columns activity-grid" id="activity-results">
+          <section className="panel table" id="quote-results">
             <h3>Quote requests ({counts[0]})</h3>
             {table(quotes)}
             <Pager page={quotePage} total={counts[0]} setPage={setQuotePage} />
           </section>
-          <section className="panel table">
+          <section className="panel table" id="booking-results">
             <h3>Bookings ({counts[1]})</h3>
             {table(bookings, true)}
             <Pager page={bookingPage} total={counts[1]} setPage={setBookingPage} />

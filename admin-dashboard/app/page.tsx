@@ -10,7 +10,7 @@ const metrics = [
     table: 'business_applications',
     field: 'status',
     value: 'pending',
-    href: '/applications',
+    href: '/applications?status=pending',
   },
   {
     label: 'Verified providers',
@@ -19,13 +19,13 @@ const metrics = [
     value: 'verified',
     href: '/providers',
   },
-  { label: 'Total bookings', table: 'bookings', href: '/activity' },
+  { label: 'Total bookings', table: 'bookings', href: '/activity?section=bookings' },
   {
     label: 'Community reports',
     table: 'community_post_reports',
     field: 'status',
     value: 'open',
-    href: '/moderation/community',
+    href: '/moderation/community?status=open',
   },
 ] as const;
 type Application = {
@@ -66,19 +66,19 @@ async function loadDashboardSnapshot(): Promise<DashboardSnapshot> {
 }
 const shortcuts = [
   [
-    '/applications',
+    '/applications?status=pending',
     'Review business applications',
     'Inspect trading proof, approve access, or request changes.',
   ],
-  ['/community', 'Live community feed', 'Inspect posts and media; remove or restore content.'],
+  ['/community?status=all', 'Live community feed', 'Inspect posts and media; remove or restore content.'],
   [
     '/community/privileges',
     'Community privileges',
     'Manage spaces, owners, moderators and participation.',
   ],
-  ['/moderation/providers', 'Provider reports', 'Investigate reports and record review decisions.'],
+  ['/moderation/providers?status=open', 'Provider reports', 'Investigate reports and record review decisions.'],
   ['/users', 'Customer accounts', 'Inspect accounts and manage account restrictions.'],
-  ['/verification', 'Provider verification', 'Review evidence and manage verification status.'],
+  ['/verification?status=pending', 'Provider verification', 'Review evidence and manage verification status.'],
   ['/notifications', 'Send notifications', 'Publish operational messages to your users.'],
   ['/audit', 'Audit history', 'Review privileged actions and their recorded reasons.'],
 ];
@@ -145,7 +145,7 @@ export default function Overview() {
             ))}
           </div>
         )}
-        <Panel className="application-preview dashboard-review" eyebrow="Priority queue" title="Applications awaiting review" description="Applicants appear here before they become approved providers." action={<Link className="dashboard-view-all" href="/applications">View application queue <span aria-hidden="true">→</span></Link>}>
+        <Panel className="application-preview dashboard-review" eyebrow="Priority queue" title="Applications awaiting review" description="Applicants appear here before they become approved providers." action={<Link className="dashboard-view-all" href="/applications?status=pending">View application queue <span aria-hidden="true">→</span></Link>}>
           {applicationError ? (
             <p role="alert">
               Applications could not be loaded. <button onClick={() => void load()}>Retry</button>
@@ -157,7 +157,7 @@ export default function Overview() {
             </div>
           ) : (
             applications.map((row) => (
-              <Link className="application-preview-row dashboard-application-row" key={row.id} href="/applications">
+              <Link className="application-preview-row dashboard-application-row" key={row.id} href="/applications?status=pending">
                 <div>
                   <b>{row.business_name}</b>
                   <small>

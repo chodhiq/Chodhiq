@@ -7,6 +7,7 @@ import { range, useAdmin } from '../../lib/admin';
 import { supabase } from '../../lib/supabase';
 import { sendNotification } from '../../lib/notify-user';
 import { useCounts, type CountDef } from '../../lib/use-counts';
+import { useUrlFilter } from '../../lib/url-filter';
 
 type Application = {
   id: string;
@@ -37,7 +38,7 @@ export default function Applications() {
   const admin = useAdmin();
   const { show } = useCounts(APPLICATION_COUNTS);
   const [rows, setRows] = useState<Application[]>([]),
-    [status, setStatus] = useState('pending'),
+    [status, setStatus] = useUrlFilter('status', ['pending', 'approved', 'changes_requested', 'rejected'], 'pending', 'applications-results'),
     [page, setPage] = useState(0),
     [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true),
@@ -156,9 +157,9 @@ export default function Applications() {
       <Page
         title="Business account review"
         note="Check the business details and UK trading evidence before granting provider access. Review pending applications within 3 days."
-        stats={[{label:'Pending',value:show('pending'),tone:'amber'},{label:'Approved',value:show('approved'),tone:'green'},{label:'Changes requested',value:show('changes'),tone:'purple'},{label:'Rejected',value:show('rejected')} ]}
+        stats={[{label:'Pending',value:show('pending'),tone:'amber',href:'/applications?status=pending'},{label:'Approved',value:show('approved'),tone:'green',href:'/applications?status=approved'},{label:'Changes requested',value:show('changes'),tone:'purple',href:'/applications?status=changes_requested'},{label:'Rejected',value:show('rejected'),href:'/applications?status=rejected'} ]}
       >
-        <div className="pills">
+        <div className="pills" id="applications-results">
           {['pending', 'approved', 'changes_requested', 'rejected'].map((value) => (
             <button
               key={value}

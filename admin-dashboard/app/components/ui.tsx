@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { memo, useEffect, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { usePathname } from "next/navigation";
 import { PAGE_SIZE } from "../../lib/admin";
 import { csvSafeValue } from "../../lib/operations";
@@ -53,8 +53,14 @@ export function Panel({ eyebrow, title, description, action, children, className
 }
 
 export const StatCard = memo(function StatCard({ icon, label, value, href, tone = 'teal' }: { icon: ReactNode; label: string; value: ReactNode; href: string; tone?: 'teal' | 'green' | 'purple' | 'amber' }) {
-  return <Link className={`metric metric-link dashboard-stat stat-${tone}`} href={href}><span className="dashboard-stat-top"><i aria-hidden="true">{icon}</i><span>{label}</span><b aria-hidden="true">↗</b></span><strong>{value}</strong><small>Open records <span aria-hidden="true">→</span></small></Link>;
+  return <Link className={`metric metric-link dashboard-stat stat-${tone}`} href={href}><span className="dashboard-stat-top"><i aria-hidden="true">{icon}</i><span>{label}</span><b aria-hidden="true">↗</b></span><strong><CountUp value={value} /></strong><small>Open records <span aria-hidden="true">→</span></small></Link>;
 });
+
+function CountUp({ value }: { value: ReactNode }) {
+  const numeric = typeof value === 'number' || (typeof value === 'string' && /^\d+$/.test(value));
+  if (!numeric) return value;
+  return <><span className="count-up" aria-hidden="true" style={{ '--admin-count-target': Number(value) } as React.CSSProperties} /><span className="sr-only">{value}</span></>;
+}
 
 export function Button({ variant = 'primary', className = '', ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'outline' | 'danger' }) {
   const variantClass = variant === 'primary' ? 'primary' : variant;
@@ -79,9 +85,20 @@ export function Textarea({ label, id, ...props }: TextareaHTMLAttributes<HTMLTex
 
 export type DataColumn<T> = { key: string; header: string; render: (row: T) => ReactNode; align?: 'start' | 'end' };
 export function DataTable<T>({ rows, columns, rowKey, loading = false, empty = 'No records found.' }: { rows: readonly T[]; columns: readonly DataColumn<T>[]; rowKey: (row: T) => string; loading?: boolean; empty?: string }) {
+  const firstRowsShown = useRef(false);
+  const firstRowsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [animateFirstRows, setAnimateFirstRows] = useState(false);
+  useEffect(() => {
+    if (!loading && rows.length && !firstRowsShown.current) {
+      firstRowsShown.current = true;
+      setAnimateFirstRows(true);
+      firstRowsTimer.current = window.setTimeout(() => setAnimateFirstRows(false), 420);
+    }
+  }, [loading, rows.length]);
+  useEffect(() => () => { if (firstRowsTimer.current) clearTimeout(firstRowsTimer.current); }, []);
   if (loading) return <Skeleton rows={5} />;
   if (!rows.length) return <EmptyState title={empty} />;
-  return <div className="panel table"><table><thead><tr>{columns.map(column => <th key={column.key} className={column.align === 'end' ? 'text-right' : undefined}>{column.header}</th>)}</tr></thead><tbody>{rows.map(row => <tr key={rowKey(row)}>{columns.map(column => <td key={column.key}>{column.render(row)}</td>)}</tr>)}</tbody></table></div>;
+  return <div className="panel table"><table><thead><tr>{columns.map(column => <th key={column.key} className={column.align === 'end' ? 'text-right' : undefined}>{column.header}</th>)}</tr></thead><tbody className={animateFirstRows ? 'first-load-rows' : undefined}>{rows.map(row => <tr key={rowKey(row)}>{columns.map(column => <td key={column.key}>{column.render(row)}</td>)}</tr>)}</tbody></table></div>;
 }
 
 export function Modal({ title, description, children, onClose }: { title: string; description?: string; children: ReactNode; onClose: () => void }) {
@@ -103,10 +120,10 @@ export function Status({ value }: { value: string }) {
         : 'purple';
   return <Badge tone={tone} className={`status ${normalized}`}><span aria-hidden="true">●</span> {value.replaceAll('_', ' ')}</Badge>;
 }
-export function Pager({ page, total, setPage, disabled = false }: { page: number; total: number; setPage: (page: number) => void; disabled?: boolean }) {
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const start = total ? page * PAGE_SIZE + 1 : 0;
-  const end = Math.min((page + 1) * PAGE_SIZE, total);
+export function Pager({ page, total, setPage, disabled = false, pageSize = PAGE_SIZE }: { page: number; total: number; setPage: (page: number) => void; disabled?: boolean; pageSize?: number }) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const start = total ? page * pageSize + 1 : 0;
+  const end = Math.min((page + 1) * pageSize, total);
   return (
     <nav className="pagination" aria-label="Pagination">
       <span aria-live="polite" aria-atomic="true">{total ? `${start}–${end} of ${total} results` : '0 results'}</span>
@@ -114,7 +131,7 @@ export function Pager({ page, total, setPage, disabled = false }: { page: number
         <div>
           <button aria-label="Go to previous page" disabled={disabled || page === 0} onClick={() => setPage(page - 1)}>Previous</button>
           <span aria-current="page">Page {page + 1} of {pages}</span>
-          <button aria-label="Go to next page" disabled={disabled || (page + 1) * PAGE_SIZE >= total} onClick={() => setPage(page + 1)}>Next</button>
+          <button aria-label="Go to next page" disabled={disabled || (page + 1) * pageSize >= total} onClick={() => setPage(page + 1)}>Next</button>
         </div>
       )}
     </nav>

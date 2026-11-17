@@ -13,11 +13,18 @@ export type CommunityPostStatus = 'draft' | 'published' | 'removed';
 export interface ProviderListRow {
   id: string;
   owner_id?: string | null;
+  listing_type: 'provider' | 'place';
+  is_listed: boolean;
+  source_profile_id: string | null;
+  source_url: string | null;
+  category_id: string;
   business_name: string;
   base_city: string | null;
+  base_postcode: string | null;
   verification_status: string;
   sponsored_rank: number | null;
   categories: { name: string } | null;
+  place_sources?: { source: string; attribution_text: string } | null;
 }
 
 export interface UserListRow {

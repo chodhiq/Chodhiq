@@ -10,9 +10,10 @@ import {
   useRef,
   useState,
 } from 'react';
-import { isSupabaseConfigured, supabase } from './supabase';
+import { initializeSupabase, isSupabaseConfigured, supabase } from './supabase';
 import { withAuthTimeout } from './auth-operations';
 import type { AdminLevel } from './permissions';
+import { can } from './permissions';
 import {
   cleanSearchValue,
   PAGE_SIZE,
@@ -32,6 +33,33 @@ export type ConfirmRequest = {
   requiredText?: string;
   resolve: (value: boolean) => void;
 } | null;
+
+type ActionErrorDetails = { code?: unknown; message?: unknown; details?: unknown };
+
+function reportActionFailure(
+  notify: (message: string, type: ToastType) => void,
+  failureCode: string,
+  correlationId: string,
+  error?: unknown,
+) {
+  const details = error && typeof error === 'object' ? (error as ActionErrorDetails) : undefined;
+  const databaseCode =
+    typeof details?.code === 'string' && /^[a-z0-9_-]{1,32}$/i.test(details.code)
+      ? details.code
+      : undefined;
+
+  console.error('[admin-action-failed]', {
+    code: databaseCode ?? failureCode,
+    message: typeof details?.message === 'string' ? details.message : safeErrorDiagnostic(error),
+    details: details?.details ?? null,
+    correlationId,
+  });
+  notify(
+    `Action failed (${failureCode}${databaseCode ? ` / ${databaseCode}` : ''}). Reference: ${correlationId}`,
+    'error',
+  );
+}
+
 type AdminContextValue = {
   session: Session | null;
   loading: boolean;
@@ -51,11 +79,14 @@ type AdminContextValue = {
   pending: ReadonlySet<string>;
   isAdmin: boolean;
   adminLevel: AdminLevel;
+  can: (permission: import('./permissions').Permission) => boolean;
+  configurationReady: boolean;
+  configured: boolean;
 };
 
 type AdminAuthContextValue = Pick<
   AdminContextValue,
-  'session' | 'loading' | 'sessionError' | 'isAdmin' | 'adminLevel'
+  'session' | 'loading' | 'sessionError' | 'isAdmin' | 'adminLevel' | 'can' | 'configurationReady' | 'configured'
 >;
 type AdminActionsContextValue = Omit<AdminContextValue, keyof AdminAuthContextValue>;
 
@@ -64,14 +95,26 @@ const AdminActionsContext = createContext<AdminActionsContextValue | null>(null)
 
 export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(() => (!isSupabaseConfigured ? false : true));
+  const [loading, setLoading] = useState(true);
+  const [configurationReady, setConfigurationReady] = useState(isSupabaseConfigured);
+  const [configured, setConfigured] = useState(isSupabaseConfigured);
   const [toast, setToast] = useState<Toast>(null);
   const [sessionError, setSessionError] = useState('');
   const [confirmation, setConfirmation] = useState<ConfirmRequest>(null);
   const pendingKeys = useRef(new Set<string>());
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   useEffect(() => {
-    if (!isSupabaseConfigured) return;
+    let active = true;
+    void initializeSupabase().then((ready) => {
+      if (!active) return;
+      setConfigured(ready);
+      setConfigurationReady(true);
+      if (!ready) setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
+  useEffect(() => {
+    if (!configurationReady || !configured) return;
 
     let active = true;
     let receivedAuthEvent = false;
@@ -105,7 +148,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       active = false;
       data.subscription.unsubscribe();
     };
-  }, []);
+  }, [configurationReady, configured]);
   const notify = useCallback((message: string, type: ToastType = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -131,20 +174,22 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     ): Promise<MutationResult<T | undefined>> => {
       const key = `${action}:${entity}:${id}`;
       const correlationId = crypto.randomUUID();
-      if (pendingKeys.current.has(key))
+      if (pendingKeys.current.has(key)) {
+        reportActionFailure(notify, 'duplicate', correlationId);
         return {
           ok: false,
           code: 'duplicate',
           userMessage: 'This action is already processing.',
           correlationId,
         };
+      }
       pendingKeys.current.add(key);
       setPending(new Set(pendingKeys.current));
       try {
         const current = await supabase.auth.getSession();
         const currentSession = current.data.session;
         if (current.error || !currentSession) {
-          notify('Your session expired. Sign in and retry.', 'error');
+          reportActionFailure(notify, 'session_expired', correlationId, current.error);
           return {
             ok: false,
             code: 'session_expired',
@@ -154,7 +199,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           };
         }
         if (currentSession.user.app_metadata?.role !== 'admin') {
-          notify('Administrator access is required.', 'error');
+          reportActionFailure(notify, 'unauthorized', correlationId);
           return {
             ok: false,
             code: 'unauthorized',
@@ -164,7 +209,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         }
         const result = await work();
         if (result.error) {
-          notify('The action could not be completed. Refresh and retry.', 'error');
+          reportActionFailure(notify, 'mutation_failed', correlationId, result.error);
           return {
             ok: false,
             code: 'mutation_failed',
@@ -190,10 +235,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
           },
         });
         if (audit.error) {
-          notify(
-            'The change succeeded, but its audit record failed. Stop and contact support before retrying.',
-            'error',
-          );
+          reportActionFailure(notify, 'audit_failed', correlationId, audit.error);
           return {
             ok: false,
             code: 'audit_failed',
@@ -206,7 +248,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         notify('Action completed and audited', 'success');
         return { ok: true, data: result.data, correlationId };
       } catch (error) {
-        notify('The action could not be completed. Refresh and retry.', 'error');
+        reportActionFailure(notify, 'mutation_failed', correlationId, error);
         return {
           ok: false,
           code: 'mutation_failed',
@@ -228,8 +270,11 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       sessionError,
       isAdmin: session?.user.app_metadata?.role === 'admin',
       adminLevel: ((session?.user.app_metadata?.admin_level as AdminLevel | undefined) ?? 'super_admin'),
+      can: (permission) => can((session?.user.app_metadata?.admin_level as AdminLevel | undefined) ?? 'super_admin', permission),
+      configurationReady,
+      configured,
     }),
-    [session, loading, sessionError],
+    [session, loading, sessionError, configurationReady, configured],
   );
   const actionsValue = useMemo<AdminActionsContextValue>(
     () => ({

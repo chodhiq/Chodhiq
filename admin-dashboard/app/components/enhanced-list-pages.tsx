@@ -5,11 +5,13 @@ import Link from "./admin-link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PaymentListRow, ProviderListRow, UserListRow } from "../../lib/database.types";
 import { cleanSearch, range, useAdmin } from "../../lib/admin";
+import { pageRange } from "../../lib/operations";
 import { runBoundedBulk, safeErrorDiagnostic, type MutationResult } from "../../lib/operations";
 import { supabase } from "../../lib/supabase";
 import { sendNotification } from "../../lib/notify-user";
 import { useDebouncedValue } from "../../lib/use-debounced-value";
 import { useCounts, type CountDef } from "../../lib/use-counts";
+import { useUrlFilter, useUrlParameter } from "../../lib/url-filter";
 import { EmptyState, LoadError, Page, Pager, Search, Skeleton, Status, exportCsv } from "./ui";
 
 const datedFilename = (name: string) => `chodhiq-${name}-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -31,55 +33,118 @@ const PAYMENT_COUNTS = [
 
 export function ProvidersOperationsPage() {
   const admin = useAdmin();
+  const canEditProviders = admin.can('providers.edit');
   const { show: showCount } = useCounts(PROVIDER_COUNTS);
   const [rows, setRows] = useState<ProviderListRow[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useUrlParameter('q', '', 'provider-filters');
+  const [listingType, setListingType] = useUrlFilter('type', ['all', 'provider', 'place'], 'all', 'provider-filters');
+  const [visibility, setVisibility] = useUrlFilter('visibility', ['all', 'listed', 'hidden'], 'all', 'provider-filters');
+  const [source, setSource] = useUrlFilter('source', ['all', 'fsa', 'osm'], 'all', 'provider-filters');
+  const [categoryId, setCategoryId] = useUrlParameter('category', '', 'provider-filters');
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [reason, setReason] = useState('');
+  const [notice, setNotice] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [bulkIntent, setBulkIntent] = useState<boolean | null>(null);
   const debouncedQuery = useDebouncedValue(query);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const requestId = useRef(0);
+  useEffect(() => {
+    void supabase.from('categories').select('id,name').order('sort_order').then(result => {
+      if (!result.error) setCategories(result.data ?? []);
+    });
+  }, []);
   const load = useCallback(async () => {
     const activeRequest = ++requestId.current;
-    setLoading(true); setError("");
-    let request = supabase.from("providers").select("id,owner_id,business_name,base_city,verification_status,sponsored_rank,categories(name)", { count: "exact" }).order("created_at", { ascending: false }).range(...range(page));
+    setLoading(true); setError('');
+    let request = supabase.from('providers').select('id,owner_id,business_name,base_city,base_postcode,verification_status,sponsored_rank,listing_type,is_listed,source_profile_id,source_url,category_id,categories(name),place_sources(source,attribution_text)', { count: 'exact' }).order('created_at', { ascending: false }).range(...pageRange(page, 100));
+    if (listingType !== 'all') request = request.eq('listing_type', listingType);
+    if (visibility !== 'all') request = request.eq('is_listed', visibility === 'listed');
+    if (categoryId) request = request.eq('category_id', categoryId);
+    if (source !== 'all') {
+      const [profileRows, sourceRows] = await Promise.all([
+        supabase.from('providers').select('id').like('source_profile_id', `${source === 'fsa' ? 'fsa' : 'osm'}-%`),
+        supabase.from('place_sources').select('listing_id').eq('source', source === 'fsa' ? 'fsa_fhrs' : 'osm'),
+      ]);
+      if (profileRows.error || sourceRows.error) {
+        if (activeRequest === requestId.current) { setError(`Source filter failed: ${(profileRows.error || sourceRows.error)?.message}`); setLoading(false); }
+        return;
+      }
+      const matchingIds = [...new Set([...(profileRows.data ?? []).map(row => row.id), ...(sourceRows.data ?? []).map(row => row.listing_id)])];
+      if (!matchingIds.length) {
+        setRows([]); setTotal(0); setLoading(false); return;
+      }
+      request = request.in('id', matchingIds);
+    }
     const search = cleanSearch(debouncedQuery);
     if (search) request = request.or(`business_name.ilike.%${search}%,base_city.ilike.%${search}%`);
     const result = await request;
     if (activeRequest !== requestId.current) return;
-    if (result.error) setError("Provider records are unavailable. Refresh and retry.");
+    if (result.error) setError(`Provider records are unavailable: ${result.error.message}`);
     else { setRows((result.data ?? []) as unknown as ProviderListRow[]); setTotal(result.count ?? 0); }
     setLoading(false);
-  }, [page, debouncedQuery]);
+  }, [page, debouncedQuery, listingType, visibility, source, categoryId]);
   useEffect(() => { void load(); return () => { requestId.current += 1; }; }, [load]);
+  useEffect(() => { setPage(0); setSelected([]); }, [debouncedQuery, listingType, visibility, source, categoryId]);
 
   async function suspendSelected() {
     if (!selected.length || processing) return;
     const names = rows.filter(row => selected.includes(row.id)).map(row => row.business_name);
-    if (!await admin.confirmAction({ title: "Suspend selected providers", message: `Remove ${names.length} providers from marketplace visibility?`, requiredText: "SUSPEND", confirmLabel: "Suspend providers" })) return;
+    if (!await admin.confirmAction({ title: 'Suspend selected providers', message: `Remove ${names.length} providers from marketplace visibility?`, requiredText: 'SUSPEND', confirmLabel: 'Suspend providers' })) return;
     setProcessing(true);
-    const summary = await runBoundedBulk(selected, id => admin.act("provider_bulk_suspended", "provider", id, () => supabase.from("providers").update({ verification_status: "suspended", is_verified: false }).eq("id", id), { bulk: true, reason: "Administrator bulk moderation" }));
+    const summary = await runBoundedBulk(selected, id => admin.act('provider_bulk_suspended', 'provider', id, () => supabase.from('providers').update({ verification_status: 'suspended', is_verified: false }).eq('id', id), { bulk: true, reason: 'Administrator bulk moderation' }));
     for (const row of rows.filter(item => selected.includes(item.id) && !summary.failed.includes(item.id) && item.owner_id)) {
       try { await sendNotification({ audience: 'user', userId: row.owner_id!, title: 'Your provider profile was suspended', body: 'Your provider profile was suspended and is hidden from the marketplace. Contact support if you need help.' }); }
       catch { admin.notify('Provider status updated, but an owner notification could not be sent.', 'error'); }
     }
-    setSelected(summary.failed);
-    admin.notify(summary.message, summary.failed.length ? "error" : "success");
-    await load();
+    setSelected(summary.failed); admin.notify(summary.message, summary.failed.length ? 'error' : 'success'); await load(); setProcessing(false);
+  }
+
+  const selectedRows = rows.filter(row => selected.includes(row.id));
+  const allSelectedArePlaces = selected.length > 0 && selectedRows.length === selected.length && selectedRows.every(row => row.listing_type === 'place');
+  async function setSelectedPlaces(listed: boolean) {
+    if (!canEditProviders || !selected.length || selected.length > 200 || !allSelectedArePlaces || processing) return;
+    if (reason.trim().length < 8) { setActionError('Enter a reason of at least 8 characters.'); return; }
+    if (!await admin.confirmAction({ title: `${listed ? 'Publish' : 'Hide'} selected places`, message: `${listed ? 'Publish' : 'Hide'} ${selected.length} selected place${selected.length === 1 ? '' : 's'}?`, confirmLabel: listed ? 'Publish places' : 'Hide places' })) return;
+    setProcessing(true); setActionError(''); setNotice('');
+    const { data, error: rpcError } = await supabase.rpc('admin_set_places_listed', { provider_ids: selected, listed, reason: reason.trim() });
+    if (rpcError) setActionError(rpcError.message);
+    else {
+      const changed = Number(data ?? 0);
+      setNotice(`${changed} changed, ${Math.max(0, selected.length - changed)} skipped`);
+      setSelected([]); setReason(''); setBulkIntent(null); await load();
+    }
     setProcessing(false);
   }
 
-  const csvRows = rows.map(row => ({ id: row.id, business_name: row.business_name, category: row.categories?.name, city: row.base_city, sponsored_rank: row.sponsored_rank, status: row.verification_status }));
-  return <Page title="Provider directory" note="Search, export the current page, bulk-moderate, or open a provider dossier." stats={[{label:'All providers',value:showCount('all')},{label:'Verified',value:showCount('verified'),tone:'green'},{label:'Pending',value:showCount('pending'),tone:'amber'},{label:'Suspended',value:showCount('suspended'),tone:'purple'}]}>
+  const csvRows = rows.map(row => ({ id: row.id, business_name: row.business_name, category: row.categories?.name, city: row.base_city, visibility: row.is_listed ? 'listed' : 'hidden', type: row.listing_type, source: row.place_sources?.source, sponsored_rank: row.sponsored_rank, status: row.verification_status }));
+  return <Page title="Provider directory" note="Search, filter, export, bulk-manage places, or open a provider dossier." stats={[{label:'All providers',value:showCount('all')},{label:'Verified',value:showCount('verified'),tone:'green'},{label:'Pending',value:showCount('pending'),tone:'amber'},{label:'Suspended',value:showCount('suspended'),tone:'purple'}]}>
     <Search id="provider-search" label="Search providers" value={query} onChange={value => { setQuery(value); setPage(0); }} />
-    <div className="toolbar"><button className="danger" disabled={!selected.length || processing} onClick={suspendSelected}>{processing ? "Suspending…" : `Suspend selected (${selected.length})`}</button><button className="export" disabled={!rows.length} onClick={() => exportCsv(datedFilename("providers-current-page"), csvRows)}>Export current page CSV</button></div>
-    {loading ? <Skeleton rows={7} /> : error ? <LoadError message={error} retry={load} /> : !rows.length ? <EmptyState title={query ? "No providers match your search." : "No providers are available."} actionLabel={query ? "Clear search" : undefined} onAction={query ? () => setQuery("") : undefined} /> : <section className="panel table"><table><thead><tr><th><input className="bulk-check" aria-label="Select all providers on this page" type="checkbox" checked={selected.length === rows.length} onChange={event => setSelected(event.target.checked ? rows.map(row => row.id) : [])} /></th><th>Business</th><th>Category</th><th>City</th><th>Sponsored rank</th><th>Status</th><th className="sticky-action">Actions</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td><input className="bulk-check" aria-label={`Select ${row.business_name}`} type="checkbox" checked={selected.includes(row.id)} onChange={event => setSelected(current => event.target.checked ? [...current, row.id] : current.filter(id => id !== row.id))} /></td><td><b>{row.business_name}</b></td><td>{row.categories?.name || "—"}</td><td>{row.base_city || "—"}</td><td>{row.sponsored_rank ?? 0}</td><td><Status value={row.verification_status} /></td><td className="sticky-action"><Link href={`/providers/${row.id}`}>Open dossier</Link>{row.owner_id && <> · <Link href={`/notifications?to=${encodeURIComponent(row.owner_id)}`}>Notify</Link></>}</td></tr>)}</tbody></table><Pager page={page} total={total} setPage={setPage} /></section>}
+    <section className="panel form-grid" id="provider-filters" aria-label="Provider filters">
+      <label>Type<select value={listingType} onChange={event => setListingType(event.target.value as typeof listingType)}><option value="all">All</option><option value="provider">Providers</option><option value="place">Places</option></select></label>
+      <label>Visibility<select value={visibility} onChange={event => setVisibility(event.target.value as typeof visibility)}><option value="all">All</option><option value="listed">Listed</option><option value="hidden">Hidden</option></select></label>
+      <label>Source<select value={source} onChange={event => setSource(event.target.value as typeof source)}><option value="all">All</option><option value="fsa">FSA</option><option value="osm">OpenStreetMap</option></select></label>
+      <label>Category<select value={categoryId} onChange={event => setCategoryId(event.target.value)}><option value="">All categories</option>{categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
+    </section>
+    {actionError && <p role="alert" className="load-error">{actionError}</p>}{notice && <p role="status">{notice}</p>}
+    <div className="toolbar">
+      {canEditProviders && allSelectedArePlaces && <>
+        <label>Bulk action reason (at least 8 characters)<textarea value={reason} minLength={8} onChange={event => setReason(event.target.value)} /></label>
+        <button className="primary" disabled={processing || selected.length > 200} onClick={() => { setBulkIntent(true); setActionError(''); }}>Publish selected ({selected.length})</button>
+        <button className="danger" disabled={processing || selected.length > 200} onClick={() => { setBulkIntent(false); setActionError(''); }}>Hide selected ({selected.length})</button>
+      </>}
+      {canEditProviders && selected.length > 200 && <span role="alert">Select no more than 200 places per action.</span>}
+      <button className="danger" disabled={!selected.length || processing} onClick={suspendSelected}>Suspend selected ({selected.length})</button>
+      <button className="export" disabled={!rows.length} onClick={() => exportCsv(datedFilename('providers-current-page'), csvRows)}>Export current page CSV</button>
+    </div>
+    {bulkIntent !== null && <section className="panel form-grid" role="alertdialog" aria-modal="true" aria-labelledby="places-bulk-title"><h3 id="places-bulk-title">{bulkIntent ? 'Publish' : 'Hide'} {selected.length} selected place{selected.length === 1 ? '' : 's'}?</h3><p>This action affects {selected.length} selected place{selected.length === 1 ? '' : 's'}.</p><label>Reason (at least 8 characters)<textarea required minLength={8} value={reason} onChange={event => setReason(event.target.value)} /></label><button disabled={processing} onClick={() => setBulkIntent(null)}>Cancel</button><button className={bulkIntent ? 'primary' : 'danger'} disabled={processing || reason.trim().length < 8 || selected.length > 200} onClick={() => void setSelectedPlaces(bulkIntent)}>{processing ? 'Working…' : bulkIntent ? 'Confirm publish' : 'Confirm hide'}</button></section>}    {loading ? <Skeleton rows={7} /> : error ? <LoadError message={error} retry={load} /> : !rows.length ? <EmptyState title={query ? 'No providers match your search.' : 'No providers are available.'} actionLabel={query ? 'Clear search' : undefined} onAction={query ? () => setQuery('') : undefined} /> : <section className="panel table"><table><thead><tr><th><input className="bulk-check" aria-label="Select all providers on this page" type="checkbox" checked={rows.length > 0 && rows.every(row => selected.includes(row.id))} onChange={event => setSelected(event.target.checked ? rows.map(row => row.id) : [])} /></th><th>Business</th><th>Category</th><th>City</th><th>Visibility</th><th>Type</th><th>Source</th><th>Sponsored rank</th><th>Status</th><th className="sticky-action">Actions</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td><input className="bulk-check" aria-label={`Select ${row.business_name}`} type="checkbox" checked={selected.includes(row.id)} onChange={event => setSelected(current => event.target.checked ? [...current, row.id] : current.filter(id => id !== row.id))} /></td><td><b>{row.business_name}</b></td><td>{row.categories?.name || '—'}</td><td>{row.base_city || '—'}</td><td>{row.is_listed ? 'Listed' : 'Hidden'}</td><td>{row.listing_type === 'place' ? 'Place' : 'Provider'}</td><td>{row.source_profile_id?.startsWith('fsa-') || row.place_sources?.source === 'fsa_fhrs' ? 'FSA' : row.source_profile_id?.startsWith('osm-') || row.place_sources?.source === 'osm' ? 'OpenStreetMap' : '—'}</td><td>{row.sponsored_rank ?? 0}</td><td><Status value={row.verification_status} /></td><td className="sticky-action"><Link href={`/providers/${row.id}`}>Open dossier</Link>{row.owner_id && <> · <Link href={`/notifications?to=${encodeURIComponent(row.owner_id)}`}>Notify</Link></>}</td></tr>)}</tbody></table><Pager page={page} total={total} setPage={next => { setSelected([]); setPage(next); }} pageSize={100} /></section>}
   </Page>;
 }
-
 export function UsersOperationsPage() {
   const admin = useAdmin();
   const { show: showCount } = useCounts(USER_COUNTS);
@@ -175,3 +240,4 @@ export function PaymentsOperationsPage() {
   const csvRows = rows.map(row => ({ id: row.id, provider: row.providers?.business_name, transaction_id: row.transaction_id, amount_pence: row.amount_pence, currency: row.currency, status: row.status, created_at: row.created_at }));
   return <Page title="Payment records" note="Read-only payment ledger. Exports contain only the current page." stats={[{label:'Total payments',value:show('total')},{label:'Paid',value:show('paid'),tone:'green'},{label:'Failed',value:show('failed'),tone:'amber'}]}><div className="toolbar"><button className="export" disabled={!rows.length} onClick={() => exportCsv(datedFilename("payments-current-page"), csvRows)}>Export current page CSV</button></div>{loading ? <Skeleton rows={7} /> : error ? <LoadError message={error} retry={load} /> : !rows.length ? <EmptyState title="No payment records are available." /> : <section className="panel table"><table><thead><tr><th>Provider</th><th>Transaction</th><th>Amount</th><th>Status</th><th>Created</th></tr></thead><tbody>{rows.map(row => <tr key={row.id}><td>{row.providers?.business_name || row.provider_id.slice(0, 8)}</td><td>{row.transaction_id || "—"}</td><td>{new Intl.NumberFormat("en-GB", { style: "currency", currency: String(row.currency || "gbp").toUpperCase() }).format(row.amount_pence / 100)}</td><td><Status value={row.status} /></td><td>{new Date(row.created_at).toLocaleDateString("en-GB", { timeZone: "Europe/London" })}</td></tr>)}</tbody></table><Pager page={page} total={total} setPage={setPage} /></section>}</Page>;
 }
+

@@ -1,4 +1,7 @@
 'use client';
+/* eslint-disable react-hooks/set-state-in-effect */
+
+
 
 import { useCallback, useEffect, useState } from 'react';
 import { cleanSearch, range, useAdmin } from '../../lib/admin';
@@ -6,17 +9,21 @@ import { can } from '../../lib/permissions';
 import { supabase } from '../../lib/supabase';
 import { EmptyState, LoadError, Page, Pager, Search, Skeleton, Status } from './ui';
 import { useCounts, type CountDef } from '../../lib/use-counts';
+import { useDebouncedValue } from '../../lib/use-debounced-value';
+import { useUrlFilter, useUrlParameter } from '../../lib/url-filter';
+import Link from './admin-link';
 const REVIEW_COUNTS = [
   { key: 'total', table: 'reviews' },
   { key: 'published', table: 'reviews', filters: { moderation_status: 'published' } },
   { key: 'removed', table: 'reviews', filters: { moderation_status: 'removed' } },
 ] as const satisfies readonly CountDef[];
 const LEAD_COUNTS = [
-  { key: 'total', table: 'quote_requests' },
-  { key: 'new', table: 'quote_requests', filters: { status: 'sent' } },
-  { key: 'delivered', table: 'provider_lead_deliveries', filters: { status: 'sent' } },
+  { key: 'total', table: 'quote_requests', select: 'id' },
+  { key: 'awaiting', table: 'quote_requests', select: 'id', filters: { status: ['opened', 'sent', 'viewed'] } },
+  { key: 'responded', table: 'quote_requests', select: 'id', filters: { status: 'responded' } },
+  { key: 'deliveryProblems', table: 'provider_lead_deliveries', distinctBy: 'quote_request_id', filters: { status: 'failed' } },
 ] as const satisfies readonly CountDef[];
-import { useDebouncedValue } from '../../lib/use-debounced-value';
+
 
 interface ReviewReplyRow {
   id: string;
@@ -27,7 +34,7 @@ interface ReviewRow {
   rating: number;
   comment: string | null;
   moderation_status: string;
-  providers: { business_name: string } | null;
+  providers: { business_name: string; category_id?: string | null; categories?: { name: string } | null } | null;
   review_replies: ReviewReplyRow[] | null;
 }
 interface CategoryRow {
@@ -41,8 +48,16 @@ interface CategoryRow {
 }
 interface DemandRow {
   id: string;
+  user_id: string | null;
+  provider_id: string | null;
+  message: string | null;
+  preferred_contact: string | null;
   status: string;
-  providers: { business_name: string } | null;
+  created_at: string;
+  responded_at: string | null;
+  response_message: string | null;
+  providers: { business_name: string; category_id?: string | null; categories?: { name: string } | null } | null;
+  provider_lead_deliveries?: Array<{ id: string; status: string; channel: string; attempts: number; last_error: string | null; delivered_at: string | null; created_at: string }>;
 }
 
 export function ReviewsPage() {
@@ -439,10 +454,10 @@ export function CategoriesPage() {
                           />
                         </td>
                         <td>
-                          {canManageCategories && <><button onClick={() => void save(row)}>Save</button>{' '}
+                          {canManageCategories && <div className="table-actions"><button onClick={() => void save(row)}>Save</button>
                           <button className="danger" onClick={() => void remove(row)}>
                             Delete
-                          </button></>}
+                          </button></div>}
                         </td>
                       </tr>
                     ))}
@@ -459,84 +474,84 @@ export function CategoriesPage() {
 
 export function DemandPage() {
   const { show } = useCounts(LEAD_COUNTS);
-  const [quotes, setQuotes] = useState<DemandRow[]>([]),
-    [bookings, setBookings] = useState<DemandRow[]>([]),
-    [loading, setLoading] = useState(true),
-    [error, setError] = useState('');
+  const filterValues = ['all', 'awaiting-response', 'responded', 'delivery-problems', 'opened', 'sent', 'viewed', 'closed'] as const;
+  type DemandFilter = typeof filterValues[number];
+  const [filter, setFilter] = useUrlFilter<DemandFilter>('filter', filterValues, 'all', 'demand-results');
+  const [query, setQuery] = useUrlParameter('q');
+  const debouncedQuery = useDebouncedValue(query);
+  const [rows, setRows] = useState<DemandRow[]>([]);
+  const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
+  const [selected, setSelected] = useState<DemandRow | null>(null);
+  const [page, setPage] = useState(0);
+  const [now] = useState(() => Date.now());
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
-    const [quoteResult, bookingResult] = await Promise.all([
-      supabase
-        .from('quote_requests')
-        .select('id,status,providers(business_name)')
-        .order('created_at', { ascending: false })
-        .range(0, 24),
-      supabase
-        .from('bookings')
-        .select('id,status,providers(business_name)')
-        .order('created_at', { ascending: false })
-        .range(0, 24),
-    ]);
-    if (quoteResult.error || bookingResult.error)
-      setError('Demand records are partially or fully unavailable.');
-    setQuotes((quoteResult.data ?? []) as unknown as DemandRow[]);
-    setBookings((bookingResult.data ?? []) as unknown as DemandRow[]);
+    const deliveryJoin = filter === 'delivery-problems'
+      ? 'provider_lead_deliveries!inner(id,status,channel,attempts,last_error,delivered_at,created_at)'
+      : 'provider_lead_deliveries(id,status,channel,attempts,last_error,delivered_at,created_at)';
+    let request = supabase.from('quote_requests').select(
+      `id,user_id,provider_id,message,preferred_contact,status,created_at,responded_at,response_message,providers(business_name,category_id,categories(name)),${deliveryJoin}`,
+      { count: 'exact' },
+    );
+    if (filter === 'awaiting-response') request = request.in('status', ['opened', 'sent', 'viewed']);
+    else if (filter === 'responded') request = request.eq('status', 'responded');
+    else if (filter === 'delivery-problems') request = request.eq('provider_lead_deliveries.status', 'failed');
+    else if (filter !== 'all') request = request.eq('status', filter);
+    const search = cleanSearch(debouncedQuery);
+    if (search) {
+      if (/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(search)) request = request.or(`message.ilike.%${search}%,id.eq.${search}`);
+      else request = request.ilike('message', `%${search}%`);
+    }
+    const result = await request.order('created_at', { ascending: false }).range(...range(page));
+    if (result.error) setError('Demand records are unavailable. Refresh and retry.');
+    const nextRows = (result.data ?? []) as unknown as DemandRow[];
+    const customerIds = [...new Set(nextRows.map(row => row.user_id).filter((id): id is string => Boolean(id)))];
+    if (customerIds.length) {
+      const customers = await supabase.from('profiles').select('id,full_name').in('id', customerIds);
+      setCustomerNames(Object.fromEntries((customers.data ?? []).map(customer => [customer.id, customer.full_name || customer.id.slice(0, 8)])));
+    } else setCustomerNames({});
+    setRows(nextRows);
+    setTotal(result.count ?? 0);
+    setSelected(current => current && nextRows.some(row => row.id === current.id) ? current : nextRows[0] ?? null);
     setLoading(false);
-  }, []);
-  useEffect(() => {
-    let active = true;
-    const run = async () => {
-      if (!active) return;
-      await load();
-    };
-    void run();
-    return () => {
-      active = false;
-    };
-  }, [load]);
-  return (
+  }, [filter, debouncedQuery, page]);
 
-      <Page
-        title="Marketplace demand"
-        note="Recent quote requests and bookings; each list shows up to 25 records."
-        stats={[{label:'Total leads',value:show('total')},{label:'New',value:show('new'),tone:'amber'},{label:'Delivered',value:show('delivered'),tone:'green'}]}
-      >
-        {loading ? (
-          <Skeleton />
-        ) : error ? (
-          <LoadError message={error} retry={load} />
-        ) : (
-          <div className="columns">
-            <section className="panel">
-              <h3>Recent quote requests</h3>
-              {quotes.length ? (
-                quotes.map((row) => (
-                  <p key={row.id}>
-                    {row.providers?.business_name || row.id.slice(0, 8)} ·{' '}
-                    <Status value={row.status} />
-                  </p>
-                ))
-              ) : (
-                <EmptyState title="No recent quote requests." />
-              )}
-            </section>
-            <section className="panel">
-              <h3>Recent bookings</h3>
-              {bookings.length ? (
-                bookings.map((row) => (
-                  <p key={row.id}>
-                    {row.providers?.business_name || row.id.slice(0, 8)} ·{' '}
-                    <Status value={row.status} />
-                  </p>
-                ))
-              ) : (
-                <EmptyState title="No recent bookings." />
-              )}
-            </section>
-          </div>
-        )}
-      </Page>
+  useEffect(() => { void load(); }, [load]);
 
-  );
+  return <Page title="Marketplace demand" note="Search and inspect quote requests and delivery history; review bookings on the Activity page." stats={[
+    { label: 'Total leads', value: show('total'), href: '/demand?filter=all', onClick: () => { setFilter('all'); setPage(0); }, tone: 'teal' },
+    { label: 'Awaiting response', value: show('awaiting'), href: '/demand?filter=awaiting-response', onClick: () => { setFilter('awaiting-response'); setPage(0); }, tone: 'amber' },
+    { label: 'Responded', value: show('responded'), href: '/demand?filter=responded', onClick: () => { setFilter('responded'); setPage(0); }, tone: 'green' },
+    { label: 'Delivery problems', value: show('deliveryProblems'), href: '/demand?filter=delivery-problems', onClick: () => { setFilter('delivery-problems'); setPage(0); }, tone: 'purple' },
+  ]}>
+    {loading && !rows.length ? <Skeleton /> : error ? <LoadError message={error} retry={load} /> : <div className="demand-workspace" id="demand-results" aria-busy={loading}>
+      <div className="toolbar demand-toolbar">
+        <Search id="demand-search" label="Search leads" value={query} onChange={value => { setQuery(value); setPage(0); }} placeholder="Search message or lead ID" />
+        <label className="field" htmlFor="demand-status-filter"><span>Lead filter</span><select id="demand-status-filter" value={filter} onChange={event => { setFilter(event.target.value as DemandFilter); setPage(0); }}>
+          <option value="all">All leads</option><option value="awaiting-response">Awaiting response</option><option value="responded">Responded</option><option value="delivery-problems">Delivery problems</option><option value="opened">Opened</option><option value="sent">Sent</option><option value="viewed">Viewed</option><option value="closed">Closed</option>
+        </select></label>
+      </div>
+      {!rows.length ? <EmptyState title="No leads match this filter." detail="Try another status or search term." /> : <>
+        <div className="panel table demand-table"><table><thead><tr><th>Provider</th><th>Customer</th><th>Category</th><th>Status</th><th>Created</th><th>Age</th></tr></thead><tbody>{rows.map(row => {
+          const ageDays = Math.max(0, Math.floor((now - new Date(row.created_at).getTime()) / 86_400_000));
+          return <tr key={row.id} aria-selected={selected?.id === row.id}>
+            <td>{row.providers?.business_name || 'Provider unavailable'}</td><td>{row.user_id ? <Link href={`/community/authors/${encodeURIComponent(row.user_id)}`}>{customerNames[row.user_id] || 'View customer'}</Link> : 'Unavailable'}</td><td>{row.providers?.categories?.name || '—'}</td><td><Status value={row.status} /></td>
+            <td>{new Date(row.created_at).toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'medium', timeStyle: 'short' })}</td><td>{ageDays === 0 ? 'Today' : `${ageDays} ${ageDays === 1 ? 'day' : 'days'} ago`}<button type="button" className="text" aria-pressed={selected?.id === row.id} onClick={() => setSelected(row)}>View details</button></td>
+          </tr>;
+        })}</tbody></table></div>
+        <Pager page={page} total={total} setPage={setPage} disabled={loading} />
+        {selected && <section className="panel demand-detail" aria-label="Lead details"><header><div><span className="page-kicker">Lead details</span><h3>{selected.providers?.business_name || 'Provider unavailable'}</h3></div><Status value={selected.status} /></header><dl>
+          <dt>Lead ID</dt><dd>{selected.id}</dd><dt>Customer</dt><dd>{selected.user_id ? <Link href={`/community/authors/${encodeURIComponent(selected.user_id)}`}>{customerNames[selected.user_id] || selected.user_id}</Link> : 'Unavailable'}</dd><dt>Category</dt><dd>{selected.providers?.categories?.name || '—'}</dd><dt>Preferred contact</dt><dd>{selected.preferred_contact || 'Not specified'}</dd>
+          <dt>Received</dt><dd>{new Date(selected.created_at).toLocaleString('en-GB', { timeZone: 'Europe/London', dateStyle: 'medium', timeStyle: 'short' })}</dd><dt>Message</dt><dd>{selected.message || 'No message supplied'}</dd>
+          <dt>Provider response</dt><dd>{selected.response_message || (selected.responded_at ? 'Response recorded' : 'No response recorded')}</dd>
+          <dt>Delivery history</dt><dd>{selected.provider_lead_deliveries?.length ? selected.provider_lead_deliveries.map(delivery => `${delivery.channel}: ${delivery.status}${delivery.last_error ? ` (${delivery.last_error})` : ''}`).join(' · ') : 'No delivery records'}</dd>
+        </dl></section>}
+      </>}
+    </div>}
+  </Page>;
 }

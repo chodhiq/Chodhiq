@@ -106,7 +106,7 @@ export default function AuthorProfilePage() {
   if (error || !profile) return <Page title="Author profile" note="Community author activity"><LoadError message={error || 'Author profile unavailable.'} retry={() => { setError(''); setLoading(true); void supabase.rpc('admin_get_author_profile', { author_id: authorId }).then(({ data, error: rpcError }) => { if (rpcError || !data) setError('The author profile could not be loaded. Check your access and retry.'); else setProfile(data as unknown as AuthorProfile); setLoading(false); }); }} /></Page>;
 
   const author = profile.profile;
-  return <Page title={author.name || 'Author profile'} note="Account, community activity and moderation history">
+  return <Page title={author.name || 'Author profile'} note="Account, community activity and moderation history" className="author-profile-page">
     <section className="panel">
       <div className="page-identity">
         {author.avatar_url ? <Image src={author.avatar_url} alt="" width={64} height={64} unoptimized /> : null}

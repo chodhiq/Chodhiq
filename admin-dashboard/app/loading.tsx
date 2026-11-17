@@ -1,13 +1,18 @@
-import { Skeleton } from './components/ui';
-import { PageHeader } from './components/ui';
+'use client';
+
+import { useEffect, useState } from 'react';
 
 export default function Loading() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setVisible(true), 300);
+    return () => window.clearTimeout(timer);
+  }, []);
+  if (!visible) return null;
   return (
-    <main className="route-loading page" aria-live="polite" aria-busy="true">
-      <span className="sr-only">Loading this workspace</span>
-      <PageHeader eyebrow="Loading workspace" title="Loading this page" description="Preparing the latest operations data." />
-      <Skeleton rows={4} />
-      <section className="panel" aria-label="Loading records"><Skeleton rows={6} /></section>
+    <main className="route-loading" aria-live="polite" aria-busy="true">
+      <span className="loading-pulse" aria-hidden="true" />
+      <p>Loading this page</p>
     </main>
   );
 }

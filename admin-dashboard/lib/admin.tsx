@@ -78,7 +78,7 @@ type AdminContextValue = {
   ) => Promise<MutationResult<T | undefined>>;
   pending: ReadonlySet<string>;
   isAdmin: boolean;
-  adminLevel: AdminLevel;
+  adminLevel: AdminLevel | undefined;
   can: (permission: import('./permissions').Permission) => boolean;
   configurationReady: boolean;
   configured: boolean;
@@ -269,8 +269,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       loading,
       sessionError,
       isAdmin: session?.user.app_metadata?.role === 'admin',
-      adminLevel: ((session?.user.app_metadata?.admin_level as AdminLevel | undefined) ?? 'super_admin'),
-      can: (permission) => can((session?.user.app_metadata?.admin_level as AdminLevel | undefined) ?? 'super_admin', permission),
+      adminLevel: session?.user.app_metadata?.admin_level as AdminLevel | undefined,
+      can: (permission) => can(session?.user.app_metadata?.admin_level as AdminLevel | undefined, permission),
       configurationReady,
       configured,
     }),

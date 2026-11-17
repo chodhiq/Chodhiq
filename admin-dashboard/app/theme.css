@@ -205,8 +205,6 @@ button { border-radius: var(--radius-control); }
 }
 
 /* Shared screenshot system: fixed navigation, readable work area and calm panels. */
-.shell { grid-template-columns: var(--sidebar-width) minmax(0, 1fr) !important; }
-.admin-sidebar { width: var(--sidebar-width) !important; }
 .workspace { min-width: 0; }
 .workspace > .topbar {
   height: var(--topbar-height) !important;

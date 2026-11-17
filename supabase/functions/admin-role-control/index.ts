@@ -1,8 +1,9 @@
 import { createClient, type User } from "npm:@supabase/supabase-js@2.112.2";
 import { checkRateLimit, RATE_LIMITS } from "../rate-limit-helper.ts";
 
-const allowedOrigins=(Deno.env.get("ADMIN_ALLOWED_ORIGINS")??"http://localhost:3000,http://localhost:3012").split(",").map(value=>value.trim()).filter(Boolean);
-const cors=(origin:string|null)=>({"Access-Control-Allow-Origin":origin&&allowedOrigins.includes(origin)?origin:allowedOrigins[0],"Access-Control-Allow-Headers":"authorization,apikey,content-type","Access-Control-Allow-Methods":"POST, OPTIONS",Vary:"Origin"});
+const localSupabase=/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(Deno.env.get("SUPABASE_URL")??"");
+const allowedOrigins=(Deno.env.get("ADMIN_ALLOWED_ORIGINS")??["https://admin.chodhiq.co.uk",...(localSupabase?["http://localhost:3000","http://localhost:3012"]:[])].join(",")).split(",").map(value=>value.trim()).filter(value=>value!=="*"&&(localSupabase||!/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(value)));
+const cors=(origin:string|null)=>({...origin&&allowedOrigins.includes(origin)?{"Access-Control-Allow-Origin":origin}:{},"Access-Control-Allow-Headers":"authorization,apikey,content-type","Access-Control-Allow-Methods":"POST, OPTIONS",Vary:"Origin"});
 const json=(origin:string|null,body:unknown,status=200,extraHeaders:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...cors(origin),...extraHeaders,"Content-Type":"application/json","Cache-Control":"no-store"}});
 
 Deno.serve(async request=>{
@@ -15,7 +16,7 @@ Deno.serve(async request=>{
   const {data:{user:caller},error:callerError}=await callerClient.auth.getUser();
   if(callerError||!caller)return json(origin,{error:"session_expired",message:"Your session expired. Sign in and retry.",correlationId},401);
   if(caller.app_metadata?.role!=="admin")return json(origin,{error:"unauthorized",message:"Administrator access is required.",correlationId},403);
-  const callerLevel=caller.app_metadata?.admin_level??"super_admin";
+  const callerLevel=caller.app_metadata?.admin_level;
   if(callerLevel!=="super_admin")return json(origin,{error:"forbidden",message:"Only a super admin can manage administrator roles.",correlationId},403);
   const admin=createClient(url,service);
   const limit=await checkRateLimit(admin,caller.id,"admin-role-control",RATE_LIMITS.mutation);
@@ -26,19 +27,19 @@ Deno.serve(async request=>{
   const users:User[]=[];let page=1;
   for(;;){const result=await admin.auth.admin.listUsers({page,perPage:1000});if(result.error)return json(origin,{error:"directory_unavailable",message:"The user directory is unavailable.",correlationId},502);users.push(...result.data.users);if(result.data.users.length<1000)break;page++}
   const admins=users.filter(user=>user.app_metadata?.role==="admin");
-  if(body.action==="list")return json(origin,{users:admins.map(user=>({id:user.id,email:user.email,admin_level:user.app_metadata?.admin_level??"super_admin"}))});
+  if(body.action==="list")return json(origin,{users:admins.map(user=>({id:user.id,email:user.email,admin_level:user.app_metadata?.admin_level??null}))});
   const email=body.email?.trim().toLowerCase()??"";
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return json(origin,{error:"invalid_email",message:"A valid user email is required.",correlationId},400);
   const target=users.find(user=>user.email?.toLowerCase()===email);
   if(!target)return json(origin,{error:"not_found",message:"The user was not found.",correlationId},404);
-  if(body.action==="revoke"&&(target.id===caller.id||admins.length<=1||((target.app_metadata?.admin_level??"super_admin")==="super_admin"&&admins.filter(user=>(user.app_metadata?.admin_level??"super_admin")==="super_admin").length<=1)))return json(origin,{error:"protected_account",message:"This administrator role cannot be revoked here.",correlationId},409);
+  if(body.action==="revoke"&&(target.id===caller.id||admins.length<=1||(target.app_metadata?.admin_level==="super_admin"&&admins.filter(user=>user.app_metadata?.admin_level==="super_admin").length<=1)))return json(origin,{error:"protected_account",message:"This administrator role cannot be revoked here.",correlationId},409);
   if(body.action==="set_level"&&!(["super_admin","moderator","support","finance","analyst"].includes(body.adminLevel??"")))return json(origin,{error:"invalid_level",message:"Choose a valid administrator level.",correlationId},400);
-  if(body.action==="set_level"&&target.app_metadata?.admin_level==="super_admin"&&body.adminLevel!=="super_admin"&&admins.filter(user=>(user.app_metadata?.admin_level??"super_admin")==="super_admin").length<=1)return json(origin,{error:"last_super_admin",message:"The last super admin cannot be demoted.",correlationId},409);
+  if(body.action==="set_level"&&target.app_metadata?.admin_level==="super_admin"&&body.adminLevel!=="super_admin"&&admins.filter(user=>user.app_metadata?.admin_level==="super_admin").length<=1)return json(origin,{error:"last_super_admin",message:"The last super admin cannot be demoted.",correlationId},409);
   const previousMetadata={...target.app_metadata},metadata={...target.app_metadata};
   if(body.action==="grant"){metadata.role="admin";metadata.admin_level=body.adminLevel??"moderator";}else if(body.action==="revoke"){delete metadata.role;delete metadata.admin_level;}else metadata.admin_level=body.adminLevel;
   const updated=await admin.auth.admin.updateUserById(target.id,{app_metadata:metadata});
   if(updated.error)return json(origin,{error:"auth_update_failed",message:"The administrator role could not be updated.",correlationId},502);
-  const audit=await admin.from("admin_audit_log").insert({admin_id:caller.id,action:`admin_role_${body.action}`,entity_type:"user",entity_id:target.id,details:{source:"admin_role_control",correlation_id:correlationId,outcome:"succeeded",previous_values:{role:previousMetadata.role??null,admin_level:previousMetadata.admin_level??"super_admin"},new_values:{role:metadata.role??null,admin_level:metadata.admin_level??null}}});
+  const audit=await admin.from("admin_audit_log").insert({admin_id:caller.id,action:`admin_role_${body.action}`,entity_type:"user",entity_id:target.id,details:{source:"admin_role_control",correlation_id:correlationId,outcome:"succeeded",previous_values:{role:previousMetadata.role??null,admin_level:previousMetadata.admin_level??null},new_values:{role:metadata.role??null,admin_level:metadata.admin_level??null}}});
   if(audit.error){const compensation=await admin.auth.admin.updateUserById(target.id,{app_metadata:previousMetadata});return json(origin,{error:"partial_failure",message:compensation.error?"Role and audit state diverged. Stop retries and contact support.":"Audit failed and the role change was rolled back. Refresh before retrying.",correlationId},500)}
   return json(origin,{ok:true,correlationId});
 });

@@ -136,12 +136,17 @@
 .community-media {
   display: block;
   width: 100%;
-  max-height: 520px;
+  max-height: min(520px, 60vh);
   object-fit: contain;
   background: var(--surface-2);
   border-radius: 12px;
   margin: 14px 0 8px;
 }
+.community-live-toolbar > button { flex: 0 0 auto; white-space: nowrap; }
+.table-actions { display: inline-flex; align-items: center; gap: 8px; }
+.report-filter-panel .select-all { display: flex; align-items: center; gap: 10px; }
+.report-filter-panel .select-all input { flex: 0 0 auto; margin: 0; }
+.demand-table .text { display: block; margin-top: 4px; }
 .community-feed-admin article > a[data-media-error]::before {
   content: 'Photo could not be loaded. Open the original or refresh to retry.';
   display: block;

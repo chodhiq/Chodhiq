@@ -10,7 +10,7 @@ export function PageHeader({ eyebrow, title, description, action }: { eyebrow: s
   return <div className="head"><div><span className="page-kicker">{eyebrow}</span><h2>{title}</h2><p>{description}</p></div>{action}</div>;
 }
 
-export type PageStat = { label: string; value: ReactNode; icon?: ReactNode; href?: string; tone?: 'teal' | 'green' | 'purple' | 'amber' };
+export type PageStat = { label: string; value: ReactNode; icon?: ReactNode; href?: string; onClick?: () => void; tone?: 'teal' | 'green' | 'purple' | 'amber' };
 
 export function Page({ title, note, children, className = '', stats }: { title: string; note: string; children: ReactNode; className?: string; stats?: PageStat[] }) {
   const environment = process.env.NEXT_PUBLIC_ENVIRONMENT_LABEL?.trim();
@@ -41,7 +41,7 @@ export function Page({ title, note, children, className = '', stats }: { title: 
     audit: 'Governance · Audit history',
   };
   const section = pathname.startsWith('/providers/') ? 'Marketplace · Provider dossier' : sections[routeClass] || 'Marketplace operations';
-  return <div className={`page page-route-${routeClass} ${className}`} data-route={routeClass}><PageHeader eyebrow={section} title={title} description={note} action={environment && <span className="environment-badge" aria-label={`${environment} environment`}>{environment}</span>} />{stats?.length ? <div className="metrics dashboard-metrics">{stats.map((stat, index) => <StatCard key={stat.label} icon={stat.icon ?? ['A', '✓', 'B', '!'][index % 4]} label={stat.label} value={stat.value} href={stat.href ?? pathname} tone={stat.tone ?? (['teal', 'green', 'purple', 'amber'] as const)[index % 4]} />)}</div> : null}{children}</div>;
+  return <div className={`page page-route-${routeClass} ${className}`} data-route={routeClass}><PageHeader eyebrow={section} title={title} description={note} action={environment && <span className="environment-badge" aria-label={`${environment} environment`}>{environment}</span>} />{stats?.length ? <div className="metrics dashboard-metrics">{stats.map((stat, index) => <StatCard key={stat.label} icon={stat.icon ?? ['A', '✓', 'B', '!'][index % 4]} label={stat.label} value={stat.value} href={stat.href ?? pathname} onClick={stat.onClick} tone={stat.tone ?? (['teal', 'green', 'purple', 'amber'] as const)[index % 4]} />)}</div> : null}{children}</div>;
 }
 
 export function HeroBanner({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: ReactNode }) {
@@ -52,8 +52,8 @@ export function Panel({ eyebrow, title, description, action, children, className
   return <section className={`panel ${className}`.trim()}>{(eyebrow || title || description || action) && <header className="section-heading"><div>{eyebrow && <span className="dashboard-section-label">{eyebrow}</span>}{title && <h3>{title}</h3>}{description && <p>{description}</p>}</div>{action}</header>}{children}</section>;
 }
 
-export const StatCard = memo(function StatCard({ icon, label, value, href, tone = 'teal' }: { icon: ReactNode; label: string; value: ReactNode; href: string; tone?: 'teal' | 'green' | 'purple' | 'amber' }) {
-  return <Link className={`metric metric-link dashboard-stat stat-${tone}`} href={href}><span className="dashboard-stat-top"><i aria-hidden="true">{icon}</i><span>{label}</span><b aria-hidden="true">↗</b></span><strong><CountUp value={value} /></strong><small>Open records <span aria-hidden="true">→</span></small></Link>;
+export const StatCard = memo(function StatCard({ icon, label, value, href, onClick, tone = 'teal' }: { icon: ReactNode; label: string; value: ReactNode; href: string; onClick?: () => void; tone?: 'teal' | 'green' | 'purple' | 'amber' }) {
+  return <Link className={`metric metric-link dashboard-stat stat-${tone}`} href={href} onClick={onClick}><span className="dashboard-stat-top"><i aria-hidden="true">{icon}</i><span>{label}</span><b aria-hidden="true">↗</b></span><strong><CountUp value={value} /></strong><small>Open records <span aria-hidden="true">→</span></small></Link>;
 });
 
 function CountUp({ value }: { value: ReactNode }) {

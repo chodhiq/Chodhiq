@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button, HeroBanner, Page, Panel, Skeleton, StatCard, Status } from './components/ui';
 import { cachedQuery, readCachedQuery } from '../lib/query-cache';
+import { useAdminAuth } from '../lib/admin';
 const metrics = [
   {
     label: 'Pending applications',
@@ -83,6 +84,7 @@ const shortcuts = [
   ['/audit', 'Audit history', 'Review privileged actions and their recorded reasons.'],
 ];
 export default function Overview() {
+  const auth = useAdminAuth();
   const cached = readCachedQuery<DashboardSnapshot>(DASHBOARD_CACHE_KEY);
   const [counts, setCounts] = useState<Array<number | null>>(cached?.counts ?? []);
   const [applications, setApplications] = useState<Application[]>(cached?.applications ?? []);
@@ -90,6 +92,7 @@ export default function Overview() {
   const [loading, setLoading] = useState(!cached);
   const requestId = useRef(0);
   const load = useCallback(async (force = false, quiet = false) => {
+    if (!auth.configured || !auth.session?.access_token || !auth.session.user.id || auth.loading || !auth.isAdmin) return;
     const request = ++requestId.current;
     if (!quiet && !readCachedQuery(DASHBOARD_CACHE_KEY)) setLoading(true);
     try {
@@ -109,8 +112,9 @@ export default function Overview() {
     } finally {
       if (request === requestId.current) setLoading(false);
     }
-  }, []);
+  }, [auth.configured, auth.session, auth.loading, auth.isAdmin]);
   useEffect(() => {
+    if (!auth.configurationReady || !auth.configured || auth.loading || !auth.isAdmin || !auth.session?.access_token) return;
     const start = window.setTimeout(() => void load(false, false), 0);
     const refresh = () => {
       if (document.visibilityState === 'visible') void load(true, true);
@@ -123,7 +127,7 @@ export default function Overview() {
       window.removeEventListener('focus', refresh);
       requestId.current += 1;
     };
-  }, [load]);
+  }, [load, auth.configurationReady, auth.configured, auth.loading, auth.isAdmin, auth.session]);
   return (
       <Page
         className="dashboard-page"

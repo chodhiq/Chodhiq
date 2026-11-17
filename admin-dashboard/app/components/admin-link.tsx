@@ -44,10 +44,12 @@ export default function AdminLink({ onClick, ...props }: AdminLinkProps) {
     clearPendingNavigation();
     const from = window.location.href;
     const documentWithTransitions = document as Document & {
-      startViewTransition?: (callback: () => void) => { finished: Promise<void> };
+      startViewTransition?: (callback: () => void | Promise<void>) => { finished: Promise<void> };
     };
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (documentWithTransitions.startViewTransition && !reducedMotion) {
+    const supportsViewTransitions = typeof documentWithTransitions.startViewTransition === 'function';
+    const skipReason = reducedMotion ? 'prefers-reduced-motion' : !supportsViewTransitions ? 'View Transitions unsupported' : null;
+    if (!skipReason && documentWithTransitions.startViewTransition) {
       event.preventDefault();
       const root = document.documentElement;
       root.classList.add('admin-transition-active');
@@ -62,8 +64,13 @@ export default function AdminLink({ onClick, ...props }: AdminLinkProps) {
         clearPendingNavigation();
         if (window.location.href === from) window.location.assign(target.href);
       }, 5000);
-      const transition = documentWithTransitions.startViewTransition(() => {
+      const transition = documentWithTransitions.startViewTransition(async () => {
         router.push(`${target.pathname}${target.search}${target.hash}`);
+        const route = target.pathname;
+        for (let attempt = 0; attempt < 40; attempt += 1) {
+          await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+          if (document.querySelector('.route-view')?.getAttribute('data-route') === route) break;
+        }
       });
       void transition.finished.finally(() => {
         root.classList.remove('admin-transition-active');
@@ -71,6 +78,9 @@ export default function AdminLink({ onClick, ...props }: AdminLinkProps) {
         window.dispatchEvent(new CustomEvent('admin:navigation-cancel'));
       });
       return;
+    }
+    if (process.env.NODE_ENV === 'development') {
+      console.info(`[admin navigation] View Transition skipped: ${skipReason}`);
     }
     window.dispatchEvent(new CustomEvent('admin:navigation-start'));
     poll.current = setInterval(() => {

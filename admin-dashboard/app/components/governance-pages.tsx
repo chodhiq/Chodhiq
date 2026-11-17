@@ -79,7 +79,7 @@ export function AdminsPage() {
       <Page
         title="Administrator access"
         note="View, grant and revoke server-issued administrator roles. Self-revocation and last-admin removal are blocked."
-        stats={[{label:'Administrators',value:rows.length},{label:'Super admins',value:rows.filter(row => (row.admin_level || 'super_admin') === 'super_admin').length,tone:'purple'}]}
+        stats={[{label:'Administrators',value:rows.length},{label:'Super admins',value:rows.filter(row => row.admin_level === 'super_admin').length,tone:'purple'}]}
       >
         <section className="panel form-grid">
           <input
@@ -103,7 +103,7 @@ export function AdminsPage() {
                     <b>{r.email}</b>
                   </td>
                   <td>{r.id}</td>
-                  <td><span className="field"><select aria-label={`Set level for ${r.email}`} value={r.admin_level || 'super_admin'} onChange={event => { setLevel(event.target.value); void change('set_level', r.email || '', event.target.value); }}><option value="super_admin">Super admin</option><option value="moderator">Moderator</option><option value="support">Support</option><option value="finance">Finance</option><option value="analyst">Analyst</option></select></span></td>
+                  <td><span className="field"><select aria-label={`Set level for ${r.email}`} value={r.admin_level || 'no_access'} onChange={event => { setLevel(event.target.value); void change('set_level', r.email || '', event.target.value); }}><option value="no_access" disabled>No access</option><option value="super_admin">Super admin</option><option value="moderator">Moderator</option><option value="support">Support</option><option value="finance">Finance</option><option value="analyst">Analyst</option></select></span></td>
                   <td>
                     <button className="danger" onClick={() => change('revoke', r.email || '')}>
                       Revoke

@@ -27,9 +27,9 @@ const monetisationEnabled =
 
 const ALERT_COUNTS = [
   { key: 'applications', table: 'business_applications', filters: { status: 'pending' } },
-  { key: 'verification', table: 'verification_requests', filters: { status: 'pending' } },
   { key: 'communityReports', table: 'community_post_reports', filters: { status: 'open' } },
   { key: 'providerReports', table: 'provider_reports', filters: { status: 'open' } },
+  { key: 'leads', table: 'quote_requests', filters: { status: 'opened' } },
 ] as const satisfies readonly CountDef[];
 const NAV_PERMISSION: Record<string, Permission> = {
   '/applications': 'applications.review', '/providers': 'providers.suspend', '/users': 'users.suspend',
@@ -206,6 +206,12 @@ function GlobalSearch() {
     };
   }, [query]);
   useEffect(() => {
+    if (cleanSearch(query).length < 2) return;
+    setResults([]);
+    setLoading(true);
+    setError('');
+  }, [query]);
+  useEffect(() => {
     const close = (event: PointerEvent) => {
       if (!root.current?.contains(event.target as Node)) {
         setResults([]);
@@ -299,7 +305,7 @@ function GlobalSearch() {
               </Link>
             ))
           ) : (
-            <p role="status">No matching providers, users, or posts.</p>
+            <p role="status">No results</p>
           )}
         </div>
       )}
@@ -317,12 +323,14 @@ function AdminAlerts({ counts }: { counts: Record<string, number | null> }) {
     document.addEventListener('pointerdown', outside);
     return () => { document.removeEventListener('keydown', close); document.removeEventListener('pointerdown', outside); };
   }, []);
-  const total = Object.values(counts).reduce<number>((sum, count) => sum + (count ?? 0), 0);
+  const total = ['applications', 'communityReports', 'providerReports', 'leads']
+    .reduce((sum, key) => sum + (counts[key] ?? 0), 0);
   const entries = [
-    ['/applications?status=pending', 'Business applications', counts.applications], ['/verification?status=pending', 'Verification', counts.verification],
+    ['/applications?status=pending', 'Pending applications', counts.applications],
     ['/moderation/community?status=open', 'Community reports', counts.communityReports], ['/moderation/providers?status=open', 'Provider reports', counts.providerReports],
+    ['/demand?filter=opened', 'New leads', counts.leads],
   ] as const;
-  return <details className="admin-alerts" ref={root} onToggle={event => setExpanded(event.currentTarget.open)}><summary aria-label={`Admin alerts, ${total} waiting`} aria-haspopup="true" aria-expanded={expanded}>♧<NavBadge value={total} /></summary><div className="admin-alerts-menu" role="menu"><b>Waiting for review</b>{entries.map(([href, label, value]) => <Link key={href} role="menuitem" href={href} onClick={() => root.current?.removeAttribute('open')}><span>{label}</span><NavBadge value={value} /></Link>)}</div></details>;
+  return <details className="admin-alerts" ref={root} onToggle={event => setExpanded(event.currentTarget.open)}><summary aria-label={`Admin alerts, ${total} waiting`} aria-haspopup="true" aria-expanded={expanded}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 9a6 6 0 0 0-12 0c0 7-1.5 8-3 9h18c-1.5-1-3-2-3-9M9 21h6" /><path d="M10 4a2 2 0 0 1 4 0" /></svg><NavBadge value={total} /></summary><div className="admin-alerts-menu" role="menu"><b>Waiting for review</b>{entries.map(([href, label, value]) => <Link key={href} role="menuitem" href={href} onClick={() => root.current?.removeAttribute('open')}><span>{label}</span><NavBadge value={value} /></Link>)}</div></details>;
 }
 
 function ConfirmationModal() {
@@ -475,7 +483,7 @@ export function AdminGate({ children }: { children: ReactNode }) {
     );
   if (recovering) return <ResetPassword onComplete={() => setRecovering(false)} />;
   if (!admin.session) return <Login />;
-  if (!admin.isAdmin)
+  if (!admin.isAdmin || !admin.adminLevel)
     return (
       <main className="auth-page">
         <section className="auth-card">

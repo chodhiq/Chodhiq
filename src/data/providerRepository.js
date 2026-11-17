@@ -31,6 +31,7 @@ function mapProvider(row) {
     reviewCount: row.review_count == null ? 0 : Number(row.review_count),
     isVerified: row.is_verified,
     isDataVerified: row.data_verification_status === 'source_checked',
+    dataVerificationStatus: row.data_verification_status || 'unchecked',
     dataVerifiedAt: row.data_verified_at,
     phone: row.phone,
     whatsapp: row.whatsapp,
@@ -149,6 +150,35 @@ export async function loadMarketplace({ onCached } = {}) {
         const rankB = b.sponsoredRank === 5 ? 2 : b.sponsoredRank === 10 ? 1 : 0;
         return rankB - rankA || (b.rating || 0) - (a.rating || 0) || b.reviewCount - a.reviewCount;
       });
+    const placeIds = providers
+      .filter((provider) => provider.listingType === 'place')
+      .map((provider) => provider.id);
+    if (placeIds.length) {
+      try {
+        const { data: placeSources, error: placeSourcesError } = await supabase
+          .from('place_sources')
+          .select('listing_id,source,attribution_text,rating_value,rating_date')
+          .in('listing_id', placeIds)
+          .abortSignal(controller.signal);
+        if (placeSourcesError) throw placeSourcesError;
+        const placeSourceById = new Map(
+          (placeSources || []).map((source) => [source.listing_id, source]),
+        );
+        for (const provider of providers) {
+          const source = placeSourceById.get(provider.id);
+          if (source) {
+            provider.placeSource = {
+              source: source.source,
+              attribution: source.attribution_text,
+              ratingValue: source.rating_value,
+              ratingDate: source.rating_date,
+            };
+          }
+        }
+      } catch (error) {
+        console.warn('Food Standards Agency details could not be loaded.', error?.message || error);
+      }
+    }
     let lastUpdatedAt = new Date().toISOString();
     try {
       lastUpdatedAt = await cacheMarketplace(categories, providers);

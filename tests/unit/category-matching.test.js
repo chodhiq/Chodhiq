@@ -26,6 +26,23 @@ test('matches exact backend category IDs', () => {
   );
 });
 
+test('categorized providers match only their assigned category', () => {
+  const restaurantsBars = provider('Restaurants & Bars', { categoryId: 'restaurants-bars' });
+  const southIndian = category('south-indian', 'South Indian Restaurants');
+  const generalRestaurants = category('restaurants-bars', 'Restaurants & Bars');
+
+  assert.equal(providerMatchesCategory(restaurantsBars, southIndian), false);
+  assert.equal(providerMatchesCategory(restaurantsBars, generalRestaurants), true);
+  assert.equal(
+    providerMatchesCategory(
+      provider('South Indian Restaurants', { categoryId: 'south-indian' }),
+      generalRestaurants,
+    ),
+    false,
+  );
+  assert.equal(providerMatchesCategory(restaurantsBars, null), true);
+});
+
 test('maps specific provider labels to broad browse categories', () => {
   assert.equal(
     providerMatchesCategory(provider('Catering'), category('restaurants', 'Restaurants')),

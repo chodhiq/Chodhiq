@@ -26,6 +26,7 @@ import { MarketplaceSkeleton } from '../components/Skeleton';
 import AdPlacement from '../components/AdPlacement';
 import { loadActiveCampaigns, recordCampaignEvent } from '../data/adCampaignRepository';
 import { distanceKm, isProviderOpenNow } from '../data/providerDiscovery';
+import { providerMatchesCategory } from '../data/categoryMatching';
 import { FadeInView } from '../components/Motion';
 import MarketplaceStatusBanner from '../components/MarketplaceStatusBanner';
 import { features } from '../config/features';
@@ -227,7 +228,17 @@ export default function HomeScreen({ navigation }) {
             : 'Popular businesses'
           : 'Businesses to explore',
   }[discoveryMode];
-  const featuredCategories = categories.slice(0, 10);
+  const featuredCategories = categories
+    .map((category) => ({
+      category,
+      count: enrichedProviders.filter((provider) =>
+        providerMatchesCategory(provider, category),
+      ).length,
+    }))
+    .filter((entry) => entry.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10)
+    .map((entry) => entry.category);
   const recentlyAddedWithoutDuplicates = recentlyAdded.filter(
     (provider) =>
       !discoveryProviders.some(
@@ -302,7 +313,7 @@ export default function HomeScreen({ navigation }) {
               mode={mode}
               image={themedHero}
               images={[themedHero]}
-              location={location}
+              location="Leicester"
               campaign={features.customAds ? campaigns[0] : null}
               onCampaignImpression={(campaign) => recordImpression(campaign, 'home_hero')}
               onCampaignPress={(campaign) => openCampaign(campaign, 'home_hero')}

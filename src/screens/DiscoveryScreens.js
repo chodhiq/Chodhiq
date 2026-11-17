@@ -2,7 +2,7 @@ import { AppAlert as Alert } from '../components/AppDialog';
 import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import AppTextInput from '../components/AppTextInput';
-import { ActivityIndicator, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import Text from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -127,6 +127,26 @@ export function MapScreen({ navigation, route }) {
   const [viewport, setViewport] = useState(null);
   const [locating, setLocating] = useState(false);
   const [mapType, setMapType] = useState('standard');
+  const cityCoordinates = {
+    leicester: { latitude: 52.6369, longitude: -1.1398 },
+    manchester: { latitude: 53.4808, longitude: -2.2426 },
+    leeds: { latitude: 53.8008, longitude: -1.5491 },
+    london: { latitude: 51.5072, longitude: -0.1276 },
+    birmingham: { latitude: 52.4862, longitude: -1.8904 },
+    liverpool: { latitude: 53.4084, longitude: -2.9916 },
+    bristol: { latitude: 51.4545, longitude: -2.5879 },
+    nottingham: { latitude: 52.9548, longitude: -1.1581 },
+    sheffield: { latitude: 53.3811, longitude: -1.4701 },
+    newcastle: { latitude: 54.9783, longitude: -1.6178 },
+  };
+  const validUkLocation =
+    Number.isFinite(locationCoordinates?.latitude) &&
+    Number.isFinite(locationCoordinates?.longitude) &&
+    locationCoordinates.latitude >= 49.8 &&
+    locationCoordinates.latitude <= 60.9 &&
+    locationCoordinates.longitude >= -8.7 &&
+    locationCoordinates.longitude <= 1.8;
+  const selectedCityLocation = cityCoordinates[String(location || '').toLowerCase()] || cityCoordinates.leicester;
   const cities = useMemo(
     () =>
       [...new Set(providers.map((provider) => provider.baseCity).filter(Boolean))].sort((a, b) =>
@@ -180,9 +200,11 @@ export function MapScreen({ navigation, route }) {
       setSelected(visibleProviders[0] || null);
     }
   }, [selected, visibleProviders]);
-  const mapInitialLocation = locationCoordinates
-    ? { ...locationCoordinates, latitudeDelta: 0.12, longitudeDelta: 0.12 }
-    : null;
+  const mapInitialLocation = {
+    ...(validUkLocation ? locationCoordinates : selectedCityLocation),
+    latitudeDelta: 0.045,
+    longitudeDelta: 0.045,
+  };
   const nearCards = useMemo(() => {
     const cardProviders = providersWithMeta.filter(hasCoordinates);
     if (!mapInitialLocation) return cardProviders.slice(0, 12);
@@ -210,7 +232,9 @@ export function MapScreen({ navigation, route }) {
           : 'The map is centered on your current device location.',
       );
     } catch (error) {
-      if (error.code === 'LOCATION_PERMISSION_DENIED') {
+      if (error.code === 'LOCATION_OUTSIDE_UK') {
+        Alert.alert('Location unavailable', 'The map will stay on your selected UK city.');
+      } else if (error.code === 'LOCATION_PERMISSION_DENIED') {
         showPermissionRecovery('Location permission needed', error.message);
       } else {
         Alert.alert('Could not get your location', error.message);
@@ -244,6 +268,7 @@ export function MapScreen({ navigation, route }) {
           onSelect={setSelected}
           palette={palette}
           location={mapInitialLocation || undefined}
+          fitProviders={false}
           onRegionChange={(region) => {
             if (region) {
               setViewport(region);
@@ -258,9 +283,12 @@ export function MapScreen({ navigation, route }) {
             { backgroundColor: palette.dark ? palette.bg : '#101817' },
           ]}
         >
-          <Text style={styles.mapBrandLogo}>
-            Chodhi<Text style={{ color: palette.primary }}>Q</Text>
-          </Text>
+          <Image
+            source={require('../../assets/chodhiq-full-logo-white-transparent.png')}
+            style={styles.mapBrandLogoImage}
+            resizeMode="contain"
+            accessibilityLabel="ChodhiQ"
+          />
           <TouchableOpacity
             testID="btn-map-notifications"
             accessibilityRole="button"
@@ -409,7 +437,7 @@ export function MapScreen({ navigation, route }) {
               </ScrollView>
             </View>
           ) : null}
-          {mapProviders.length > 0 ? (
+          {mapProviders.length > 0 && viewport ? (
             <GlassView pointerEvents="box-none" intensity={44} style={styles.mapResultBadge}>
               <MapPin size={14} color={palette.primary} />
               <Text style={[styles.mapResultText, { color: palette.text }]}>
@@ -685,11 +713,10 @@ function MapSelectedCard({ provider, saved, onSave, onDirections, onPress }) {
   );
 }
 
-function MapNearbyCard({ provider, palette: _palette, saved, selected, onPress, onSave }) {
+function MapNearbyCard({ provider, saved, selected, onPress, onSave }) {
   return (
     <ProviderCardGlow
       variant="map"
-      mapMode="nearby"
       provider={provider}
       saved={saved}
       selected={selected}
@@ -733,7 +760,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
 
-  mapBrandLogo: { color: '#FFFFFF', fontSize: 25, fontWeight: '800', letterSpacing: -1 },
+  mapBrandLogoImage: { height: 34, width: 102 },
   mapBell: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
   mapBellDot: {
     position: 'absolute',

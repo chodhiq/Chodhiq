@@ -7,7 +7,7 @@ import GlowIconButton from './GlowIconButton';
 import PressableScale from './PressableScale';
 import PulseDot from '../PulseDot';
 import useEffectsLevel from '../../src/hooks/useEffectsLevel';
-import { categoryFallback, imageSource } from '../../src/data/assetCatalog';
+import { categoryIcon, categoryIconComponent, imageSource } from '../../src/data/assetCatalog';
 import { theme } from '../../theme';
 
 export interface GlowProvider {
@@ -18,6 +18,7 @@ export interface GlowProvider {
   image?: string | number | { uri: string } | null;
   isVerified?: boolean;
   isDataVerified?: boolean;
+  dataVerificationStatus?: string | null;
   rating?: number;
   reviewCount?: number;
   distance?: string | null;
@@ -85,10 +86,8 @@ function ProviderCardGlow({
       : variant === 'map'
         ? 'btn-map-save'
         : 'btn-save-business');
-  const source = imageSource(
-    provider.image,
-    categoryFallback(provider.category, provider.categoryId),
-  );
+  const source = imageSource(provider.image);
+  const PlaceholderIcon = categoryIconComponent(categoryIcon(provider.category, provider.categoryId));
   const reviews = Number(provider.reviewCount) || 0;
   const rating = Number(provider.rating);
   const price = priceLabel(provider.priceRange);
@@ -149,7 +148,13 @@ function ProviderCardGlow({
             isNearbyMap && styles.nearbyMain,
           ]}
         >
-          <Image resizeMethod="resize" source={source} resizeMode="cover" style={imageStyle} />
+          {source ? (
+            <Image resizeMethod="resize" source={source} resizeMode="cover" style={imageStyle} />
+          ) : (
+            <View style={[imageStyle, styles.imagePlaceholder]}>
+              <PlaceholderIcon size={variant === 'compact' ? 34 : 30} color={theme.colors.primary} />
+            </View>
+          )}
           <View style={detailsStyle}>
             <View style={styles.nameRow}>
               <Text numberOfLines={1} style={[styles.name, isNearbyMap && styles.nearbyName]}>
@@ -160,7 +165,8 @@ function ProviderCardGlow({
                   <BadgeCheck size={13} color={theme.colors.primary} />
                   <Text style={styles.badgeText}>Verified</Text>
                 </View>
-              ) : provider.isDataVerified ? (
+              ) :
+                provider.isDataVerified && provider.dataVerificationStatus !== 'unchecked' ? (
                 <View style={styles.badge}>
                   <BadgeCheck size={13} color={theme.colors.primary} />
                   <Text style={styles.badgeText}>Data checked</Text>
@@ -297,6 +303,13 @@ const styles = StyleSheet.create({
   image: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.spacing.sm,
+  },
+  imagePlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primaryDeep,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   rowImage: { width: 76, height: 76 },
   compactImage: { width: '100%', height: 94 },

@@ -16,6 +16,8 @@ import Constants from 'expo-constants';
 
 const CATEGORY_ICONS = {
   restaurants: Utensils,
+  'south-indian-restaurant': Utensils,
+  'indian-restaurant': Utensils,
   grocery: Store,
   beauty: Scissors,
   property: Building2,
@@ -29,6 +31,7 @@ export default function ChodhiQMap({
   onSelect,
   palette,
   location,
+  fitProviders = true,
   onRegionChange,
   mapType = 'standard',
   compact = false,
@@ -62,7 +65,7 @@ export default function ChodhiQMap({
     return [...groups.values()];
   }, [coordinates]);
   useEffect(() => {
-    if (!mapsEnabled || !mapRef.current || !coordinates.length) return;
+    if (!mapsEnabled || !fitProviders || !mapRef.current || !coordinates.length) return;
     mapRef.current.fitToCoordinates(
       coordinates.map((item) => ({ latitude: item.latitude, longitude: item.longitude })),
       {
@@ -72,7 +75,7 @@ export default function ChodhiQMap({
         animated: true,
       },
     );
-  }, [compact, coordinates, mapsEnabled]);
+  }, [compact, coordinates, fitProviders, mapsEnabled]);
   useEffect(() => {
     if (!mapsEnabled || !mapRef.current || !location) return;
     mapRef.current.animateToRegion(location, 450);
@@ -83,6 +86,7 @@ export default function ChodhiQMap({
         providers={providers}
         selected={selected}
         location={location}
+        fitProviders={fitProviders}
         onSelect={onSelect}
         onRegionChange={onRegionChange}
         palette={palette}
@@ -94,14 +98,14 @@ export default function ChodhiQMap({
       ref={mapRef}
       style={StyleSheet.absoluteFill}
       initialRegion={
-        location || { latitude: 53.1, longitude: -1.65, latitudeDelta: 7.4, longitudeDelta: 7.4 }
+        location || { latitude: 52.6369, longitude: -1.1398, latitudeDelta: 0.12, longitudeDelta: 0.12 }
       }
       mapType={mapType}
       showsUserLocation={!compact}
       showsMyLocationButton={false}
       toolbarEnabled={false}
       onMapReady={() => {
-        if (coordinates.length)
+        if (fitProviders && coordinates.length)
           mapRef.current?.fitToCoordinates(coordinates, {
             edgePadding: compact
               ? { top: 12, right: 12, bottom: 12, left: 12 }

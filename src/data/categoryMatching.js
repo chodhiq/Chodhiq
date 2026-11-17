@@ -69,16 +69,11 @@ export function providerSearchText(provider) {
 /** @param {any} provider @param {any} category */
 export function providerMatchesCategory(provider, category) {
   if (!category) return true;
+  const providerCategoryId = normalize(provider.categoryId ?? provider.category_id);
   const providerText = providerSearchText(provider);
   const categoryId = normalize(category.id);
   const categoryName = normalize(category.name);
-  if (
-    [provider.categoryId, provider.category].some((value) => {
-      const candidate = normalize(value);
-      return candidate === categoryId || candidate === categoryName;
-    })
-  )
-    return true;
+  if (providerCategoryId) return providerCategoryId === categoryId;
   const terms = CATEGORY_TERMS[category.id] || [categoryName];
   return terms.some((term) => providerText.includes(normalize(term)));
 }

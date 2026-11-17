@@ -56,7 +56,7 @@ test('mapProfile applies trusted fallbacks and local avatar precedence', () => {
     'local.png',
   );
   assert.equal(result.name, 'Anjali');
-  assert.equal(result.location, 'Birmingham');
+  assert.equal(result.location, 'Leicester');
   assert.equal(result.avatarUri, 'local.png');
   assert.equal(result.memberSince, '2025');
 });

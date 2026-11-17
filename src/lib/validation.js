@@ -70,7 +70,7 @@ export function validateQuote(input) {
 /** @param {unknown} reason @param {unknown} details */
 export function validateReport(reason, details) {
   /** @type {Set<string>} */
-  const allowedReasons = new Set(['incorrect_information', 'closed_business', 'fraud', 'other']);
+  const allowedReasons = new Set(['incorrect_information', 'closed_business', 'fraud', 'other', 'owner_removal_request']);
   if (typeof reason !== 'string' || !allowedReasons.has(reason))
     throw new Error('Report reason is invalid.');
   return {

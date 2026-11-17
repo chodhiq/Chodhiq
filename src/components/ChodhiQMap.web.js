@@ -2,11 +2,11 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { openStreetMapHtml } from '../lib/openStreetMap';
 
-export default function ChodhiQMap({ providers, location, onSelect, onRegionChange, mapType }) {
+export default function ChodhiQMap({ providers, location, onSelect, onRegionChange, mapType, fitProviders = true }) {
   const frame = useRef(null);
   const html = useMemo(
-    () => openStreetMapHtml(providers, location, mapType),
-    [providers, location?.latitude, location?.longitude, mapType],
+    () => openStreetMapHtml(providers, location, mapType, null, fitProviders),
+    [providers, location?.latitude, location?.longitude, mapType, fitProviders],
   );
   useEffect(() => {
     const receive = (event) => {

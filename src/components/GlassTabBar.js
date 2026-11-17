@@ -413,7 +413,7 @@ function TabItem({
     >
       <View pointerEvents="none" style={styles.itemContent}>
         <View testID="tab-icon-slot" style={styles.iconSlot}>
-          <Icon size={19} color={focused ? activeText : inactiveText} strokeWidth={2} />
+          <Icon size={16} color={focused ? activeText : inactiveText} strokeWidth={2} />
         </View>
         <View testID="tab-label-slot" style={styles.labelSlot}>
           <Animated.Text
@@ -493,30 +493,30 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   iconSlot: {
-    width: 22,
-    height: 21,
+    width: 20,
+    height: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   labelSlot: {
     width: '100%',
     minWidth: 0,
-    height: 14,
+    height: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   label: {
     width: '100%',
     textAlign: 'center',
-    fontSize: 10,
-    lineHeight: 12,
+    fontSize: 9,
+    lineHeight: 11,
     fontFamily: fonts.semibold,
     includeFontPadding: false,
   },
   underline: {
     width: 18,
     height: 2,
-    marginTop: 1,
+    marginTop: 0,
     borderRadius: radius?.pill || 999,
   },
 });

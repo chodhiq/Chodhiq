@@ -10,6 +10,7 @@ export default function OpenStreetMap({
   providers,
   selected,
   location,
+  fitProviders = true,
   onSelect,
   onRegionChange,
   palette,
@@ -20,8 +21,8 @@ export default function OpenStreetMap({
   const [revision, setRevision] = useState(0);
   const webViewRef = useRef(null);
   const html = useMemo(
-    () => openStreetMapHtml(providers, location, mapType),
-    [providers, location?.latitude, location?.longitude, mapType],
+    () => openStreetMapHtml(providers, location, mapType, null, fitProviders),
+    [providers, location?.latitude, location?.longitude, mapType, fitProviders],
   );
   const syncSelectedMarker = useCallback(() => {
     const selectedId = selected?.id == null ? '' : String(selected.id);

@@ -72,7 +72,7 @@ export function AppStateProvider({ children }) {
     name: 'Guest',
     email: '',
     phone: '',
-    location: 'Birmingham',
+    location: 'Leicester',
     avatarUri: null,
     memberSince: null,
   });
@@ -591,7 +591,7 @@ export function AppStateProvider({ children }) {
       name: 'Guest',
       email: '',
       phone: '',
-      location: 'Birmingham',
+      location: 'Leicester',
       avatarUri: null,
       memberSince: null,
     });
@@ -635,7 +635,7 @@ export function AppStateProvider({ children }) {
       name: 'Guest',
       email: '',
       phone: '',
-      location: 'Birmingham',
+      location: 'Leicester',
       avatarUri: null,
       memberSince: null,
     });
@@ -687,7 +687,7 @@ export function AppStateProvider({ children }) {
       toggleSaved,
       profile,
       setProfile,
-      location: profile.location || 'Birmingham',
+      location: profile.location || 'Leicester',
       locationCoordinates,
       selectLocation,
       setCurrentLocation,

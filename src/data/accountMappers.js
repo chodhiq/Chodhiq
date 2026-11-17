@@ -52,7 +52,7 @@ export function mapProfile(row = {}, user = {}, localAvatar = null) {
     name: row.full_name || row.name || user.user_metadata?.full_name || 'ChodhiQ member',
     email: user.email || '',
     phone: row.phone || '',
-    location: row.city || row.location || 'Birmingham',
+    location: row.city || row.location || 'Leicester',
     avatarUri: localAvatar || row.avatar_url || row.avatarUri || null,
     memberSince: formatYear(row.created_at || user.created_at || new Date()),
   };

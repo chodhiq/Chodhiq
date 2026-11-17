@@ -199,6 +199,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
   const [quoteBusy, setQuoteBusy] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportDetails, setReportDetails] = useState('');
+  const [reportReason, setReportReason] = useState('incorrect_information');
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
   const [editingReviewId, setEditingReviewId] = useState(null);
@@ -665,7 +666,6 @@ export default function ProviderDetailScreen({ route, navigation }) {
         ref={detailScrollRef}
         onScroll={handleDetailScroll}
         scrollEventThrottle={16}
-        stickyHeaderIndices={[3]}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.detailContent,
@@ -680,6 +680,22 @@ export default function ProviderDetailScreen({ route, navigation }) {
           onSave={saveProvider}
           scrollOffset={scrollOffset}
         />
+        {isPlace && provider.placeSource?.ratingValue != null && String(provider.placeSource.ratingValue).trim() && provider.placeSource.ratingDate ? (
+          <View
+            style={[
+              styles.placeRatingBadge,
+              { backgroundColor: palette.surface, borderColor: palette.primary },
+            ]}
+          >
+            <Star size={16} color={palette.star} fill={palette.star} />
+            <Text style={[styles.placeRatingBadgeText, { color: palette.text }]}>
+              Food hygiene rating: {provider.placeSource.ratingValue} out of 5
+              {provider.placeSource.ratingDate
+                ? `, inspected ${new Date(`${provider.placeSource.ratingDate}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                : ''}
+            </Text>
+          </View>
+        ) : null}
         <ProviderIdentity provider={provider} reviews={providerReviews} />
         <View style={styles.body}>
           {quickActions.length > 0 && (
@@ -896,6 +912,16 @@ export default function ProviderDetailScreen({ route, navigation }) {
             onPress={() => setReportOpen(true)}
           />
         </View>
+        {isPlace ? (
+          <View style={[styles.placeSource, { borderTopColor: palette.border }]}>
+            <Text style={[styles.placeAttribution, { color: palette.textSecondary }]}>
+              {provider.placeSource?.attribution ||
+                (provider.placeSource?.source === 'osm'
+                  ? 'Contains data from OpenStreetMap contributors. Licensed under the Open Database Licence (ODbL).'
+                  : 'Contains data from the Food Standards Agency. © Crown copyright. Licensed under the Open Government Licence.')}
+            </Text>
+          </View>
+        ) : null}
       </ScrollView>
       {!isPlace && !bookingOpen && (
         <View
@@ -1106,7 +1132,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
                 multiline
                 value={reportDetails}
                 onChangeText={setReportDetails}
-                placeholder="Incorrect phone, address, business closed..."
+                placeholder="Add any details that will help us review this request..."
                 placeholderTextColor={palette.muted}
               />
               <GlowButton
@@ -1507,6 +1533,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
+  placeSource: {
+    width: '100%',
+    maxWidth: 840,
+    alignSelf: 'center',
+    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 6,
+  },
+  placeRatingBadge: {
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 9,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  placeRatingBadgeText: { fontSize: 14, fontWeight: '800' },
+  placeAttribution: { fontSize: 11, lineHeight: 16 },
   reportListingButton: {
     minHeight: 48,
     alignSelf: 'flex-start',
@@ -1603,3 +1654,8 @@ const styles = StyleSheet.create({
   error: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorTitle: { fontSize: 20, fontWeight: '800', marginBottom: 16 },
 });
+
+
+
+
+

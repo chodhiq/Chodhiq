@@ -31,10 +31,21 @@ export async function getDeviceLocation(locationApi) {
     POSITION_TIMEOUT_MS,
     'Your location is taking too long to load. Check that device location is on and try again.',
   );
-  const coordinates = {
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude,
-  };
+  const latitude = Number(position.coords.latitude);
+  const longitude = Number(position.coords.longitude);
+  if (
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude) ||
+    latitude < 49.8 ||
+    latitude > 60.9 ||
+    longitude < -8.7 ||
+    longitude > 1.8
+  ) {
+    const error = new Error('Your device location is unavailable or outside the UK.');
+    error.code = 'LOCATION_OUTSIDE_UK';
+    throw error;
+  }
+  const coordinates = { latitude, longitude };
 
   try {
     const places = await withTimeout(

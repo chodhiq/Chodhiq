@@ -358,7 +358,15 @@ export default function ExploreScreen({ navigation, route }) {
       <FiltersModal
         visible={filtersVisible}
         palette={palette}
-        resultCount={resultCount}
+        providers={providers}
+        categories={categories}
+        deferredQuery={deferredQuery}
+        selectedCategory={selectedCategory}
+        appliedPrice={price === 'Any' ? null : price.length}
+        appliedRating={rating === 'Any' ? null : rating}
+        appliedService={service === 'Any service' ? null : service}
+        draftCity={selectedCity === 'Any city' ? null : selectedCity}
+        draftPostcode={postcodeQuery.trim()}
         sortBy={sortBy}
         setSortBy={setSortBy}
         price={price}
@@ -397,7 +405,18 @@ function FiltersModal(props) {
   const {
     visible,
     palette,
-    resultCount,
+    providers,
+    categories,
+    deferredQuery,
+    selectedCategory,
+    appliedPrice,
+    appliedRating,
+    appliedService,
+    draftCity,
+    draftPostcode,
+    openNow,
+    nearbyOnly,
+    location,
     sortBy,
     setSortBy,
     price,
@@ -409,9 +428,7 @@ function FiltersModal(props) {
     safeAreaBottom,
     service,
     setService,
-    openNow,
     setOpenNow,
-    nearbyOnly,
     setNearbyOnly,
     selectedCity,
     setSelectedCity,
@@ -422,6 +439,25 @@ function FiltersModal(props) {
     onApply,
   } = props;
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const modalResultCount = useMemo(() => {
+    const selected = categories.find((category) => category.id === selectedCategory);
+    const normalize = (value) => String(value || '').trim().toLowerCase();
+    const minimumRating = appliedRating ? Number(String(appliedRating).replace('+', '')) : 0;
+    return providers.filter((provider) => {
+      const areas = [provider.baseCity, ...(provider.serviceAreas || [])].map(normalize);
+      const open = isProviderOpenNow(provider.openingHours);
+      return (
+        matchesProviderSearch(provider, deferredQuery) &&
+        providerMatchesCategory(provider, selected) &&
+        providerMatchesService(provider, appliedService) &&
+        (!appliedPrice || provider.priceRange === appliedPrice) &&
+        Number(provider.rating || 0) >= minimumRating &&
+        providerMatchesCityAndPostcode(provider, { city: draftCity, postcode: draftPostcode }) &&
+        (!openNow || open === true) &&
+        (!nearbyOnly || areas.some((area) => area === normalize(location) || area.includes(normalize(location)) || normalize(location).includes(area)))
+      );
+    }).length;
+  }, [providers, categories, deferredQuery, selectedCategory, appliedPrice, appliedRating, appliedService, draftCity, draftPostcode, openNow, nearbyOnly, location]);
   const filterScrollRef = useRef(null);
   const { suggestions: postcodeSuggestions, loading: postcodeSuggestionsLoading } =
     useUkPostcodeSuggestions(postcodeQuery);
@@ -497,7 +533,7 @@ function FiltersModal(props) {
               keyboardDismissMode="on-drag"
               contentContainerStyle={[styles.sheetBody, { paddingBottom: safeAreaBottom + 84 }]}
             >
-              {resultCount > 0 ? (
+              {modalResultCount > 0 ? (
                 <>
                   <Text style={[styles.filterHeading, { color: palette.text }]}>Sort by</Text>
                   {choices(
@@ -584,7 +620,7 @@ function FiltersModal(props) {
               )}
             </ScrollView>
             <GlowButton
-              label={`Show ${resultCount} ${resultCount === 1 ? 'result' : 'results'}`}
+              label={`Show ${modalResultCount} ${modalResultCount === 1 ? 'result' : 'results'}`}
               variant="primary"
               size="lg"
               stretch
@@ -651,8 +687,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 25,
-    marginBottom: 13,
+    marginTop: 8,
+    marginBottom: 8,
   },
   resultsText: { fontSize: 14, fontWeight: '800' },
   mapView: { flexDirection: 'row', alignItems: 'center', gap: 5 },

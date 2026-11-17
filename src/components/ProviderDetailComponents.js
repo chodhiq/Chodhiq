@@ -16,8 +16,9 @@ import {
   Phone,
   Share2,
   Star,
+  Store,
 } from 'lucide-react-native';
-import { categoryFallback, imageSource, isPlaceholderImage } from '../data/assetCatalog';
+import { categoryIconName, imageSource, isPlaceholderImage } from '../data/assetCatalog';
 import { GlowListItem, GlowMapInfoCard, GlowProfileCard } from '../../components/ui/GlowSurfaces';
 import GlowIconButton from '../../components/ui/GlowIconButton';
 import CategoryChip from '../../components/CategoryChip';
@@ -29,10 +30,8 @@ import ChodhiQMap from './ChodhiQMap';
 import { summarizeReviews } from '../lib/reviewStats';
 
 export function ProviderHero({ provider, saved, onBack, onShare, onSave, scrollOffset }) {
-  const source = imageSource(
-    provider.image,
-    categoryFallback(provider.category, provider.categoryId),
-  );
+  const source = imageSource(provider.image);
+  const PlaceholderIcon = require('lucide-react-native')[categoryIconName(provider.category, provider.categoryId)] || Store;
   const effectsLevel = useEffectsLevel();
   const imageStyle = useAnimatedStyle(() => ({
     transform: [
@@ -49,12 +48,18 @@ export function ProviderHero({ provider, saved, onBack, onShare, onSave, scrollO
   }));
   return (
     <View style={s.hero}>
-      <Animated.Image
-        pointerEvents="none"
-        source={source}
-        resizeMode="cover"
-        style={[s.heroImage, imageStyle]}
-      />
+      {source ? (
+        <Animated.Image
+          pointerEvents="none"
+          source={source}
+          resizeMode="cover"
+          style={[s.heroImage, imageStyle]}
+        />
+      ) : (
+        <View pointerEvents="none" style={[s.heroImage, s.heroPlaceholder]}>
+          <PlaceholderIcon size={72} color={theme.colors.primary} />
+        </View>
+      )}
       <LinearGradient
         pointerEvents="none"
         colors={['transparent', `${theme.colors.primary}14`, theme.colors.background]}
@@ -140,7 +145,7 @@ export function ProviderIdentity({ provider, reviews }) {
               <Text style={s.newBadgeText}>New</Text>
             </View>
           )}
-          {provider.isDataVerified && (
+          {provider.isDataVerified && provider.dataVerificationStatus !== 'unchecked' && (
             <View style={s.dataCheckedBadge}>
               <BadgeCheck size={13} color={theme.colors.primary} />
               <Text style={s.dataCheckedText}>Data checked</Text>
@@ -487,6 +492,11 @@ const s = StyleSheet.create({
     left: 0,
     width: '100%',
     height: '120%',
+  },
+  heroPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primaryDeep,
   },
   heroShade: {
     ...StyleSheet.absoluteFillObject,

@@ -15,13 +15,14 @@ export function mapPoints(providers = []) {
     }));
 }
 
-export function openStreetMapHtml(providers, location, mapType = 'standard', selectedId = null) {
+export function openStreetMapHtml(providers, location, mapType = 'standard', selectedId = null, fitProviders = true) {
   const points = mapPoints(providers);
   const serialize = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
   const center =
     location && Number.isFinite(location.latitude) && Number.isFinite(location.longitude)
       ? [location.latitude, location.longitude]
-      : [53.1, -1.65];
+      : [52.6369, -1.1398];
+  const zoom = location?.zoom || 12;
   return `<!doctype html><html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -30,7 +31,7 @@ export function openStreetMapHtml(providers, location, mapType = 'standard', sel
 html,body,#map{height:100%;margin:0;background:#101817}
 #status{z-index:1000;position:absolute;top:46%;left:10%;right:10%;text-align:center;font:15px system-ui;color:#285a45}
 .leaflet-control-zoom{display:none!important}
-.leaflet-tile{filter:${mapType === 'standard' ? 'brightness(.62) invert(1) hue-rotate(180deg) saturate(.55) brightness(.78)' : 'none'}}
+.leaflet-tile{filter:${mapType === 'standard' ? 'none' : 'none'}}
 .leaflet-control-attribution{font-size:9px!important}
 .cq-marker{background:none;border:0}
 </style>
@@ -42,7 +43,7 @@ html,body,#map{height:100%;margin:0;background:#101817}
 <script>
   function send(value){if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(JSON.stringify(value));else window.parent.postMessage(value,'*');}
   if(typeof L==='undefined'){document.getElementById('status').textContent='Map could not load. Check your connection and retry.';send({type:'error'});}else{
-    const points=${serialize(points)};const map=L.map('map',{zoomControl:true}).setView(${serialize(center)},${location ? 12 : 6});
+    const points=${serialize(points)};const map=L.map('map',{zoomControl:true}).setView(${serialize(center)},${zoom});
     const satellite=${mapType === 'satellite'};
     const tileUrl=satellite ? 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
     const credit=satellite ? 'Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community' : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
@@ -81,7 +82,7 @@ html,body,#map{height:100%;margin:0;background:#101817}
       marker.on('click',function(){window.setSelectedProvider(point.id);send({type:'select',id:point.id});});
     });
     window.setSelectedProvider(${serialize(selectedId == null ? '' : String(selectedId))});
-    if(points.length && !${Boolean(location)})map.fitBounds(points.map(function(point){return [point.latitude,point.longitude];}),{paddingTopLeft:[36,160],paddingBottomRight:[36,190],maxZoom:14});
+    if(points.length && !${Boolean(location)} && ${fitProviders})map.fitBounds(points.map(function(point){return [point.latitude,point.longitude];}),{paddingTopLeft:[36,160],paddingBottomRight:[36,190],maxZoom:14});
     map.on('moveend',function(){const c=map.getCenter(),b=map.getBounds();send({type:'region',region:{latitude:c.lat,longitude:c.lng,latitudeDelta:b.getNorth()-b.getSouth(),longitudeDelta:b.getEast()-b.getWest()}});});
     document.getElementById('status').remove();send({type:'ready'});
   }</script></body></html>`;

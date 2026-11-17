@@ -2,11 +2,11 @@ import { MotionTouchable as TouchableOpacity } from './Motion';
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import Text from './AppText';
-import { Heart, Star, MapPin, BadgeCheck, Crown } from 'lucide-react-native';
+import { Heart, Star, BadgeCheck, Crown } from 'lucide-react-native';
 import { colors, radius, shadows, spacing, typography } from '../theme/theme';
 import { PressableScale } from './Motion';
 import { useChodhiQTheme } from '../context/ThemeContext';
-import { categoryFallback, imageSource } from '../data/assetCatalog';
+import { categoryIcon, categoryIconComponent, imageSource } from '../data/assetCatalog';
 import StatusBadge from './StatusBadge';
 import { features } from '../config/features';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -26,6 +26,7 @@ const deriveStatus = (provider) => {
 // Horizontal card style (used on Home screen)
 export function ProviderCardCompact({ provider, onPress, onSave, saved, index = 0 }) {
   const { palette } = useChodhiQTheme();
+  const PlaceholderIcon = categoryIconComponent(categoryIcon(provider.category, provider.categoryId));
   const entrance =
     useEffectsLevel() === 'full'
       ? FadeInDown.delay(Math.min(index, 8) * 36).duration(230)
@@ -45,22 +46,27 @@ export function ProviderCardCompact({ provider, onPress, onSave, saved, index = 
             onPress={onPress}
           >
             <View style={styles.compactMedia}>
-              <Image
-                resizeMethod="resize"
-                source={imageSource(
-                  provider.image,
-                  categoryFallback(provider.category, provider.categoryId),
-                )}
-                style={styles.compactImage}
-                resizeMode="cover"
-              />
+              {imageSource(provider.image) ? (
+                <Image
+                  resizeMethod="resize"
+                  source={imageSource(provider.image)}
+                  style={styles.compactImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.compactImage, styles.imagePlaceholder, { backgroundColor: palette.primaryDeep, borderColor: palette.border }]}>
+                  <PlaceholderIcon size={40} color={palette.primary} />
+                </View>
+              )}
               {provider.isVerified && (
                 <View style={styles.verifiedBadge}>
                   <BadgeCheck size={12} color={colors.primary} />
                   <Text style={styles.verifiedText}>Verified</Text>
                 </View>
               )}
-              {!provider.isVerified && provider.isDataVerified && (
+              {!provider.isVerified &&
+                provider.isDataVerified &&
+                provider.dataVerificationStatus !== 'unchecked' && (
                 <View style={styles.dataCheckedBadge}>
                   <BadgeCheck size={12} color="#08724F" />
                   <Text style={styles.dataCheckedText}>Data checked</Text>
@@ -152,6 +158,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   compactImage: { width: '100%', height: 118, borderRadius: 13, backgroundColor: colors.border },
+  imagePlaceholder: { alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   imageFallback: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -250,3 +257,4 @@ const styles = StyleSheet.create({
   addressText: { fontSize: 12, color: colors.textMuted, flexShrink: 1 },
   heartButtonRow: { padding: spacing.sm, alignSelf: 'flex-start' },
 });
+

@@ -316,6 +316,17 @@ function GlobalSearch() {
 function AdminAlerts({ counts }: { counts: Record<string, number | null> }) {
   const root = useRef<HTMLDetailsElement>(null);
   const [expanded, setExpanded] = useState(false);
+  const seenStorageKey = 'chodhiq-admin-alerts-seen-v1';
+  const [seen, setSeen] = useState<Record<string, number>>({});
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(seenStorageKey);
+      if (raw) {
+        const stored = JSON.parse(raw) as unknown;
+        if (stored && typeof stored === 'object' && !Array.isArray(stored)) setSeen(stored as Record<string, number>);
+      }
+    } catch { setSeen({}); }
+  }, []);
   useEffect(() => {
     const close = (event: globalThis.KeyboardEvent) => { if (event.key === 'Escape') { root.current?.removeAttribute('open'); setExpanded(false); } };
     const outside = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) { root.current?.removeAttribute('open'); setExpanded(false); } };
@@ -323,14 +334,18 @@ function AdminAlerts({ counts }: { counts: Record<string, number | null> }) {
     document.addEventListener('pointerdown', outside);
     return () => { document.removeEventListener('keydown', close); document.removeEventListener('pointerdown', outside); };
   }, []);
-  const total = ['applications', 'communityReports', 'providerReports', 'leads']
-    .reduce((sum, key) => sum + (counts[key] ?? 0), 0);
   const entries = [
     ['/applications?status=pending', 'Pending applications', counts.applications],
     ['/moderation/community?status=open', 'Community reports', counts.communityReports], ['/moderation/providers?status=open', 'Provider reports', counts.providerReports],
     ['/demand?filter=opened', 'New leads', counts.leads],
   ] as const;
-  return <details className="admin-alerts" ref={root} onToggle={event => setExpanded(event.currentTarget.open)}><summary aria-label={`Admin alerts, ${total} waiting`} aria-haspopup="true" aria-expanded={expanded}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 9a6 6 0 0 0-12 0c0 7-1.5 8-3 9h18c-1.5-1-3-2-3-9M9 21h6" /><path d="M10 4a2 2 0 0 1 4 0" /></svg><NavBadge value={total} /></summary><div className="admin-alerts-menu" role="menu"><b>Waiting for review</b>{entries.map(([href, label, value]) => <Link key={href} role="menuitem" href={href} onClick={() => root.current?.removeAttribute('open')}><span>{label}</span><NavBadge value={value} /></Link>)}</div></details>;
+  const markSeen = () => {
+    const snapshot = Object.fromEntries(entries.map(([href, , value]) => [href, value ?? 0]));
+    setSeen(snapshot);
+    try { window.localStorage.setItem(seenStorageKey, JSON.stringify(snapshot)); } catch { /* Storage may be unavailable. */ }
+  };
+  const unseen = entries.reduce((sum, [href, , value]) => sum + Math.max(0, (value ?? 0) - (seen[href] ?? 0)), 0);
+  return <details className="admin-alerts" ref={root} onToggle={event => { setExpanded(event.currentTarget.open); if (event.currentTarget.open) markSeen(); }}><summary aria-label={`Admin alerts, ${unseen} new`} aria-haspopup="true" aria-expanded={expanded}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 9a6 6 0 0 0-12 0c0 7-1.5 8-3 9h18c-1.5-1-3-2-3-9M9 21h6" /><path d="M10 4a2 2 0 0 1 4 0" /></svg><NavBadge value={unseen} /></summary><div className="admin-alerts-menu" role="menu"><b>Waiting for review</b>{entries.map(([href, label, value]) => <Link key={href} role="menuitem" href={href} onClick={() => root.current?.removeAttribute('open')}><span>{label}</span><NavBadge value={value} /></Link>)}</div></details>;
 }
 
 function ConfirmationModal() {
@@ -503,6 +518,7 @@ export function AdminFrame({ children }: { children: ReactNode }) {
   const { counts: alertCounts, refresh: refreshAlerts } = useCounts(ALERT_COUNTS);
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [routeAnimationKey, setRouteAnimationKey] = useState(path);
   const [title, setTitle] = useState('Dashboard');
   const [progress, setProgress] = useState(false);
   const progressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -556,7 +572,13 @@ export function AdminFrame({ children }: { children: ReactNode }) {
       if (progressTimer.current) clearTimeout(progressTimer.current);
     };
   }, [path]);
+  useEffect(() => {
+    if (progressTimer.current) clearTimeout(progressTimer.current);
+    progressTimer.current = null;
+    setProgress(false);
+  }, [path]);
   useEffect(() => setTitle(routeTitles[path] || (path.startsWith('/providers/') ? 'Provider dossier' : path.startsWith('/community/authors/') ? 'Author profile' : 'Admin operations')), [path]);
+  useEffect(() => setRouteAnimationKey(path), [path]);
   useEffect(() => {
     const timer = window.setTimeout(() => {
       document.querySelector<HTMLElement>('.page-identity h1')?.focus({ preventScroll: true });
@@ -691,7 +713,7 @@ export function AdminFrame({ children }: { children: ReactNode }) {
             </div>
           </details>
         </header>
-          <div className="route-view" key={path} data-route={path}>
+          <div className="route-view" key={routeAnimationKey} data-route={path}>
             {authorProfileDenied || (currentPermission && !can(admin.adminLevel, currentPermission)) ? <section className="panel" role="alert"><h2>Administrator role required</h2><p>Your admin level does not include this page.</p></section> : children}
           </div>
       </section>

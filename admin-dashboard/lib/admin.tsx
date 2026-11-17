@@ -105,40 +105,41 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   useEffect(() => {
     let active = true;
-    void initializeSupabase().then((ready) => {
-      if (!active) return;
-      setConfigured(ready);
-      setConfigurationReady(true);
-      if (!ready) setLoading(false);
+    const restoreTheme = Promise.resolve().then(() => {
+      try { return window.localStorage.getItem('chodhiq-dashboard-theme'); } catch { return null; }
     });
+    void (async () => {
+      try {
+        const [ready, theme] = await Promise.all([initializeSupabase(), restoreTheme]);
+        if (!active) return;
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+        }
+        setConfigured(ready);
+        setConfigurationReady(true);
+        if (!ready) { setLoading(false); return; }
+        const { data, error } = await withAuthTimeout(supabase.auth.getSession());
+        if (!active) return;
+        if (error) throw error;
+        setSession(data.session);
+        setSessionError('');
+      } catch {
+        if (!active) return;
+        setConfigured(false);
+        setConfigurationReady(true);
+        setSessionError('Your session could not be validated. Check your connection and reload to retry.');
+        setLoading(false);
+      }
+    })().catch(() => undefined);
     return () => { active = false; };
   }, []);
   useEffect(() => {
     if (!configurationReady || !configured) return;
 
     let active = true;
-    let receivedAuthEvent = false;
-    void withAuthTimeout(supabase.auth.getSession())
-      .then(({ data, error }) => {
-        if (!active || receivedAuthEvent) return;
-        if (error) throw error;
-        setSession(data.session);
-        setSessionError('');
-      })
-      .catch(() => {
-        if (!active || receivedAuthEvent) return;
-        setSessionError(
-          'Your session could not be validated. Check your connection and reload to retry.',
-        );
-      })
-      .finally(() => {
-        if (!active) return;
-        setLoading(false);
-      });
-
     const { data } = supabase.auth.onAuthStateChange((_event, next) => {
       if (!active) return;
-      receivedAuthEvent = true;
       setSession(next);
       setSessionError('');
       setLoading(false);

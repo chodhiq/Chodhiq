@@ -35,7 +35,8 @@ export default function AdminLink({ onClick, ...props }: AdminLinkProps) {
       event.ctrlKey ||
       event.shiftKey ||
       event.altKey ||
-      props.target && props.target !== '_self' ||
+      props.target === '_blank' ||
+      (props.target !== undefined && props.target !== '_self') ||
       props.download
     ) return;
 
@@ -43,45 +44,7 @@ export default function AdminLink({ onClick, ...props }: AdminLinkProps) {
     if (target.origin !== window.location.origin || target.href === window.location.href) return;
     clearPendingNavigation();
     const from = window.location.href;
-    const documentWithTransitions = document as Document & {
-      startViewTransition?: (callback: () => void | Promise<void>) => { finished: Promise<void> };
-    };
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const supportsViewTransitions = typeof documentWithTransitions.startViewTransition === 'function';
-    const skipReason = reducedMotion ? 'prefers-reduced-motion' : !supportsViewTransitions ? 'View Transitions unsupported' : null;
-    if (!skipReason && documentWithTransitions.startViewTransition) {
-      event.preventDefault();
-      const root = document.documentElement;
-      root.classList.add('admin-transition-active');
-      window.dispatchEvent(new CustomEvent('admin:navigation-start'));
-      poll.current = setInterval(() => {
-        if (window.location.href !== from) {
-          if (poll.current) clearInterval(poll.current);
-          poll.current = null;
-        }
-      }, 100);
-      fallback.current = setTimeout(() => {
-        clearPendingNavigation();
-        if (window.location.href === from) window.location.assign(target.href);
-      }, 5000);
-      const transition = documentWithTransitions.startViewTransition(async () => {
-        router.push(`${target.pathname}${target.search}${target.hash}`);
-        const route = target.pathname;
-        for (let attempt = 0; attempt < 40; attempt += 1) {
-          await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-          if (document.querySelector('.route-view')?.getAttribute('data-route') === route) break;
-        }
-      });
-      void transition.finished.finally(() => {
-        root.classList.remove('admin-transition-active');
-        clearPendingNavigation();
-        window.dispatchEvent(new CustomEvent('admin:navigation-cancel'));
-      });
-      return;
-    }
-    if (process.env.NODE_ENV === 'development') {
-      console.info(`[admin navigation] View Transition skipped: ${skipReason}`);
-    }
+    event.preventDefault();
     window.dispatchEvent(new CustomEvent('admin:navigation-start'));
     poll.current = setInterval(() => {
       if (window.location.href !== from) {
@@ -94,6 +57,11 @@ export default function AdminLink({ onClick, ...props }: AdminLinkProps) {
       if (window.location.href === from) window.location.assign(target.href);
       else window.dispatchEvent(new CustomEvent('admin:navigation-cancel'));
     }, 5000);
+    try {
+      router.push(`${target.pathname}${target.search}${target.hash}`);
+    } catch {
+      window.location.assign(target.href);
+    }
   }
 
   return <Link {...props} onClick={handleClick} prefetch={props.prefetch ?? true} />;

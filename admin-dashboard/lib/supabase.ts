@@ -8,9 +8,7 @@ const key = process.env.NODE_ENV === "production" ? "" : process.env.NEXT_PUBLIC
 function validSupabaseUrl(value: string) {
   try {
     const parsed = new URL(value);
-    const hosted = parsed.protocol === "https:" && parsed.hostname.endsWith(".supabase.co");
-    const local = process.env.NODE_ENV !== "production" && parsed.protocol === "http:" && ["127.0.0.1", "localhost"].includes(parsed.hostname);
-    return hosted || local;
+    return parsed.protocol === "https:" && /^[a-z0-9]+\.supabase\.co$/i.test(parsed.hostname) && parsed.port === "" && parsed.username === "" && parsed.password === "" && parsed.pathname === "/" && parsed.search === "" && parsed.hash === "";
   } catch { return false; }
 }
 function validPublicKey(value: string) {
@@ -30,6 +28,11 @@ export let supabase = createSupabaseClient(
 
 let runtimeConfiguration: Promise<boolean> | undefined;
 
+function applyPublicConfig(config: { url: string; anonKey: string }) {
+  supabase = createSupabaseClient(config.url, config.anonKey);
+  isSupabaseConfigured = true;
+}
+
 /** Load the public credentials from the Worker at runtime when the build has no production values. */
 export function initializeSupabase(): Promise<boolean> {
   if (isSupabaseConfigured) return Promise.resolve(true);
@@ -44,8 +47,7 @@ export function initializeSupabase(): Promise<boolean> {
         !validSupabaseUrl(config.url) ||
         !validPublicKey(config.anonKey)
       ) return false;
-      supabase = createSupabaseClient(config.url, config.anonKey);
-      isSupabaseConfigured = true;
+      applyPublicConfig({ url: config.url, anonKey: config.anonKey });
       return true;
     })
     .catch(() => false);

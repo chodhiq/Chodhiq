@@ -751,3 +751,169 @@ a:focus-visible {
   .hero-visual { min-height: 17rem; }
   .hero-bottom { letter-spacing: .03em; }
 }
+
+/* Design refresh: clearer editorial rhythm, softer surfaces, and sharper actions. */
+.marketing-page {
+  --ink: #10251b;
+  --muted: #64766a;
+  --brand: #247a49;
+  --brand-deep: #145a35;
+  --acid: #c8ee83;
+  --canvas: #f7f8f2;
+  background: var(--canvas);
+}
+.marketing-header {
+  min-height: 5.6rem;
+  padding-inline: 1.25rem;
+}
+.marketing-header .site-nav a {
+  padding: .58rem .92rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+.marketing-header .site-nav a:hover {
+  border-color: rgb(255 255 255 / 12%);
+  background: rgb(255 255 255 / 8%);
+}
+.header-cta {
+  border-color: rgb(200 238 131 / 55%);
+  color: #d7f3a7;
+}
+.hero-marketing {
+  background: #071b16;
+}
+.hero-marketing::before {
+  background: linear-gradient(90deg, rgb(4 19 15 / 78%) 0%, rgb(4 19 15 / 66%) 39%, rgb(4 19 15 / 25%) 72%, rgb(4 19 15 / 16%) 100%), linear-gradient(0deg, rgb(4 19 15 / 45%), transparent 48%);
+}
+.hero-inner {
+  min-height: 43rem;
+  padding-top: 8rem;
+  padding-bottom: 3rem;
+}
+.marketing-page .hero-copy h1 {
+  max-width: 11ch;
+  font-size: clamp(3.7rem, 6.2vw, 5.9rem);
+  line-height: .96;
+}
+.hero-lede {
+  max-width: 31rem;
+  color: #cfdbd1;
+  font-size: 1.02rem;
+}
+.hero-actions { gap: .75rem 1.3rem; }
+.marketing-page .hero-button {
+  min-height: 3.35rem;
+  border: 1px solid var(--acid);
+  border-radius: .45rem;
+  font-weight: 750;
+}
+.hero-secondary { padding-inline: .25rem; }
+.hero-note { margin-top: 2.7rem; }
+.hero-bottom { padding-block: 1.1rem 1.25rem; }
+.section-wrap { padding-block: 6.8rem; }
+.intro-section {
+  grid-template-columns: .78fr 2.2fr .7fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+.intro-label { color: #718174; }
+.section-index { color: #4c8b55; }
+.intro-content h2, .section-heading-wide h2, .trust-copy h2, .faq-intro h2 {
+  letter-spacing: -.07em;
+}
+.intro-text { max-width: 42rem; color: #647367; }
+.intro-aside {
+  padding: 1.3rem 1.4rem;
+  border-left: 1px solid #d4dfcd;
+}
+.feature-section {
+  background: #edf2e9;
+}
+.feature-section .section-wrap { padding-block: 5.8rem 6.2rem; }
+.section-heading-wide { margin-top: 2.3rem; }
+.feature-card {
+  padding: .8rem .8rem 1.55rem;
+  border-color: #dce5d7;
+  border-radius: 1rem;
+  background: #fbfcf8;
+  box-shadow: 0 8px 28px rgb(25 56 31 / 3%);
+}
+.feature-art {
+  height: 14rem;
+  margin: 0 0 1.35rem;
+  border-radius: .72rem;
+}
+.feature-number, .journey-kicker { letter-spacing: .16em; }
+.feature-card h3 { margin-top: .8rem; font-size: 1.18rem; }
+.feature-card > p { padding-inline: .12rem; }
+.trust-section { background: #10271e; }
+.trust-section .section-wrap { padding-block: 6.4rem; }
+.trust-points article { padding-block: 1.35rem; }
+.journey-section { padding-block: 6rem; }
+.journey-grid { gap: 1.2rem; margin-top: 2rem; }
+.journey-card {
+  min-height: 22rem;
+  padding: 2.15rem;
+  border-radius: 1rem;
+}
+.journey-customer { background: linear-gradient(145deg, #19442e, #102d20); }
+.journey-provider { background: linear-gradient(145deg, #e3f0d0, #d5e8bd); }
+.journey-card h2 { font-size: clamp(1.9rem, 3vw, 2.55rem); }
+.journey-points { position: relative; z-index: 1; max-width: 38rem; padding-left: 1.1rem; }
+.journey-points li { padding: .16rem 0 .16rem .12rem; font-size: .77rem; line-height: 1.7; opacity: .86; }
+.journey-points li::marker { color: #c5eb81; }
+.journey-provider .journey-points li::marker { color: #4e8a4c; }
+.journey-beta-note {
+  padding: .75rem .9rem;
+  border: 1px solid rgb(39 98 53 / 13%);
+  border-radius: .55rem;
+  background: rgb(255 255 255 / 32%);
+}
+.faq-section { background: #f1f4ed; }
+.faq-section .section-wrap { padding-block: 6.2rem; }
+.faq-list details {
+  border-bottom-color: #d9e2d5;
+}
+.faq-list details:first-child { border-top-color: #d9e2d5; }
+.faq-list summary { min-height: 4.3rem; }
+.closing-section {
+  min-height: 31rem;
+  background: radial-gradient(ellipse at 50% 110%, rgb(54 117 61 / 35%), transparent 45%), #0b2018;
+}
+.closing-content h2 { letter-spacing: -.075em; }
+.closing-signature { color: #84978a; }
+.marketing-footer {
+  padding-top: 4rem;
+  background: #071b16;
+}
+.footer-top { padding-bottom: 3.3rem; }
+.footer-column > span { color: #9cae9f; }
+.footer-bottom { padding-top: 1.1rem; }
+@media (max-width: 900px) {
+  .intro-section { grid-template-columns: .7fr 2fr; }
+  .intro-aside { display: none; }
+  .journey-card { padding: 1.7rem; }
+}
+@media (max-width: 680px) {
+  .marketing-header { padding: .7rem 1rem .65rem; }
+  .marketing-header .site-nav a { border-radius: .55rem; }
+  .hero-inner { padding-top: 2.3rem; }
+  .hero-marketing::before { background: linear-gradient(90deg, rgb(4 19 15 / 78%), rgb(4 19 15 / 49%)), linear-gradient(0deg, rgb(4 19 15 / 30%), transparent 60%); }
+  .marketing-page .hero-copy h1 { font-size: clamp(2.8rem, 11.8vw, 4rem); }
+  .hero-note { margin-top: 1.25rem; }
+  .section-wrap { padding-block: 3.6rem; }
+  .intro-content h2, .section-heading-wide h2 { letter-spacing: -.065em; }
+  .feature-card { padding: .75rem .75rem 1.35rem; border-radius: .85rem; }
+  .journey-section { padding-block: 3.6rem; }
+  .journey-grid { gap: .8rem; }
+  .journey-card { min-height: auto; padding: 1.4rem; border-radius: .85rem; }
+  .journey-card h2 { font-size: 1.9rem; }
+  .journey-points li { font-size: .8rem; }
+  .trust-section .section-wrap, .faq-section .section-wrap { padding-block: 3.6rem; }
+  .closing-section { min-height: 26rem; }
+  .marketing-footer { padding-top: 2.8rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-map-image { animation: none; }
+}

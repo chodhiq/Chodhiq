@@ -18,9 +18,10 @@
   --warning: var(--amber);
   --danger: var(--red);
   --focus-ring: color-mix(in srgb, var(--teal) 35%, transparent);
-  --motion-fast: 140ms;
-  --motion-base: 220ms;
-  --motion-slow: 360ms;
+  --motion-scale: 1;
+  --motion-fast: calc(140ms * var(--motion-scale));
+  --motion-base: calc(220ms * var(--motion-scale));
+  --motion-slow: calc(360ms * var(--motion-scale));
   --motion-ease: cubic-bezier(.2, .8, .2, 1);
 }
 
@@ -48,19 +49,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* The pathname key remounts this wrapper once per route change. No opacity
-     is left behind after the short animation completes. */
-  .route-view { animation: admin-route-in var(--motion-fast) var(--motion-ease) both; }
-  .metrics > *, .dashboard-stat { animation: admin-card-in var(--motion-base) var(--motion-ease) both; }
-  .metrics > :nth-child(2), .dashboard-stat:nth-child(2) { animation-delay: 40ms; }
-  .metrics > :nth-child(3), .dashboard-stat:nth-child(3) { animation-delay: 80ms; }
-  .metrics > :nth-child(4), .dashboard-stat:nth-child(4) { animation-delay: 120ms; }
-  .metrics > :nth-child(5), .dashboard-stat:nth-child(5) { animation-delay: 160ms; }
-  .metrics > :nth-child(6), .dashboard-stat:nth-child(6) { animation-delay: 200ms; }
-  .metrics > :nth-child(7), .dashboard-stat:nth-child(7) { animation-delay: 240ms; }
-  .metrics > :nth-child(8), .dashboard-stat:nth-child(8) { animation-delay: 280ms; }
-  .metrics > :nth-child(n+9), .dashboard-stat:nth-child(n+9) { animation: none; }
-
   .panel, .metric, .table, .dashboard-stat, .quick a, .quick button {
     transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease),
       background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
@@ -79,13 +67,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .first-load-rows > tr:nth-child(-n+8), .first-load-rows > article:nth-of-type(-n+8), .first-load-rows > button:nth-child(-n+8) {
     animation: admin-row-in var(--motion-fast) var(--motion-ease) both;
   }
-  .first-load-rows > :nth-child(2) { animation-delay: 40ms; }
-  .first-load-rows > :nth-child(3) { animation-delay: 80ms; }
-  .first-load-rows > :nth-child(4) { animation-delay: 120ms; }
-  .first-load-rows > :nth-child(5) { animation-delay: 160ms; }
-  .first-load-rows > :nth-child(6) { animation-delay: 200ms; }
-  .first-load-rows > :nth-child(7) { animation-delay: 240ms; }
-  .first-load-rows > :nth-child(8) { animation-delay: 280ms; }
   .filter-list-enter { animation: admin-row-in var(--motion-fast) var(--motion-ease) both; }
 
   .account-menu[open] > .account-menu-panel, .admin-alerts[open] > .admin-alerts-menu {
@@ -109,6 +90,22 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   }
   .skeleton > i:nth-child(n+1) { animation-fill-mode: both; }
 }
+
+.page-identity h1:focus, .page-identity h1:focus-visible { outline: none; }
+.count-up-value { font-variant-numeric: tabular-nums; }
+.sidebar-scroll nav { position: relative; }
+.nav-active-pill { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: color-mix(in srgb, var(--teal) 20%, transparent); box-shadow: inset 3px 0 0 var(--teal); clip-path: inset(100% 0 0 0 round 8px); }
+.nav-group { position: relative; z-index: 1; }
+.nav-group a { position: relative; overflow: hidden; background: transparent !important; }
+.nav-group a.active { background: transparent !important; box-shadow: none !important; }
+.nav-group a.active i { background: var(--teal) !important; color: var(--on-accent, #fff) !important; }
+.nav-ripple { position: absolute; z-index: 2; width: 24px; height: 24px; border: 1px solid var(--teal); border-radius: 50%; pointer-events: none; }
+.route-view.route-entering .head h2 { will-change: opacity, transform, clip-path; }
+.route-view.route-entering .metrics > *, .route-view.route-entering .panel, .route-view.route-entering .table,
+.route-view.route-entering .quick, .route-view.route-entering .dashboard-welcome,
+.route-view.route-entering .table tbody tr { will-change: opacity, transform; }
+.demand-table table { min-width: 920px; }
+.demand-table th:last-child, .demand-table td:last-child { min-width: 150px; white-space: nowrap; }
 
 @keyframes admin-route-in { from { opacity: .6; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes admin-card-in { from { opacity: .72; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }

@@ -50,6 +50,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: `try{var q=new URLSearchParams(location.search).get('slowmo'),n=Number(q);document.documentElement.style.setProperty('--motion-scale',String(n>=1&&n<=5?n:1))}catch(e){}` }} />
         <script
           dangerouslySetInnerHTML={{
             __html: `try{var t=localStorage.getItem('chodhiq-dashboard-theme');var d=t!=='light';document.documentElement.dataset.theme=d?'dark':'light';document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}`,

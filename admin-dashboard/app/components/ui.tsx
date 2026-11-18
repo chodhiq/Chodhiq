@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { PAGE_SIZE } from "../../lib/admin";
 import { csvSafeValue } from "../../lib/operations";
 import Link from "./admin-link";
+import { CountUpValue } from "../../lib/motion-effects";
 
 export function PageHeader({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: ReactNode }) {
   return <div className="head"><div><span className="page-kicker">{eyebrow}</span><h2>{title}</h2><p>{description}</p></div>{action}</div>;
@@ -56,11 +57,7 @@ export const StatCard = memo(function StatCard({ icon, label, value, href, onCli
   return <Link className={`metric metric-link dashboard-stat stat-${tone}`} href={href} onClick={onClick}><span className="dashboard-stat-top"><i aria-hidden="true">{icon}</i><span>{label}</span><b aria-hidden="true">↗</b></span><strong><CountUp value={value} /></strong><small>Open records <span aria-hidden="true">→</span></small></Link>;
 });
 
-function CountUp({ value }: { value: ReactNode }) {
-  const numeric = typeof value === 'number' || (typeof value === 'string' && /^\d+$/.test(value));
-  if (!numeric) return value;
-  return <><span className="count-up" aria-hidden="true" style={{ '--admin-count-target': Number(value) } as React.CSSProperties} /><span className="sr-only">{value}</span></>;
-}
+function CountUp({ value }: { value: ReactNode }) { return <CountUpValue value={value} />; }
 
 export function Button({ variant = 'primary', className = '', ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'outline' | 'danger' }) {
   const variantClass = variant === 'primary' ? 'primary' : variant;

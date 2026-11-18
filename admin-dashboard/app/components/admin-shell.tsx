@@ -21,6 +21,7 @@ import { Toast } from './ui';
 import { AdminTitleContext } from './admin-page-title';
 import { useCounts, type CountDef } from '../../lib/use-counts';
 import { can, type Permission } from '../../lib/permissions';
+import { motionScale, useMotionScale, useRouteEntrance } from '../../lib/motion-effects';
 
 const monetisationEnabled =
   process.env.NEXT_PUBLIC_ENABLE_MONETISATION?.trim().toLowerCase() === 'true';
@@ -514,6 +515,12 @@ export function AdminGate({ children }: { children: ReactNode }) {
 }
 
 export function AdminFrame({ children }: { children: ReactNode }) {
+  useMotionScale();
+  const routeEntrance = useRouteEntrance();
+  const navPillRef = useRef<HTMLSpanElement>(null);
+  const navPrevious = useRef<HTMLElement | null>(null);
+  const navAnimations = useRef<Animation[]>([]);
+  const pathname = usePathname();
   const admin = useAdmin();
   const { counts: alertCounts, refresh: refreshAlerts } = useCounts(ALERT_COUNTS);
   const path = usePathname();
@@ -578,6 +585,65 @@ export function AdminFrame({ children }: { children: ReactNode }) {
   }, [path]);
   useEffect(() => setTitle(routeTitles[path] || (path.startsWith('/providers/') ? 'Provider dossier' : path.startsWith('/community/authors/') ? 'Author profile' : 'Admin operations')), [path]);
   useEffect(() => {
+    const list = document.querySelector<HTMLElement>('.sidebar-scroll nav');
+    const pill = navPillRef.current;
+    const current = list?.querySelector<HTMLElement>('.nav-group a[aria-current="page"]') || null;
+    if (!list || !pill || !current) return;
+    navAnimations.current.forEach(animation => animation.cancel());
+    navAnimations.current = [];
+    const listRect = list.getBoundingClientRect();
+    const nextRect = current.getBoundingClientRect();
+    const next = { top: nextRect.top - listRect.top + list.scrollTop, bottom: listRect.bottom - nextRect.bottom - list.scrollTop };
+    const previous = navPrevious.current;
+    if (!previous || !previous.isConnected || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      pill.style.clipPath = `inset(${next.top}px 0 ${next.bottom}px 0 round 8px)`;
+    } else {
+      const oldRect = previous.getBoundingClientRect();
+      const from = { top: oldRect.top - listRect.top + list.scrollTop, bottom: listRect.bottom - oldRect.bottom - list.scrollTop };
+      const downward = nextRect.top > oldRect.top;
+      const near = downward ? 'bottom' : 'top';
+      const first = pill.animate([{ clipPath: `inset(${from.top}px 0 ${from.bottom}px 0 round 8px)` }, { clipPath: `inset(${near === 'top' ? next.top : from.top}px 0 ${near === 'bottom' ? next.bottom : from.bottom}px 0 round 8px)` }], { duration: 360 * motionScale(), easing: 'cubic-bezier(.215,.61,.355,1)', fill: 'forwards' });
+      const second = pill.animate([{ clipPath: `inset(${near === 'top' ? next.top : from.top}px 0 ${near === 'bottom' ? next.bottom : from.bottom}px 0 round 8px)` }, { clipPath: `inset(${next.top}px 0 ${next.bottom}px 0 round 8px)` }], { duration: 550 * motionScale(), easing: 'cubic-bezier(.645,.045,.355,1)', fill: 'forwards' });
+      second.pause();
+      first.onfinish = () => second.play();
+      navAnimations.current = [first, second];
+      second.onfinish = () => { pill.style.clipPath = `inset(${next.top}px 0 ${next.bottom}px 0 round 8px)`; };
+    }
+    navPrevious.current = current;
+  }, [pathname]);
+  useEffect(() => {
+    const list = document.querySelector<HTMLElement>('.sidebar-scroll nav');
+    if (!list) return;
+    const resize = () => {
+      navAnimations.current.forEach(animation => animation.cancel());
+      navAnimations.current = [];
+      const active = list.querySelector<HTMLElement>('.nav-group a[aria-current="page"]');
+      if (!active || !navPillRef.current) return;
+      const lr = list.getBoundingClientRect(), ar = active.getBoundingClientRect();
+      navPillRef.current.style.clipPath = `inset(${ar.top - lr.top + list.scrollTop}px 0 ${lr.bottom - ar.bottom - list.scrollTop}px 0 round 8px)`;
+      navPrevious.current = active;
+    };
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
+  useEffect(() => {
+    const click = (event: globalThis.MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest<HTMLElement>('.nav-group a');
+      if (!link || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const rect = link.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      ripple.className = 'nav-ripple';
+      ripple.style.left = `${event.clientX - rect.left}px`;
+      ripple.style.top = `${event.clientY - rect.top}px`;
+      link.appendChild(ripple);
+      ripple.animate([{ opacity: .45, transform: 'translate(-50%,-50%) scale(0)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1)' }], { duration: 450 * motionScale(), easing: 'ease-out' }).onfinish = () => ripple.remove();
+    };
+    document.addEventListener('click', click, true);
+    return () => document.removeEventListener('click', click, true);
+  }, []);
+  useEffect(() => {
     const timer = window.setTimeout(() => {
       document.querySelector<HTMLElement>('.page-identity h1')?.focus({ preventScroll: true });
     }, 0);
@@ -620,6 +686,7 @@ export function AdminFrame({ children }: { children: ReactNode }) {
         </div>
         <div className="sidebar-scroll">
           <nav aria-label="Admin sections">
+            <span className="nav-active-pill" ref={navPillRef} aria-hidden="true" />
             {navGroups.map((group) => (
               <section className="nav-group" key={group.label}>
                 <h2>{group.label}</h2>
@@ -711,7 +778,7 @@ export function AdminFrame({ children }: { children: ReactNode }) {
             </div>
           </details>
         </header>
-          <div className="route-view" key={path} data-route={path}>
+          <div className={`route-view ${routeEntrance}`} key={path} data-route={path}>
             {authorProfileDenied || (currentPermission && !can(admin.adminLevel, currentPermission)) ? <section className="panel" role="alert"><h2>Administrator role required</h2><p>Your admin level does not include this page.</p></section> : children}
           </div>
       </section>

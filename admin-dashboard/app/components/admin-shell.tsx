@@ -516,14 +516,14 @@ export function AdminGate({ children }: { children: ReactNode }) {
 
 export function AdminFrame({ children }: { children: ReactNode }) {
   useMotionScale();
-  const routeEntrance = useRouteEntrance();
+  const path = usePathname();
+  useRouteEntrance(path);
   const navPillRef = useRef<HTMLSpanElement>(null);
+  const navListRef = useRef<HTMLElement>(null);
   const navPrevious = useRef<HTMLElement | null>(null);
   const navAnimations = useRef<Animation[]>([]);
-  const pathname = usePathname();
   const admin = useAdmin();
   const { counts: alertCounts, refresh: refreshAlerts } = useCounts(ALERT_COUNTS);
-  const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [title, setTitle] = useState('Dashboard');
   const [progress, setProgress] = useState(false);
@@ -585,14 +585,28 @@ export function AdminFrame({ children }: { children: ReactNode }) {
   }, [path]);
   useEffect(() => setTitle(routeTitles[path] || (path.startsWith('/providers/') ? 'Provider dossier' : path.startsWith('/community/authors/') ? 'Author profile' : 'Admin operations')), [path]);
   useEffect(() => {
-    const list = document.querySelector<HTMLElement>('.sidebar-scroll nav');
+    const list = navListRef.current;
     const pill = navPillRef.current;
-    const current = list?.querySelector<HTMLElement>('.nav-group a[aria-current="page"]') || null;
-    if (!list || !pill || !current) return;
-    navAnimations.current.forEach(animation => animation.cancel());
+    if (!list || !pill) return;
+    const current = list.querySelector<HTMLElement>('.nav-group a[aria-current="page"]') || null;
+    const navRect = list.getBoundingClientRect();
+    const nextRect = current?.getBoundingClientRect();
+    if (!current || !nextRect || navRect.width <= 0 || navRect.height <= 0 || nextRect.width <= 0 || nextRect.height <= 0) {
+      list.classList.remove('nav-pill-ready');
+      pill.hidden = true;
+      navPrevious.current = null;
+      return;
+    }
+    const fromClip = getComputedStyle(pill).clipPath;
+    for (const animation of navAnimations.current) {
+      try {
+        if (animation.playState === 'running') animation.commitStyles();
+      } catch { /* Use the last committed pill position if the browser cannot commit. */ }
+      animation.cancel();
+    }
     navAnimations.current = [];
+    pill.hidden = false;
     const listRect = list.getBoundingClientRect();
-    const nextRect = current.getBoundingClientRect();
     const next = { top: nextRect.top - listRect.top + list.scrollTop, bottom: listRect.bottom - nextRect.bottom - list.scrollTop };
     const previous = navPrevious.current;
     if (!previous || !previous.isConnected || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -602,29 +616,42 @@ export function AdminFrame({ children }: { children: ReactNode }) {
       const from = { top: oldRect.top - listRect.top + list.scrollTop, bottom: listRect.bottom - oldRect.bottom - list.scrollTop };
       const downward = nextRect.top > oldRect.top;
       const near = downward ? 'bottom' : 'top';
-      const first = pill.animate([{ clipPath: `inset(${from.top}px 0 ${from.bottom}px 0 round 8px)` }, { clipPath: `inset(${near === 'top' ? next.top : from.top}px 0 ${near === 'bottom' ? next.bottom : from.bottom}px 0 round 8px)` }], { duration: 360 * motionScale(), easing: 'cubic-bezier(.215,.61,.355,1)', fill: 'forwards' });
-      const second = pill.animate([{ clipPath: `inset(${near === 'top' ? next.top : from.top}px 0 ${near === 'bottom' ? next.bottom : from.bottom}px 0 round 8px)` }, { clipPath: `inset(${next.top}px 0 ${next.bottom}px 0 round 8px)` }], { duration: 550 * motionScale(), easing: 'cubic-bezier(.645,.045,.355,1)', fill: 'forwards' });
-      second.pause();
-      first.onfinish = () => second.play();
+      const startClip = fromClip.startsWith('inset(') ? fromClip : `inset(${from.top}px 0 ${from.bottom}px 0 round 8px)`;
+      const middleClip = `inset(${near === 'top' ? next.top : from.top}px 0 ${near === 'bottom' ? next.bottom : from.bottom}px 0 round 8px)`;
+      const first = pill.animate([{ clipPath: startClip }, { clipPath: middleClip }], { duration: 360 * motionScale(), easing: 'cubic-bezier(.215,.61,.355,1)', fill: 'forwards' });
+      const second = pill.animate([{ clipPath: middleClip }, { clipPath: `inset(${next.top}px 0 ${next.bottom}px 0 round 8px)` }], { duration: 550 * motionScale(), delay: 360 * motionScale(), easing: 'cubic-bezier(.645,.045,.355,1)', fill: 'forwards' });
       navAnimations.current = [first, second];
       second.onfinish = () => { pill.style.clipPath = `inset(${next.top}px 0 ${next.bottom}px 0 round 8px)`; };
     }
+    list.classList.add('nav-pill-ready');
     navPrevious.current = current;
-  }, [pathname]);
+  }, [path]);
   useEffect(() => {
-    const list = document.querySelector<HTMLElement>('.sidebar-scroll nav');
+    const list = navListRef.current;
     if (!list) return;
-    const resize = () => {
-      navAnimations.current.forEach(animation => animation.cancel());
+    const reposition = () => {
+      for (const animation of navAnimations.current) {
+        try { if (animation.playState === 'running') animation.commitStyles(); } catch { /* Snap below. */ }
+        animation.cancel();
+      }
       navAnimations.current = [];
       const active = list.querySelector<HTMLElement>('.nav-group a[aria-current="page"]');
-      if (!active || !navPillRef.current) return;
+      if (!active || !navPillRef.current) { list.classList.remove('nav-pill-ready'); return; }
       const lr = list.getBoundingClientRect(), ar = active.getBoundingClientRect();
+      if (lr.width <= 0 || lr.height <= 0 || ar.width <= 0 || ar.height <= 0) {
+        list.classList.remove('nav-pill-ready');
+        navPillRef.current.hidden = true;
+        return;
+      }
+      navPillRef.current.hidden = false;
       navPillRef.current.style.clipPath = `inset(${ar.top - lr.top + list.scrollTop}px 0 ${lr.bottom - ar.bottom - list.scrollTop}px 0 round 8px)`;
       navPrevious.current = active;
+      list.classList.add('nav-pill-ready');
     };
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
+    const observer = new ResizeObserver(reposition);
+    observer.observe(list);
+    reposition();
+    return () => observer.disconnect();
   }, []);
   useEffect(() => {
     const click = (event: globalThis.MouseEvent) => {
@@ -685,29 +712,22 @@ export function AdminFrame({ children }: { children: ReactNode }) {
           </button>
         </div>
         <div className="sidebar-scroll">
-          <nav aria-label="Admin sections">
+          <nav aria-label="Admin sections" ref={navListRef}>
             <span className="nav-active-pill" ref={navPillRef} aria-hidden="true" />
             {navGroups.map((group) => (
               <section className="nav-group" key={group.label}>
                 <h2>{group.label}</h2>
                 {group.items.filter(([href]) => { const permission = NAV_PERMISSION[href]; return !permission || can(admin.adminLevel, permission); }).map(([href, label]) => {
                   const current = iconIndex++;
+                  const selected = path === href || (href === '/providers' && path.startsWith('/providers/')) || (href === '/community' && path.startsWith('/community/authors/'));
                   return (
                     <Link
                       onClick={() => setMobileOpen(false)}
                       aria-label={label}
                       key={href}
                       href={href === '/applications' ? '/applications?status=pending' : href === '/verification' ? '/verification?status=pending' : href === '/moderation/community' ? '/moderation/community?status=open' : href === '/moderation/providers' ? '/moderation/providers?status=open' : href}
-                      aria-current={
-                        path === href || (href === '/providers' && path.startsWith('/providers/'))
-                          ? 'page'
-                          : undefined
-                      }
-                      className={
-                        path === href || (href === '/providers' && path.startsWith('/providers/'))
-                          ? 'active'
-                          : ''
-                      }
+                      aria-current={selected ? 'page' : undefined}
+                      className={selected ? 'active' : ''}
                     >
                       <i>
                         <NavIcon index={current} />
@@ -778,7 +798,7 @@ export function AdminFrame({ children }: { children: ReactNode }) {
             </div>
           </details>
         </header>
-          <div className={`route-view ${routeEntrance}`} key={path} data-route={path}>
+          <div className="route-view" key={path} data-route={path}>
             {authorProfileDenied || (currentPermission && !can(admin.adminLevel, currentPermission)) ? <section className="panel" role="alert"><h2>Administrator role required</h2><p>Your admin level does not include this page.</p></section> : children}
           </div>
       </section>

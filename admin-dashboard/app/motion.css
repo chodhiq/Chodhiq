@@ -64,9 +64,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .nav-group a.active { background-color: color-mix(in srgb, var(--text) 9%, transparent); }
   .table tbody tr { transition: background-color var(--motion-fast) var(--motion-ease); }
   .table tbody tr:hover { background-color: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
-  .first-load-rows > tr:nth-child(-n+8), .first-load-rows > article:nth-of-type(-n+8), .first-load-rows > button:nth-child(-n+8) {
-    animation: admin-row-in var(--motion-fast) var(--motion-ease) both;
+  .first-load-rows > tr:nth-child(-n+10), .first-load-rows > article:nth-of-type(-n+10), .first-load-rows > button:nth-child(-n+10) {
+    animation: admin-row-in calc(240ms * var(--motion-scale)) var(--motion-ease) both;
   }
+  .first-load-rows > :nth-child(2) { animation-delay: calc(25ms * var(--motion-scale)); }
+  .first-load-rows > :nth-child(3) { animation-delay: calc(50ms * var(--motion-scale)); }
+  .first-load-rows > :nth-child(4) { animation-delay: calc(75ms * var(--motion-scale)); }
+  .first-load-rows > :nth-child(5) { animation-delay: calc(100ms * var(--motion-scale)); }
+  .first-load-rows > :nth-child(6) { animation-delay: calc(125ms * var(--motion-scale)); }
+  .first-load-rows > :nth-child(7) { animation-delay: calc(150ms * var(--motion-scale)); }
+  .first-load-rows > :nth-child(8) { animation-delay: calc(175ms * var(--motion-scale)); }
+  .first-load-rows > :nth-child(9) { animation-delay: calc(200ms * var(--motion-scale)); }
+  .first-load-rows > :nth-child(10) { animation-delay: calc(225ms * var(--motion-scale)); }
   .filter-list-enter { animation: admin-row-in var(--motion-fast) var(--motion-ease) both; }
 
   .account-menu[open] > .account-menu-panel, .admin-alerts[open] > .admin-alerts-menu {
@@ -96,14 +105,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .sidebar-scroll nav { position: relative; }
 .nav-active-pill { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: color-mix(in srgb, var(--teal) 20%, transparent); box-shadow: inset 3px 0 0 var(--teal); clip-path: inset(100% 0 0 0 round 8px); }
 .nav-group { position: relative; z-index: 1; }
-.nav-group a { position: relative; overflow: hidden; background: transparent !important; }
-.nav-group a.active { background: transparent !important; box-shadow: none !important; }
+.nav-group a { position: relative; overflow: hidden; }
+.sidebar-scroll nav.nav-pill-ready .nav-group a.active { background: transparent !important; box-shadow: none !important; }
 .nav-group a.active i { background: var(--teal) !important; color: var(--on-accent, #fff) !important; }
 .nav-ripple { position: absolute; z-index: 2; width: 24px; height: 24px; border: 1px solid var(--teal); border-radius: 50%; pointer-events: none; }
-.route-view.route-entering .head h2 { will-change: opacity, transform, clip-path; }
-.route-view.route-entering .metrics > *, .route-view.route-entering .panel, .route-view.route-entering .table,
-.route-view.route-entering .quick, .route-view.route-entering .dashboard-welcome,
-.route-view.route-entering .table tbody tr { will-change: opacity, transform; }
 .demand-table table { min-width: 920px; }
 .demand-table th:last-child, .demand-table td:last-child { min-width: 150px; white-space: nowrap; }
 

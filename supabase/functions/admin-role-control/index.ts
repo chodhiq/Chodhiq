@@ -3,7 +3,7 @@ import { checkRateLimit, RATE_LIMITS } from "../rate-limit-helper.ts";
 
 const localSupabase=/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(Deno.env.get("SUPABASE_URL")??"");
 const allowedOrigins=(Deno.env.get("ADMIN_ALLOWED_ORIGINS")??["https://admin.chodhiq.co.uk",...(localSupabase?["http://localhost:3000","http://localhost:3012"]:[])].join(",")).split(",").map(value=>value.trim()).filter(value=>value!=="*"&&(localSupabase||!/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(value)));
-const cors=(origin:string|null)=>({...origin&&allowedOrigins.includes(origin)?{"Access-Control-Allow-Origin":origin}:{},"Access-Control-Allow-Headers":"authorization,apikey,content-type","Access-Control-Allow-Methods":"POST, OPTIONS",Vary:"Origin"});
+const cors=(origin:string|null)=>({...origin&&allowedOrigins.includes(origin)?{"Access-Control-Allow-Origin":origin}:{},"Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type","Access-Control-Allow-Methods":"POST, OPTIONS",Vary:"Origin"});
 const json=(origin:string|null,body:unknown,status=200,extraHeaders:Record<string,string>={})=>new Response(JSON.stringify(body),{status,headers:{...cors(origin),...extraHeaders,"Content-Type":"application/json","Cache-Control":"no-store"}});
 
 Deno.serve(async request=>{

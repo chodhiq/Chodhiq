@@ -18,7 +18,12 @@
         "EXPO_PUBLIC_ENABLE_GOOGLE_MAPS": "false",
         "EXPO_PUBLIC_ENABLE_PAYMENTS": "false",
         "EXPO_PUBLIC_ENABLE_GOOGLE_ADS": "false"
-      }
+      },
+      "ios": { "simulator": false }
+    },
+    "ios-preview": {
+      "extends": "preview",
+      "ios": { "simulator": false }
     },
     "beta": {
       "channel": "beta",
@@ -78,7 +83,12 @@
         "EXPO_PUBLIC_ENABLE_GOOGLE_MAPS": "false",
         "EXPO_PUBLIC_ENABLE_PAYMENTS": "false",
         "EXPO_PUBLIC_ENABLE_GOOGLE_ADS": "false"
-      }
+      },
+      "ios": { "simulator": false }
+    },
+    "ios-production": {
+      "extends": "production",
+      "ios": { "simulator": false }
     },
     "production-apk": {
       "channel": "production",
@@ -103,6 +113,8 @@
         "releaseStatus": "completed"
       }
     },
-    "production": {}
+    "production": {
+      "ios": {}
+    }
   }
 }

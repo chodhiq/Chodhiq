@@ -274,10 +274,17 @@ describe('useCommunityFeed', () => {
       expect.any(Array),
     );
     const buttons = alert.mock.calls.at(-1)?.[2] as Array<{ text: string; onPress?: () => void }>;
+    const blockReadsBeforeConfirmation = mockFrom.mock.calls.filter(
+      ([table]) => table === 'community_user_blocks',
+    ).length;
     await act(async () => buttons.find((button) => button.text === 'Cancel')?.onPress?.());
-    expect(mockFrom).not.toHaveBeenCalledWith('community_user_blocks');
+    expect(
+      mockFrom.mock.calls.filter(([table]) => table === 'community_user_blocks'),
+    ).toHaveLength(blockReadsBeforeConfirmation);
     await act(async () => buttons.find((button) => button.text === 'Block')?.onPress?.());
-    expect(mockFrom).toHaveBeenCalledWith('community_user_blocks');
+    expect(
+      mockFrom.mock.calls.filter(([table]) => table === 'community_user_blocks').length,
+    ).toBeGreaterThan(blockReadsBeforeConfirmation);
     alert.mockRestore();
   });
 

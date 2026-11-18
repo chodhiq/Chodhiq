@@ -1,4 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { AppAlert as Alert } from '../components/AppDialog';
 import { canReportContent, reportFailureMessage } from '../components/community/communitySafety';
 import {
@@ -140,7 +141,10 @@ export default function useCommunityFeed({
                     .catch((activityError) => ({ postIds: null, error: activityError }))
                 : Promise.resolve({ postIds: [], error: null })
               : Promise.resolve(null);
-          const [{ data, error: queryError }, saveResult, generalResult, activityResult] =
+          const blockedPromise = Platform.OS === 'ios' && session
+            ? supabase.from('community_user_blocks').select('blocked_id').eq('blocker_id', session.user.id)
+            : Promise.resolve({ data: [], error: null });
+          const [{ data, error: queryError }, saveResult, generalResult, activityResult, blockedResult] =
             await Promise.all([
               query,
               session
@@ -159,9 +163,19 @@ export default function useCommunityFeed({
                     .limit(3)
                 : Promise.resolve({ data: [], error: null }),
               activityPromise,
+              blockedPromise,
             ]);
           if (request !== loadSequence.current) return;
           if (queryError) throw queryError;
+          if (blockedResult.error) {
+            loadedPosts.current = [];
+            setRecords([]);
+            setGeneralPosts([]);
+            setError('Could not verify blocked members. Pull to refresh and try again.');
+            setHasMore(false);
+            return;
+          }
+          const blockedAuthors = new Set((blockedResult.data || []).map((row) => row.blocked_id));
           if (activityResult) {
             if (activityResult.error) {
               console.warn('Unable to load your Community comment activity.', activityResult.error);
@@ -214,8 +228,8 @@ export default function useCommunityFeed({
             ...post,
             author_name: authorNames.get(post.author_id) || post.author_name || 'Community member',
           });
-          const namedPosts = resolvedPosts.map(withAuthorNames);
-          const namedGeneral = resolvedGeneral.map(withAuthorNames);
+          const namedPosts = resolvedPosts.filter((post) => !blockedAuthors.has(post.author_id)).map(withAuthorNames);
+          const namedGeneral = resolvedGeneral.filter((post) => !blockedAuthors.has(post.author_id)).map(withAuthorNames);
           const merged = mergeCommunityPage(loadedPosts.current, namedPosts, currentPage === 1);
           loadedPosts.current = merged;
           setRecords(merged);
@@ -680,14 +694,23 @@ export default function useCommunityFeed({
     if (!supabase) throw new Error('Connect to the community service to read comments.');
     setCommentsLoading(true);
     try {
-      const { data, error: queryError } = await supabase
-        .from('community_comments')
-        .select('id,author_id,body,created_at')
-        .eq('post_id', postId)
-        .order('created_at')
-        .limit(100);
-      if (queryError) throw queryError;
-      const rows = (data || []).map((comment) => ({ ...comment, post_id: postId }));
+      const [commentResult, blockResult] = await Promise.all([
+        supabase
+          .from('community_comments')
+          .select('id,author_id,body,created_at')
+          .eq('post_id', postId)
+          .order('created_at')
+          .limit(100),
+        Platform.OS === 'ios' && session
+          ? supabase.from('community_user_blocks').select('blocked_id').eq('blocker_id', session.user.id)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+      if (commentResult.error) throw commentResult.error;
+      if (blockResult.error) throw blockResult.error;
+      const blockedAuthors = new Set((blockResult.data || []).map((row) => row.blocked_id));
+      const rows = (commentResult.data || [])
+        .filter((comment) => !blockedAuthors.has(comment.author_id))
+        .map((comment) => ({ ...comment, post_id: postId }));
       setComments(rows);
       const authorIds = [...new Set(rows.map((row) => row.author_id).filter(Boolean))];
       const profiles = await Promise.all(
@@ -707,7 +730,7 @@ export default function useCommunityFeed({
     } finally {
       setCommentsLoading(false);
     }
-  }, []);
+  }, [session]);
 
   const addComment = useCallback(
     async (postId, text) => {

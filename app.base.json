@@ -16,6 +16,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.chodhiq.app",
       "buildNumber": "1",
+      "usesAppleSignIn": true,
       "config": {
         "usesNonExemptEncryption": false
       }

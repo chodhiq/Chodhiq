@@ -220,12 +220,12 @@ describe('onboarding and authentication buttons', () => {
     const originalOS = Platform.OS;
     Object.defineProperty(Platform, 'OS', { configurable: true, value: 'ios' });
     const ios = await render(<WelcomeScreen navigation={navigation} route={{ params: {} }} />);
-    expect(ios.getByText('Continue with Apple')).toBeTruthy();
+    expect(ios.getByTestId('btn-continue-with-apple')).toBeTruthy();
     await ios.unmount();
 
     Object.defineProperty(Platform, 'OS', { configurable: true, value: 'android' });
     const android = await render(<WelcomeScreen navigation={navigation} route={{ params: {} }} />);
-    expect(android.queryByText('Continue with Apple')).toBeNull();
+    expect(android.queryByTestId('btn-continue-with-apple')).toBeNull();
     await android.unmount();
     Object.defineProperty(Platform, 'OS', { configurable: true, value: originalOS });
   });

@@ -161,6 +161,20 @@ export async function updatePassword(password) {
 
 export async function signInWithOAuth(provider) {
   if (!supabase) throw new Error('Supabase is not configured.');
+  if (provider === 'apple') {
+    if (Platform.OS !== 'ios') throw new Error('Sign in with Apple is available on iOS only.');
+    const AppleAuthentication = require('expo-apple-authentication');
+    const credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
+    });
+    if (!credential.identityToken) throw new Error('Apple did not return an identity token.');
+    const { data, error } = await withAuthTimeout(supabase.auth.signInWithIdToken({
+      provider: 'apple', token: credential.identityToken,
+      ...(credential.nonce ? { nonce: credential.nonce } : {}),
+    }));
+    if (error) throw error;
+    return data.session;
+  }
   const useExpoGoGoogleBrowser =
     provider === 'google' &&
     Platform.OS === 'android' &&

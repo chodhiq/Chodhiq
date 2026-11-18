@@ -14,7 +14,6 @@ import {
   View,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import * as IntentLauncher from 'expo-intent-launcher';
 
 import Text from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -521,6 +520,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
           return;
         }
         try {
+          const IntentLauncher = await import('expo-intent-launcher');
           await IntentLauncher.startActivityAsync('android.intent.action.DIAL', { data: url });
         } catch (error) {
           console.warn('Unable to open the phone dialer.', error);
@@ -1097,7 +1097,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
         animationType="slide"
         onRequestClose={() => setReportOpen(false)}
       >
-        <View style={[styles.overlay, { paddingBottom: insets.bottom }]}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.overlay, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
           <GlassView
             intensity={48}
             style={[
@@ -1148,7 +1148,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
               />
             </ScrollView>
           </GlassView>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
       {!isPlace && (
         <Modal

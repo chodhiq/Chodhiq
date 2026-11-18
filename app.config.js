@@ -218,6 +218,20 @@ module.exports = {
   ios: {
     ...base.ios,
     bundleIdentifier: process.env.EXPO_IOS_BUNDLE_ID || base.ios.bundleIdentifier,
+    buildNumber: base.ios.buildNumber || '1',
+    supportsTablet: false,
+    usesAppleSignIn: true,
+    config: {
+      ...base.ios.config,
+      usesNonExemptEncryption: false,
+    },
+    infoPlist: {
+      ...base.ios.infoPlist,
+      NSLocationWhenInUseUsageDescription: `${brandName} uses your location to show nearby businesses and services.`,
+      NSCameraUsageDescription: `${brandName} uses your camera when you take a photo for your profile, reviews, or community posts.`,
+      NSPhotoLibraryUsageDescription: `${brandName} uses your photos when you choose images for your profile, reviews, or community posts.`,
+      NSUserNotificationsUsageDescription: `${brandName} sends notifications about updates you choose to receive.`,
+    },
   },
   android: {
     ...base.android,
@@ -230,6 +244,7 @@ module.exports = {
   },
   plugins: [
     ...plugins,
+    'expo-apple-authentication',
     '@react-native-community/datetimepicker',
     'expo-secure-store',
     'expo-font',

@@ -529,21 +529,21 @@ export function WelcomeScreen({ navigation, route }) {
               >
                 <Text style={{ color: palette.text, fontWeight: '600' }}>Continue with Google</Text>
               </PressableScale>
-              {Platform.OS === 'ios' ? (
-                <PressableScale
-                  testID="btn-continue-with-apple"
-                  disabled={busy}
-                  style={[
-                    stylesWelcome.social,
-                    { backgroundColor: palette.surface, borderColor: palette.border },
-                  ]}
-                  onPress={() => submit('apple')}
-                >
-                  <Text style={{ color: palette.text, fontWeight: '600' }}>
-                    Continue with Apple
-                  </Text>
-                </PressableScale>
-              ) : null}
+              {Platform.OS === 'ios' ? (() => {
+                const AppleAuthentication = require('expo-apple-authentication');
+                return (
+                  <View style={[stylesWelcome.social, { overflow: 'hidden', borderWidth: 0 }]}>
+                    <AppleAuthentication.AppleAuthenticationButton
+                      testID="btn-continue-with-apple"
+                      buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                      buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                      cornerRadius={12}
+                      style={{ width: '100%', height: 48, opacity: busy ? 0.55 : 1 }}
+                      onPress={() => { if (!busy) submit('apple'); }}
+                    />
+                  </View>
+                );
+              })() : null}
             </View>
           </FadeInView>
           <FadeInView delay={220}>

@@ -262,15 +262,7 @@ export function AppStateProvider({ children }) {
       );
       try {
         const result = await setSaved(session.user.id, id, !wasSaved);
-        showButtonToast(
-          result?.status === 'pending'
-            ? wasSaved
-              ? "Removed from saved on your phone, will sync when you're online"
-              : "Saved on your phone, will sync when you're online"
-            : wasSaved
-              ? 'Removed from saved'
-              : 'Saved',
-        );
+        showButtonToast(wasSaved ? 'Removed from saved' : 'Saved');
         return result;
       } catch (error) {
         captureError(error, { operation: 'toggleSaved' });

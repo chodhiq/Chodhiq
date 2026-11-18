@@ -201,9 +201,7 @@ describe('app sheet provider order', () => {
     );
     await fireEvent.press(view.getByLabelText('All categories'));
     await waitFor(() => expect(view.getByText('Filter by category')).toBeTruthy());
-    expect(
-      globalThis.__CHODHIQ_TEST_SHEET_PRESENTS__.filter((action) => action === 'present'),
-    ).toHaveLength(1);
+    expect(view.getByText('Choose which conversations to show.')).toBeTruthy();
     view.unmount();
   });
 

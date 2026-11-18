@@ -155,7 +155,7 @@ describe('business detail and account buttons', () => {
     await fireEvent.press(submitReport);
     expect(state.reportProvider).not.toHaveBeenCalled();
     await fireEvent.changeText(
-      view.getByPlaceholderText(/Incorrect phone, address/),
+      view.getByPlaceholderText(/Add any details that will help us review this request/),
       'Phone number is outdated',
     );
     expect(view.getByRole('button', { name: 'Submit report' }).props.accessibilityState?.disabled)

@@ -1,9 +1,10 @@
 /* eslint-disable react-hooks/immutability -- Reanimated shared values are intentionally updated for the slide transition. */
 import React, { useEffect, useRef, useState } from 'react';
-import { ImageBackground, PanResponder, StyleSheet, View } from 'react-native';
+import { AppState, ImageBackground, PanResponder, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowRight } from 'lucide-react-native';
+import { useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, {
   Extrapolation,
@@ -17,6 +18,8 @@ import Text from '../components/AppText';
 import { MotionTouchable as TouchableOpacity } from '../components/Motion';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import useEffectsLevel from '../hooks/useEffectsLevel';
+
+const AUTO_ADVANCE_MS = 3500;
 
 const pages = [
   {
@@ -61,11 +64,28 @@ function FadeImage({ item, index, progress }) {
 export default function OpeningScreen({ navigation }) {
   const { palette } = useChodhiQTheme();
   const canAnimate = useEffectsLevel() === 'full';
+  const isFocused = useIsFocused();
   const [pageIndex, setPageIndex] = useState(0);
+  const [appIsActive, setAppIsActive] = useState(AppState.currentState === 'active');
   const progress = useSharedValue(0);
   const contentOpacity = useSharedValue(1);
   const contentTransitionStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
   const item = pages[pageIndex];
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      setAppIsActive(state === 'active');
+    });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!canAnimate || !appIsActive || !isFocused) return undefined;
+    const timer = setTimeout(() => {
+      setPageIndex((currentIndex) => (currentIndex + 1) % pages.length);
+    }, AUTO_ADVANCE_MS);
+    return () => clearTimeout(timer);
+  }, [appIsActive, canAnimate, isFocused, pageIndex]);
 
   // Crossfade the background images.
   useEffect(() => {

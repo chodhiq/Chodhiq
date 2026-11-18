@@ -4,6 +4,7 @@ import {
   FlatList,
   type FlatListProps,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   RefreshControl,
@@ -37,6 +38,7 @@ import { formatDate } from '../src/lib/dateTime';
 import TabPills from '../components/TabPills';
 import type { TabPillOption } from '../components/TabPills';
 import { theme } from '../theme';
+import { legalLinks } from '../src/config/legal';
 import { AppAlert as Alert } from '../src/components/AppDialog';
 import { useAppState } from '../src/context/AppStateContext';
 import useCommunityFeed from '../src/hooks/useCommunityFeed';
@@ -135,8 +137,12 @@ export default function CommunityFeedScreen({ navigation, route }: CommunityFeed
   )?.syncedOperations;
   useEffect(() => {
     const message = (writeStatus as { message?: string } | null)?.message;
-    if (!message || message === 'Sent' || message === 'Saved item removed') return;
-    Alert.alert('Write status', message);
+    if (!message) return;
+    const isSaveFailure =
+      /could not update saved item|could not save(?: post)?|couldn't save(?: post)?|failed to save(?: post)?|unable to save(?: post)?/i.test(
+        message,
+      ) || /post.*(?:failed|could not|couldn't)/i.test(message);
+    if (isSaveFailure) Alert.alert("Couldn't save", message);
   }, [writeStatus]);
   useEffect(() => {
     const confirmed = syncedOperations?.some(
@@ -762,6 +768,16 @@ export default function CommunityFeedScreen({ navigation, route }: CommunityFeed
                   <View style={styles.heading}>
                     <Text style={styles.title}>Community feed</Text>
                     <Text style={styles.subtitle}>Stories from people around you</Text>
+                    {legalLinks.terms ? (
+                      <AnimatedPressable
+                        accessibilityRole="link"
+                        accessibilityLabel="Community rules and terms"
+                        onPress={() => void Linking.openURL(legalLinks.terms)}
+                        hitSlop={8}
+                      >
+                        <Text style={styles.subtitle}>Community rules</Text>
+                      </AnimatedPressable>
+                    ) : null}
                   </View>
                 </View>
 

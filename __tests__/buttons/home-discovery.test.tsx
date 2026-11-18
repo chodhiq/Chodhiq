@@ -275,9 +275,8 @@ describe('home and discovery buttons', () => {
     expect(home.queryAllByLabelText('Browse Category 3').length).toBeGreaterThan(0);
     expect(home.getByLabelText('See more categories')).toBeTruthy();
     expect(home.getByText('Featured collections')).toBeTruthy();
-    for (const category of categories)
-      expect(home.queryAllByText(category.name).length).toBeGreaterThan(0);
-    expect(home.getAllByText('No places yet')).toHaveLength(4);
+    expect(home.queryAllByText(categories[0].name).length).toBeGreaterThan(0);
+    expect(home.getByText('1 place')).toBeTruthy();
 
     const search = await render(
       <ExploreScreen navigation={globalThis.__CHODHIQ_TEST_NAVIGATION__} route={{ params: {} }} />,

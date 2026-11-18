@@ -17,6 +17,7 @@ import { supabase } from '../lib/supabase';
 import { mergeCommunityPage } from '../lib/communityPaging';
 import { communityFeedErrorMessage, withCommunityFeedDeadline } from '../lib/communityFeedDeadline';
 import { classifySyncError, isAuthSessionError } from '../data/syncPolicy';
+import { showButtonToast } from '../lib/buttonToast';
 
 const PAGE_SIZE = 30;
 const COMMENT_ACTIVITY_PAGE_SIZE = 1000;
@@ -632,6 +633,7 @@ export default function useCommunityFeed({
               .from('community_saved_posts')
               .insert({ post_id: postId, user_id: session.user.id });
         if (result.error) throw result.error;
+        showButtonToast(saved ? 'Removed from saved' : 'Saved');
         return true;
       } catch (saveError) {
         if (isAuthSessionError(saveError)) {
@@ -656,6 +658,7 @@ export default function useCommunityFeed({
               saved: !saved,
               _sync: pendingSyncState,
             });
+            showButtonToast(saved ? 'Removed from saved' : 'Saved');
             return true;
           } catch (queueError) {
             setEngagement((current) => ({ ...current, saves: previousSaves }));

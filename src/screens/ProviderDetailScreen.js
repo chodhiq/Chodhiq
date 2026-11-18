@@ -918,7 +918,7 @@ export default function ProviderDetailScreen({ route, navigation }) {
               {provider.placeSource?.attribution ||
                 (provider.placeSource?.source === 'osm'
                   ? 'Contains data from OpenStreetMap contributors. Licensed under the Open Database Licence (ODbL).'
-                  : 'Contains data from the Food Standards Agency. © Crown copyright. Licensed under the Open Government Licence.')}
+                  : 'Contains data from the Food Standards Agency. Â© Crown copyright. Licensed under the Open Government Licence.')}
             </Text>
           </View>
         ) : null}

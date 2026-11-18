@@ -27,7 +27,7 @@ export default function ButtonToastHost() {
           ? setTimeout(
               () => {
                 timer.current = null;
-                setToast(null);
+                dismissButtonToast();
               },
               nextToast.onRetry ? 8000 : 3200,
             )

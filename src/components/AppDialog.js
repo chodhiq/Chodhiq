@@ -5,6 +5,7 @@ import Text from './AppText';
 import { useChodhiQTheme } from '../context/ThemeContext';
 import GlowButton from '../../components/ui/GlowButton';
 import GlassView from './GlassView';
+import { showButtonToast } from '../lib/buttonToast';
 
 let showDialog;
 export const AppAlert = {
@@ -15,6 +16,15 @@ export const AppAlert = {
    * @param {object} [options]
    */
   alert(title, message, buttons = [{ text: 'Got it' }], options = {}) {
+    const confirmation = String(message || title || '').trim().toLowerCase();
+    if (confirmation === 'removed from saved' || confirmation.startsWith('removed from saved ')) {
+      showButtonToast('Removed from saved');
+      return;
+    }
+    if (confirmation === 'saved' || confirmation.startsWith('saved on your phone')) {
+      showButtonToast('Saved');
+      return;
+    }
     if (showDialog)
       showDialog({
         title,

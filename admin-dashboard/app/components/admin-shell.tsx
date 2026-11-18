@@ -518,7 +518,6 @@ export function AdminFrame({ children }: { children: ReactNode }) {
   const { counts: alertCounts, refresh: refreshAlerts } = useCounts(ALERT_COUNTS);
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [routeAnimationKey, setRouteAnimationKey] = useState(path);
   const [title, setTitle] = useState('Dashboard');
   const [progress, setProgress] = useState(false);
   const progressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -578,7 +577,6 @@ export function AdminFrame({ children }: { children: ReactNode }) {
     setProgress(false);
   }, [path]);
   useEffect(() => setTitle(routeTitles[path] || (path.startsWith('/providers/') ? 'Provider dossier' : path.startsWith('/community/authors/') ? 'Author profile' : 'Admin operations')), [path]);
-  useEffect(() => setRouteAnimationKey(path), [path]);
   useEffect(() => {
     const timer = window.setTimeout(() => {
       document.querySelector<HTMLElement>('.page-identity h1')?.focus({ preventScroll: true });
@@ -713,7 +711,7 @@ export function AdminFrame({ children }: { children: ReactNode }) {
             </div>
           </details>
         </header>
-          <div className="route-view" key={routeAnimationKey} data-route={path}>
+          <div className="route-view" key={path} data-route={path}>
             {authorProfileDenied || (currentPermission && !can(admin.adminLevel, currentPermission)) ? <section className="panel" role="alert"><h2>Administrator role required</h2><p>Your admin level does not include this page.</p></section> : children}
           </div>
       </section>

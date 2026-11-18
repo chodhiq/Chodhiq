@@ -18,33 +18,15 @@
   --warning: var(--amber);
   --danger: var(--red);
   --focus-ring: color-mix(in srgb, var(--teal) 35%, transparent);
-  --dur-fast: 120ms;
-  --dur-base: 200ms;
-  --dur-slow: 320ms;
-  --ease-out: cubic-bezier(.2,.8,.2,1);
-  --ease-in-out: cubic-bezier(.65,0,.35,1);
+  --motion-fast: 140ms;
+  --motion-base: 220ms;
+  --motion-slow: 360ms;
+  --motion-ease: cubic-bezier(.2, .8, .2, 1);
 }
 
-.route-view { animation: admin-route-in 200ms var(--ease-out) both; }
-.page { animation: none; }
-.metrics > *, .table tbody tr { animation: admin-page-in var(--dur-base) var(--ease-out) both; }
-.metrics > :nth-child(2), .table tbody tr:nth-child(2) { animation-delay: 28ms; }
-.metrics > :nth-child(3), .table tbody tr:nth-child(3) { animation-delay: 52ms; }
-.metrics > :nth-child(4), .table tbody tr:nth-child(4) { animation-delay: 76ms; }
-.metrics > :nth-child(n+5), .table tbody tr:nth-child(n+7) { animation: none; }
-.nav-group a { transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease; }
-@keyframes admin-page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes admin-route-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto; animation: none !important; transition: none !important; }
-}
-
-/* Shared polish for every operations route. These properties animate only
-   opacity and transform so navigation stays light on slower devices. */
+/* Shared routed layout and clear keyboard focus. */
 .workspace { min-height: 100dvh; }
-.route-view { width: 100%; min-width: 0; }
-.page { width: 100%; min-width: 0; }
-.page > :not(.head) { animation: none; }
+.route-view, .page { width: 100%; min-width: 0; }
 .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 0 0 18px; border-bottom: 1px solid color-mix(in srgb, var(--border) 78%, transparent); }
 .head > div { min-width: 0; }
 .head h2 { margin: 0; font-size: clamp(24px, 2.2vw, 32px) !important; font-weight: 780 !important; letter-spacing: -.04em !important; }
@@ -57,13 +39,91 @@
 .panel + .panel, .table + .table { margin-top: 16px; }
 .table { overflow-x: auto; overscroll-behavior-x: contain; }
 .table table { width: 100%; border-collapse: separate; border-spacing: 0; }
-.table tbody tr:hover { background: color-mix(in srgb, var(--accent) 4%, var(--surface)); }
 .toolbar { align-items: center; }
-.toolbar button, .primary, .route-search, .field input, .field select, .field textarea { transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease; }
-a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
-button:not(:disabled):hover, .toolbar a:hover { filter: brightness(1.025); }
 .empty-state, .load-error { max-width: 100%; }
 .pagination { gap: 12px; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The pathname key remounts this wrapper once per route change. No opacity
+     is left behind after the short animation completes. */
+  .route-view { animation: admin-route-in var(--motion-fast) var(--motion-ease) both; }
+  .metrics > *, .dashboard-stat { animation: admin-card-in var(--motion-base) var(--motion-ease) both; }
+  .metrics > :nth-child(2), .dashboard-stat:nth-child(2) { animation-delay: 40ms; }
+  .metrics > :nth-child(3), .dashboard-stat:nth-child(3) { animation-delay: 80ms; }
+  .metrics > :nth-child(4), .dashboard-stat:nth-child(4) { animation-delay: 120ms; }
+  .metrics > :nth-child(5), .dashboard-stat:nth-child(5) { animation-delay: 160ms; }
+  .metrics > :nth-child(6), .dashboard-stat:nth-child(6) { animation-delay: 200ms; }
+  .metrics > :nth-child(7), .dashboard-stat:nth-child(7) { animation-delay: 240ms; }
+  .metrics > :nth-child(8), .dashboard-stat:nth-child(8) { animation-delay: 280ms; }
+  .metrics > :nth-child(n+9), .dashboard-stat:nth-child(n+9) { animation: none; }
+
+  .panel, .metric, .table, .dashboard-stat, .quick a, .quick button {
+    transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease),
+      background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
+  }
+  .panel:hover, .metric:hover, .dashboard-stat:hover, .quick a:hover, .quick button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px var(--shadow) !important;
+  }
+  button:not(:disabled), a { transition: transform var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease); }
+  button:not(:disabled):active, a:active { transform: scale(.985); }
+  .nav-group a { transition: transform var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease); }
+  .nav-group a:hover, .nav-group a:focus-visible { transform: translateX(2px); background-color: color-mix(in srgb, var(--text) 7.5%, transparent); }
+  .nav-group a.active { background-color: color-mix(in srgb, var(--text) 9%, transparent); }
+  .table tbody tr { transition: background-color var(--motion-fast) var(--motion-ease); }
+  .table tbody tr:hover { background-color: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
+  .first-load-rows > tr:nth-child(-n+8), .first-load-rows > article:nth-of-type(-n+8), .first-load-rows > button:nth-child(-n+8) {
+    animation: admin-row-in var(--motion-fast) var(--motion-ease) both;
+  }
+  .first-load-rows > :nth-child(2) { animation-delay: 40ms; }
+  .first-load-rows > :nth-child(3) { animation-delay: 80ms; }
+  .first-load-rows > :nth-child(4) { animation-delay: 120ms; }
+  .first-load-rows > :nth-child(5) { animation-delay: 160ms; }
+  .first-load-rows > :nth-child(6) { animation-delay: 200ms; }
+  .first-load-rows > :nth-child(7) { animation-delay: 240ms; }
+  .first-load-rows > :nth-child(8) { animation-delay: 280ms; }
+  .filter-list-enter { animation: admin-row-in var(--motion-fast) var(--motion-ease) both; }
+
+  .account-menu[open] > .account-menu-panel, .admin-alerts[open] > .admin-alerts-menu {
+    animation: admin-popover-in var(--motion-fast) var(--motion-ease) both;
+    transform-origin: top right;
+  }
+  .modal-backdrop { animation: admin-overlay-in var(--motion-fast) ease-out both; }
+  .confirm-modal { animation: admin-dialog-in var(--motion-fast) var(--motion-ease) both; transform-origin: center; }
+  .toast { animation: admin-toast-life 3000ms var(--motion-ease) both; }
+  .load-error { animation: admin-toast-in var(--motion-fast) var(--motion-ease) both; }
+
+  .skeleton > i {
+    display: block;
+    height: 54px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 37%, var(--surface) 63%);
+    background-size: 200% 100%;
+    animation: admin-shimmer 1.3s linear infinite;
+    animation-delay: 300ms;
+  }
+  .skeleton > i:nth-child(n+1) { animation-fill-mode: both; }
+}
+
+@keyframes admin-route-in { from { opacity: .6; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes admin-card-in { from { opacity: .72; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes admin-row-in { from { opacity: .75; } to { opacity: 1; } }
+@keyframes admin-popover-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes admin-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes admin-dialog-in { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: scale(1); } }
+@keyframes admin-toast-life { 0% { opacity: 0; transform: translateY(8px); } 7% { opacity: 1; transform: translateY(0); } 92% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(8px); } }
+@keyframes admin-toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes admin-shimmer { to { background-position: -200% 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+}
+
 @media (max-width: 900px) {
   .activity-grid, .verify, .columns, .campaign-operations-grid { grid-template-columns: minmax(0, 1fr) !important; }
   .page { min-height: calc(100dvh - 68px); }
@@ -75,14 +135,11 @@ button:not(:disabled):hover, .toolbar a:hover { filter: brightness(1.025); }
   .toolbar { gap: 8px; }
   .toolbar > * { max-width: 100%; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .route-view { animation: none !important; }
-}
 
 .account-menu { position: relative; }
 .account-menu > summary { list-style: none; cursor: pointer; }
 .account-menu > summary::-webkit-details-marker { display: none; }
-.account-menu-panel { position: absolute; z-index: 120; right: 0; top: calc(100% + 8px); width: min(280px, calc(100vw - 32px)); display: grid; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); box-shadow: 0 12px 32px var(--shadow); }
+.account-menu-panel { position: absolute; z-index: 120; top: calc(100% + 8px); right: 0; display: grid; width: min(280px, calc(100vw - 32px)); gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); box-shadow: 0 12px 32px var(--shadow); }
 .account-menu-panel > button { min-height: 44px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); color: var(--text); cursor: pointer; }
 .theme-choice { display: grid; gap: 6px; color: var(--text-muted); font-size: 12px; }
 .theme-choice select { min-height: 42px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
@@ -92,118 +149,25 @@ button:not(:disabled):hover, .toolbar a:hover { filter: brightness(1.025); }
 .route-progress { width: 100%; }
 .skip-link { position: fixed; z-index: 10000; top: 8px; left: 8px; transform: translateY(-160%); padding: 12px 16px; border-radius: 8px; background: var(--surface); color: var(--text); box-shadow: 0 4px 18px var(--shadow); }
 .skip-link:focus { transform: translateY(0); }
-@media (pointer: coarse) {
-  button, select, input[type="checkbox"], .nav-group a, .toolbar a { min-height: 44px; }
-}
-@media (max-width: 760px) {
-  .sidebar-appearance { display: block; padding: 0 14px 10px; }
-  .topbar .account-menu { display: none; }
-}
+@media (pointer: coarse) { button, select, input[type="checkbox"], .nav-group a, .toolbar a { min-height: 44px; } }
+@media (max-width: 760px) { .sidebar-appearance { display: block; padding: 0 14px 10px; } .topbar .account-menu { display: none; } }
 
 .nav-badge { margin-left: auto; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: var(--teal); color: #fff; font-size: 12px; font-weight: 700; text-align: center; }
 .admin-alerts { position: relative; margin-inline: 10px; }
 .admin-alerts > summary { position: relative; display: grid; width: 40px; height: 40px; place-items: center; cursor: pointer; list-style: none; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--surface); }
 .admin-alerts > summary::-webkit-details-marker { display: none; }
 .admin-alerts > summary .nav-badge { position: absolute; top: -8px; right: -12px; }
-.admin-alerts-menu { position: absolute; z-index: 200; right: 0; top: calc(100% + 10px); width: min(320px, calc(100vw - 24px)); display: grid; gap: 8px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: 0 12px 32px var(--shadow); }
+.admin-alerts-menu { position: absolute; z-index: 200; top: calc(100% + 10px); right: 0; display: grid; width: min(320px, calc(100vw - 24px)); gap: 8px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: 0 12px 32px var(--shadow); }
 .admin-alerts-menu a { display: flex; gap: 12px; align-items: center; padding: 9px; color: var(--text); text-decoration: none; }
 .admin-alerts-menu a:hover { border-radius: 8px; background: color-mix(in srgb, var(--text) 6%, transparent); }
 
-/* Keep loading and search updates steady without animating individual rows. */
-.skeleton > i {
-  display: block;
-  height: 54px;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 37%, var(--surface) 63%);
-  background-size: 200% 100%;
-  animation: admin-shimmer 1.3s linear infinite;
-}
-@keyframes admin-shimmer { to { background-position: -200% 0; } }
-.dashboard-stat, .panel.table tbody tr, .nav-group a { transition: background-color 180ms var(--ease-out), border-color 180ms var(--ease-out), color 180ms var(--ease-out), transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out); }
-.dashboard-stat:hover { transform: translateY(-2px); }
-.dashboard-stat:active { transform: translateY(1px); }
-.panel.table tbody tr { content-visibility: auto; contain-intrinsic-size: auto 56px; }
-.page .metrics { min-height: 154px; }
-.metrics > *, .table tbody tr { animation: none; }
-@media (prefers-reduced-motion: reduce) {
-  .skeleton > i, .dashboard-stat { animation: none !important; transition: none !important; transform: none !important; }
-}
-
-.account-menu[open] > .account-menu-panel,
-.admin-alerts[open] > .admin-alerts-menu {
-  animation: admin-popover-in 180ms var(--ease-out) both;
-  transform-origin: top right;
-}
-.modal-backdrop {
-  animation: admin-overlay-in 180ms ease-out both;
-}
-.confirm-modal {
-  animation: admin-dialog-in 200ms var(--ease-out) both;
-}
-.toast {
-  animation: admin-toast-life 3000ms var(--ease-out) both;
-}
-.nav-badge { animation: admin-badge-in 180ms var(--ease-out) both; }
-.pills button, .page button, .page a, .toolbar button { transition-duration: 180ms; transition-timing-function: var(--ease-out); }
-.first-load-rows > tr:nth-child(-n+10), .first-load-rows > article:nth-of-type(-n+10), .first-load-rows > button:nth-child(-n+10) { animation: admin-row-in 200ms var(--ease-out) both; }
-.first-load-rows > tr:nth-child(1), .first-load-rows > article:nth-of-type(1), .first-load-rows > button:nth-child(1) { animation-delay: 0ms; }
-.first-load-rows > tr:nth-child(2), .first-load-rows > article:nth-of-type(2), .first-load-rows > button:nth-child(2) { animation-delay: 20ms; }
-.first-load-rows > tr:nth-child(3), .first-load-rows > article:nth-of-type(3), .first-load-rows > button:nth-child(3) { animation-delay: 40ms; }
-.first-load-rows > tr:nth-child(4), .first-load-rows > article:nth-of-type(4), .first-load-rows > button:nth-child(4) { animation-delay: 60ms; }
-.first-load-rows > tr:nth-child(5), .first-load-rows > article:nth-of-type(5), .first-load-rows > button:nth-child(5) { animation-delay: 80ms; }
-.first-load-rows > tr:nth-child(6), .first-load-rows > article:nth-of-type(6), .first-load-rows > button:nth-child(6) { animation-delay: 100ms; }
-.first-load-rows > tr:nth-child(7), .first-load-rows > article:nth-of-type(7), .first-load-rows > button:nth-child(7) { animation-delay: 120ms; }
-.first-load-rows > tr:nth-child(8), .first-load-rows > article:nth-of-type(8), .first-load-rows > button:nth-child(8) { animation-delay: 140ms; }
-.first-load-rows > tr:nth-child(9), .first-load-rows > article:nth-of-type(9), .first-load-rows > button:nth-child(9) { animation-delay: 160ms; }
-.first-load-rows > tr:nth-child(10), .first-load-rows > article:nth-of-type(10), .first-load-rows > button:nth-child(10) { animation-delay: 180ms; }
-.filter-list-enter { animation: admin-row-in 180ms var(--ease-out) both; }
-.modal-backdrop.closing { animation: admin-overlay-out 180ms ease-out both; pointer-events: none; }
-.confirm-modal.closing { animation: admin-dialog-out 180ms var(--ease-out) both; pointer-events: none; }
-@keyframes admin-popover-in {
-  from { opacity: 0; transform: translateY(-5px) scale(.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes admin-overlay-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .modal-backdrop.closing { animation: admin-overlay-out var(--motion-fast) ease-out both; pointer-events: none; }
+  .confirm-modal.closing { animation: admin-dialog-out var(--motion-fast) var(--motion-ease) both; pointer-events: none; }
 }
 @keyframes admin-overlay-out { from { opacity: 1; } to { opacity: 0; } }
-@keyframes admin-dialog-in {
-  from { opacity: 0; transform: scale(.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes admin-dialog-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.97); } }
-@keyframes admin-toast-life {
-  0% { opacity: 0; transform: translateY(8px); }
-  7% { opacity: 1; transform: translateY(0); }
-  92% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(8px); }
-}
-@keyframes admin-badge-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes admin-row-in { from { opacity: 0; } to { opacity: 1; } }
-.load-error { animation: admin-toast-in 180ms var(--ease-out) both; }
-@keyframes admin-toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-@property --admin-count { syntax: '<integer>'; inherits: false; initial-value: 0; }
-@keyframes admin-count-up { to { --admin-count: var(--admin-count-target); } }
-.count-up { counter-reset: admin-count var(--admin-count); animation: admin-count-up 220ms var(--ease-out) both; }
-.count-up::before { content: counter(admin-count); }
-@media (prefers-reduced-motion: reduce) {
-  .count-up { --admin-count: var(--admin-count-target); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .modal-backdrop.closing { display: none !important; }
-  .route-view,
-  .account-menu[open] > .account-menu-panel,
-  .admin-alerts[open] > .admin-alerts-menu,
-  .modal-backdrop,
-  .confirm-modal,
-  .toast {
-    animation: none !important;
-  }
-}
+@keyframes admin-dialog-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.98); } }
 
-/* Demand records and compact admin interactions. */
 .demand-toolbar { align-items: end; gap: 12px; }
 .demand-toolbar .route-search-field { flex: 1 1 320px; margin: 0; }
 .demand-toolbar .field { min-width: min(220px, 100%); margin: 0; }
@@ -213,7 +177,6 @@ button:not(:disabled):hover, .toolbar a:hover { filter: brightness(1.025); }
 .demand-detail dl { display: grid; grid-template-columns: minmax(140px, .3fr) minmax(0, 1fr); gap: 9px 16px; margin: 16px 0 0; }
 .demand-detail dt { color: var(--muted); }
 .demand-detail dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
-.demand-table tr[aria-selected="true"] { background: color-mix(in srgb, var(--teal) 7%, transparent); }
 .page-route-community .community-feed-admin > article { width: 100%; max-width: none; }
 .author-profile-page .table { width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; }
 .author-profile-page .table table { width: 100%; min-width: 620px; }
@@ -221,9 +184,4 @@ button:not(:disabled):hover, .toolbar a:hover { filter: brightness(1.025); }
 .global-search:focus-within { z-index: 90; }
 .search-results { z-index: 100; min-width: min(320px, calc(100vw - 24px)); }
 .toolbar, .moderation footer, .quick { column-gap: 10px; row-gap: 10px; }
-@media (max-width: 760px) {
-  .demand-toolbar { align-items: stretch; }
-  .demand-toolbar .field { min-width: 100%; }
-  .demand-detail dl { grid-template-columns: minmax(0, 1fr); gap: 4px; }
-  .demand-detail dd { margin-bottom: 8px; }
-}
+@media (max-width: 760px) { .demand-toolbar { align-items: stretch; } .demand-toolbar .field { min-width: 100%; } .demand-detail dl { grid-template-columns: minmax(0, 1fr); gap: 4px; } .demand-detail dd { margin-bottom: 8px; } }

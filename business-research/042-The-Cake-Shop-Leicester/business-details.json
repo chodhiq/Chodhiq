@@ -1,0 +1,27 @@
+{
+  "raw_id": 42,
+  "business_name": "The Cake Shop Leicester",
+  "address": "65 Derwent Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE2 0GE",
+  "latitude": null,
+  "longitude": null,
+  "category": "Bakery / cake shop",
+  "phone": "0116 251 5764 (seed listing; not corroborated by the sources returned)",
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Bakery/cake shop at 65 Derwent Street; local directory listings corroborate the business name and address.",
+  "services": [
+    "Cakes and bakery products (category-level; specific services not verified)"
+  ],
+  "review_summary": "Google rating/text not verified; third-party directory snippets praise cakes and service, but are not presented as Google reviews.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for field-level source context"
+  ],
+  "uncertain_fields": "No current official website or opening hours verified; phone remains seed-only.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

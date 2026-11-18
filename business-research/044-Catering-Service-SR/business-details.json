@@ -1,0 +1,25 @@
+{
+  "raw_id": 44,
+  "business_name": "Catering Service SR Ltd",
+  "address": "Unit 2, 23–25 Highfield Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE2 1AB",
+  "latitude": null,
+  "longitude": null,
+  "category": "Catering service / other catering premises",
+  "phone": "07955 588772 (seed listing; not independently confirmed)",
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Leicester City food hygiene register confirms a catering premises at Unit 2, 23–25 Highfield Street. Public-facing cuisine, event services and current contact details were not found in this search.",
+  "services": [],
+  "review_summary": "No Google rating/review verified.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for field-level source context"
+  ],
+  "uncertain_fields": "Inspection record confirms premises classification and address, but not consumer offering, current operation, hours or phone. 2025 inspection rated hygiene standards as generally satisfactory with improvement necessary for cleanliness/facilities.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

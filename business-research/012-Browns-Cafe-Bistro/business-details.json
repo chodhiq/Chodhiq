@@ -1,0 +1,29 @@
+{
+  "raw_id": 12,
+  "business_name": "Brown's Cafe Bistro",
+  "address": "12 Allandale Road, Stoneygate",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE2 2DA",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe / bistro",
+  "phone": "0116 270 6865 (seed listing)",
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Cafe bistro. Business listings describe home-cooked daily specials, breakfast, hot and cold lunches, afternoon tea and Sunday lunch.",
+  "services": [
+    "Breakfast",
+    "Hot and cold lunches",
+    "Afternoon tea",
+    "Sunday lunch (secondary listing)"
+  ],
+  "review_summary": "Google review score/text not verified. Tripadvisor reviews and local directory snippets describe food/service; not Google review content.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for source-specific evidence"
+  ],
+  "uncertain_fields": "No official website or current hours verified; phone only from seed/secondary directory.",
+  "image_sources": []
+}

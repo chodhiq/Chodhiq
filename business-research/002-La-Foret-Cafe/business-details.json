@@ -1,0 +1,27 @@
+{
+  "raw_id": 2,
+  "business_name": "La Forêt Café",
+  "address": "11 King Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 6RH (business/city listings); LE1 6RN also appears in company/review listings",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe / coffee shop",
+  "phone": "07898 007227",
+  "website": null,
+  "social_media": "https://m.facebook.com/laforetcafeuk/",
+  "opening_hours": "Tue–Fri 09:00–18:00; Sat 10:00–18:00; Sun 10:00–17:00; Mon closed (directory updated 2026-06-07)",
+  "description": "Cafe and coffee shop; secondary review snippets mention soup, avocado and egg dishes, and coffee.",
+  "services": [
+    "Cafe food",
+    "Coffee"
+  ],
+  "review_summary": "No Google rating/review verified; Tripadvisor reviews exist but are not Google reviews.",
+  "google_rating": null,
+  "verified_fields": [
+    "See source list for evidence by field"
+  ],
+  "uncertain_fields": "Postcode conflict; hours from directory, not first-party; social page currency unconfirmed.",
+  "image_sources": []
+}

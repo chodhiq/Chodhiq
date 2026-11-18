@@ -1,0 +1,29 @@
+{
+  "raw_id": 33,
+  "business_name": "Wild Tango",
+  "address": "14–16 King Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 6RJ",
+  "latitude": null,
+  "longitude": null,
+  "category": "Argentinian restaurant",
+  "phone": "0116 319 7837",
+  "website": "https://wildtango.co.uk/",
+  "social_media": null,
+  "opening_hours": "Mon–Sat 06:30–01:00; Sun 10:00–18:00 (official contact page; unusually early weekday start, verify before use)",
+  "description": "Argentinian restaurant at 14–16 King Street. The official site describes Argentine cuisine and table bookings.",
+  "services": [
+    "Argentinian dining",
+    "Table reservations",
+    "Lunch and dinner (third-party listing)"
+  ],
+  "review_summary": "Google rating/text not verified; Tripadvisor listing includes positive review snippets.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for evidence"
+  ],
+  "uncertain_fields": "Official hours show 06:30 weekday opening, which may be a typo or service-time nuance; confirm directly.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

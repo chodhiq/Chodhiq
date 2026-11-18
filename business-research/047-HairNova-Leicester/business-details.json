@@ -1,0 +1,31 @@
+{
+  "raw_id": 47,
+  "business_name": "HairNova Leicester",
+  "address": "40 Silver Street, St Martin's Square / The Lanes",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 5ET (official website); seed lists LE1 5ET",
+  "latitude": null,
+  "longitude": null,
+  "category": "Hair salon",
+  "phone": "020 3983 5818",
+  "website": "https://hairnovaleicester.co.uk/",
+  "social_media": null,
+  "opening_hours": null,
+  "description": "City-centre hair salon offering haircuts, colouring, hair treatments and extensions.",
+  "services": [
+    "Haircuts",
+    "Hair colouring",
+    "Hair treatments",
+    "Hair extensions",
+    "Consultations"
+  ],
+  "review_summary": "Google score/text not verified. Fresha search snippets show a 5.0 rating with 900+ reviews, but this is Fresha platform data, not Google; exact count varies by page snapshot.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for field-level source context"
+  ],
+  "uncertain_fields": "No opening hours captured from official site in this search.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

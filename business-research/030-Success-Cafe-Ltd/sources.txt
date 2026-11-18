@@ -1,0 +1,4 @@
+ChodhiQ Leicester seed raw_id 30: Success Cafe Ltd
+Research date: 2026-11-18
+Sources:
+No Google review score/text verified. For unverified records, this folder documents the search outcome and retains fields as null rather than inferring from the seed name/address.

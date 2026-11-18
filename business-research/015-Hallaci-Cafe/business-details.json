@@ -1,0 +1,28 @@
+{
+  "raw_id": 15,
+  "business_name": "Hallaci Cafe",
+  "address": "79 Church Gate",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 3AN",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe",
+  "phone": null,
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Cafe at 79 Church Gate. Secondary listings describe Albanian/Turkish home-cooked food, sandwiches, toasties and daily specials.",
+  "services": [
+    "Cafe food",
+    "Sandwiches and toasties (secondary sources)",
+    "Delivery listed on Deliveroo"
+  ],
+  "review_summary": "Google review score/text not verified.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for source-specific evidence"
+  ],
+  "uncertain_fields": "Hours, phone and official site not verified; cuisine/menu details from secondary directories.",
+  "image_sources": []
+}

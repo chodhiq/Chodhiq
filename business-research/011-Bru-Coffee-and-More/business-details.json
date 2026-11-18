@@ -1,0 +1,28 @@
+{
+  "raw_id": 11,
+  "business_name": "Bru Coffee and More",
+  "address": "20–22 Granby Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 1DE",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe / coffee shop / bakery",
+  "phone": "0116 251 9667 (seed; not confirmed on official page)",
+  "website": "https://brucoffee.co.uk/leicester/",
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Leicester cafe serving coffee, food and desserts. Official page confirms the Granby Street location and describes extended opening, but exact schedule was not captured.",
+  "services": [
+    "Coffee",
+    "Food",
+    "Desserts"
+  ],
+  "review_summary": "Google review score/text not verified. Third-party listings have review content, not recorded as Google reviews.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for source-specific evidence"
+  ],
+  "uncertain_fields": "Exact current hours and phone not verified; do not use another Bru branch details.",
+  "image_sources": []
+}

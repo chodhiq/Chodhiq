@@ -1,0 +1,28 @@
+{
+  "raw_id": 39,
+  "business_name": "L'Amore Dessert Lounge (Evington Road)",
+  "address": "145 Evington Road",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE2 1QJ",
+  "latitude": null,
+  "longitude": null,
+  "category": "Dessert lounge",
+  "phone": "07850 278079 (seed listing; not independently verified)",
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Dessert lounge at 145 Evington Road. Licensing records document a premises licence application and delivery menus list desserts including cakes and sundaes.",
+  "services": [
+    "Desserts",
+    "Delivery listing (Uber Eats)"
+  ],
+  "review_summary": "Google rating/text not verified.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for evidence"
+  ],
+  "uncertain_fields": "Official hours and current phone not verified; source evidence confirms venue/licensing and address, not current schedule.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

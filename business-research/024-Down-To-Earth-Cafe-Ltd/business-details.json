@@ -1,0 +1,25 @@
+{
+  "raw_id": 24,
+  "business_name": "Down To Earth Cafe Ltd",
+  "address": "98 Rutland Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 1SB",
+  "latitude": null,
+  "longitude": null,
+  "category": "Company SIC includes unlicensed restaurants and cafes",
+  "phone": null,
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Companies House confirms an active company named Down To Earth Cafe Ltd registered at 98 Rutland Street. This alone does not confirm a cafe is operating at the address.",
+  "services": [],
+  "review_summary": "No Google reviews or score verified.",
+  "google_rating": null,
+  "storefront_verified": false,
+  "verified_fields": [
+    "See sources.txt; legal/company records are not proof of an operating storefront"
+  ],
+  "uncertain_fields": "New company incorporated 26 November 2025; registered office only. Customer-facing storefront, service, hours and contact details not established.",
+  "image_sources": []
+}

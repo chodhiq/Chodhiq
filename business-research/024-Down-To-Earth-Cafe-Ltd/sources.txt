@@ -1,0 +1,6 @@
+ChodhiQ Leicester seed raw_id 24: Down To Earth Cafe Ltd
+Research date: 2026-11-18
+Sources:
+https://find-and-update.company-information.service.gov.uk/company/16876284
+https://www.checkcompany.co.uk/company/16876284/DOWN-TO-EARTH-CAFE-LTD
+No Google review score/text verified. For unverified records, this folder documents the search outcome and retains fields as null rather than inferring from the seed name/address.

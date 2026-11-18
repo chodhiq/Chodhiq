@@ -1,0 +1,28 @@
+{
+  "raw_id": 10,
+  "business_name": "Bryter Moon Deli",
+  "address": "Unit 1, Silver Arcade",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 5FA",
+  "latitude": null,
+  "longitude": null,
+  "category": "Deli / cafe",
+  "phone": "0116 251 7786",
+  "website": "https://www.brytermoon.net/",
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Delicatessen in Leicester's historic Silver Arcade; offers deli food and a published menu.",
+  "services": [
+    "Delicatessen",
+    "Cafe/food and drink",
+    "Menu available online"
+  ],
+  "review_summary": "No Google score/text captured; Tripadvisor reviews include mixed opinions.",
+  "google_rating": null,
+  "verified_fields": [
+    "See source list for evidence by field"
+  ],
+  "uncertain_fields": "Opening hours not verified in this pass. Raw_id 40 is a possible duplicate at the same name/address.",
+  "image_sources": []
+}

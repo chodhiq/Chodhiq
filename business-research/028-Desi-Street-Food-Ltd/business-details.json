@@ -1,0 +1,25 @@
+{
+  "raw_id": 28,
+  "business_name": "Desi Street Food Ltd",
+  "address": "22–24 Horsefair Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 5BN",
+  "latitude": null,
+  "longitude": null,
+  "category": "Restaurant / cafe (seed category only)",
+  "phone": null,
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "No sufficiently reliable source found in this pass to verify a current customer-facing business under this exact legal name and address.",
+  "services": [],
+  "review_summary": "No Google reviews or score verified.",
+  "google_rating": null,
+  "storefront_verified": false,
+  "verified_fields": [
+    "See sources.txt; legal/company records are not proof of an operating storefront"
+  ],
+  "uncertain_fields": "Storefront and legal-entity link, operating status, menu, hours and contact details remain unverified.",
+  "image_sources": []
+}

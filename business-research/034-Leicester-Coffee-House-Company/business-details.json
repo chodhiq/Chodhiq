@@ -1,0 +1,30 @@
+{
+  "raw_id": 34,
+  "business_name": "Leicester Coffee House Company",
+  "address": "110 Granby Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 1DL",
+  "latitude": null,
+  "longitude": null,
+  "category": "Coffee shop",
+  "phone": "07772 258728 (seed listing; official current page did not confirm phone)",
+  "website": "https://www.leicestercoffeehouse.co.uk/",
+  "social_media": null,
+  "opening_hours": "Mon–Fri 07:00–16:00; Sat 09:00–15:00; Sunday not listed",
+  "description": "Coffee shop in a historic Granby Street building; serves espresso-based drinks using in-house roasted beans and cakes baked in-house, including gluten-free and vegan options.",
+  "services": [
+    "Specialty coffee",
+    "In-house roasted coffee beans",
+    "House-baked cakes",
+    "Gluten-free and vegan cake options"
+  ],
+  "review_summary": "Google rating/text not verified; Tripadvisor listing exists.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for evidence"
+  ],
+  "uncertain_fields": "Seed phone not corroborated on current official contact page; Sunday hours not listed.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

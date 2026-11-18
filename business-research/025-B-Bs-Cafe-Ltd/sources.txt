@@ -1,0 +1,7 @@
+ChodhiQ Leicester seed raw_id 25: B-B's Cafe Ltd (legal entity candidate)
+Research date: 2026-11-18
+Sources:
+https://find-and-update.company-information.service.gov.uk/company/15439439
+https://ratings.food.gov.uk/business/1764666/b-bs-cafe
+https://www.tripadvisor.co.uk/Restaurant_Review-g186333-d34086973-Reviews-B_B_s_Cafe-Leicestershire_England.html
+No Google review score/text verified. For unverified records, this folder documents the search outcome and retains fields as null rather than inferring from the seed name/address.

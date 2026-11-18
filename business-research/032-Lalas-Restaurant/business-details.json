@@ -1,0 +1,31 @@
+{
+  "raw_id": 32,
+  "business_name": "Lala's Restaurant",
+  "address": "17 Halford Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 1JA",
+  "latitude": null,
+  "longitude": null,
+  "category": "Restaurant / takeaway",
+  "phone": "0116 507 9949",
+  "website": "https://www.thelalasrestaurant.com/",
+  "social_media": null,
+  "opening_hours": "Mon–Thu 11:00–23:00; Fri–Sat 11:00–00:00; Sun 12:00–22:00",
+  "description": "Restaurant serving stone-baked pizzas, peri-peri chicken, grilled dishes and burgers, cooked to order.",
+  "services": [
+    "Dine-in",
+    "Takeaway",
+    "Pizza",
+    "Flame-grilled chicken and grills",
+    "Burgers"
+  ],
+  "review_summary": "Google score/text not verified; official site mentions 500+ happy customers but does not provide a review platform breakdown.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for evidence"
+  ],
+  "uncertain_fields": "Official site identifies Lala's Restaurant at the exact seed address; no area or coordinates verified.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

@@ -1,0 +1,24 @@
+{
+  "raw_id": 18,
+  "business_name": "B-B's Cafe",
+  "address": "28 Belgrave Road",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE4 5AS",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe / restaurant",
+  "phone": "0116 221 6670",
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Cafe/restaurant at 28 Belgrave Road. Current official food hygiene record corroborates this business and address; menu/offer details not confirmed from first-party source.",
+  "services": [],
+  "review_summary": "Google score/text not verified; Tripadvisor listing exists but no rating copied.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for source-specific evidence"
+  ],
+  "uncertain_fields": "Possible duplicate/relationship ambiguity with raw_id 25 (B B's Cafe Ltd); legal entity vs storefront operator is unresolved. Hours not verified.",
+  "image_sources": []
+}

@@ -1,0 +1,29 @@
+{
+  "raw_id": 19,
+  "business_name": "Merchant of Venice (Granby Street branch)",
+  "address": "173–175 Granby Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 6FE",
+  "latitude": null,
+  "longitude": null,
+  "category": "Italian cafe / restaurant",
+  "phone": "0116 291 5604",
+  "website": "https://merchantofvenice.co/",
+  "social_media": null,
+  "opening_hours": "Mon–Thu 08:00–22:00; Fri–Sat 08:00–23:00; Sun 09:00–22:00 (official site, Granby branch)",
+  "description": "Italian restaurant and cafe serving coffee, ice cream, pastries, salads and other Italian food. This record is specifically the Granby Street branch.",
+  "services": [
+    "Italian dining",
+    "Coffee",
+    "Ice cream, pastries and desserts",
+    "Reservations"
+  ],
+  "review_summary": "Google rating/review text not verified; Tripadvisor has location-specific reviews.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for source-specific evidence"
+  ],
+  "uncertain_fields": "Merchant of Venice also has a separate Leicester branch at Loseby Lane; keep branch records distinct.",
+  "image_sources": []
+}

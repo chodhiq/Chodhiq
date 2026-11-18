@@ -1,0 +1,30 @@
+{
+  "raw_id": 36,
+  "business_name": "The Tiny Bakery",
+  "address": "98 Clarendon Park Road, Clarendon Park",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE2 3AE",
+  "latitude": null,
+  "longitude": null,
+  "category": "Artisan bakery",
+  "phone": "0116 244 6447 (unverified; secondary listings differ; omit from profile until checked)",
+  "website": "https://thetinybakeryleicester.com/ (business link in listings; site not accessed/confirmed active)",
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Small artisan bakery reported to make handcrafted pastries, sourdough bread and cakes on site; location is corroborated by Visit Leicester and the Food Standards Agency.",
+  "services": [
+    "Artisan pastries",
+    "Sourdough bread",
+    "Cakes",
+    "Coffee (secondary listing)"
+  ],
+  "review_summary": "Google rating/text not verified; Tripadvisor listing exists with mixed review snippets.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for evidence"
+  ],
+  "uncertain_fields": "Current hours/phone and status of official website not verified in this pass.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

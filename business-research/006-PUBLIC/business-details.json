@@ -1,0 +1,29 @@
+{
+  "raw_id": 6,
+  "business_name": "PUBLIC Leicester (seed name: PUBLIC)",
+  "address": "41 King Street, Canopy",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 6RN",
+  "latitude": null,
+  "longitude": null,
+  "category": "Independent coffee shop / bakery",
+  "phone": null,
+  "website": "https://ourpublic.co.uk/find-us/leicester",
+  "social_media": null,
+  "opening_hours": "Mon–Fri 07:30–18:00; Sat 08:00–18:00; Sun 09:00–17:00",
+  "description": "Independent coffee shop and bakery serving coffee, filled croissants, bakes and food; located inside Canopy.",
+  "services": [
+    "Coffee",
+    "Bakery and filled croissants",
+    "Food",
+    "Work/meet space"
+  ],
+  "review_summary": "No Google score/text captured.",
+  "google_rating": null,
+  "verified_fields": [
+    "See source list for evidence by field"
+  ],
+  "uncertain_fields": "Possible overlap with raw_id 197 PUBLIC & Plants at same address; relationship unresolved.",
+  "image_sources": []
+}

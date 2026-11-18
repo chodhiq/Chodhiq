@@ -1,0 +1,27 @@
+{
+  "raw_id": 13,
+  "business_name": "KAI",
+  "address": "4 St Martins Square",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 5DF",
+  "latitude": null,
+  "longitude": null,
+  "category": "Brunch restaurant",
+  "phone": "0116 262 1400 (seed listing)",
+  "website": "https://kai.kitchen/",
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Leicester brunch and coffee venue. Recent local news reported a temporary closure for refurbishment; current reopening date/status was not established in this pass.",
+  "services": [
+    "Brunch",
+    "Coffee"
+  ],
+  "review_summary": "Google score/text not verified. Third-party reviews exist but not treated as Google reviews.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for source-specific evidence"
+  ],
+  "uncertain_fields": "Current operating status uncertain due to reported refurbishment closure; hours not verified.",
+  "image_sources": []
+}

@@ -1,0 +1,7 @@
+ChodhiQ Leicester seed raw_id 23: Santhi Leicester Ltd
+Research date: 2026-11-18
+Sources:
+https://find-and-update.company-information.service.gov.uk/officers/p_FTuY6YbiBxHz1qLJaODdG94-o/appointments
+https://www.192.com/atoz/financial/business/13240801/
+https://www.dataindex.online/postalcode/postcode/le1-1dl
+No Google review score/text verified. For unverified records, this folder documents the search outcome and retains fields as null rather than inferring from the seed name/address.

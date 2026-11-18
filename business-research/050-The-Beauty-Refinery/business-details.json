@@ -1,0 +1,34 @@
+{
+  "raw_id": 50,
+  "business_name": "The Beauty Refinery",
+  "address": "First Floor, 101 London Road",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE2 0PF",
+  "latitude": null,
+  "longitude": null,
+  "category": "Beauty salon / aesthetics",
+  "phone": "0116 254 7940; 07516 096 525; 07542 556 525 (official contact page; mobile numbers differ slightly from seed)",
+  "website": "https://thebeautyrefinery.co.uk/",
+  "social_media": null,
+  "opening_hours": "Mon–Sat 10:00–18:00; Sun 11:30–18:00 (official contact page)",
+  "description": "Established Leicester beauty salon offering beauty and aesthetic treatments at its London Road premises.",
+  "services": [
+    "Aesthetic treatments",
+    "Facials",
+    "Japanese head spa",
+    "Brows and semi-permanent makeup",
+    "Lash lifts and extensions",
+    "Waxing",
+    "Manicure and pedicure",
+    "Hair services"
+  ],
+  "review_summary": "Google rating/text not verified. Fresha listing shows 4.9/5 with roughly 3,000 votes; this is Fresha data, not Google.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for field-level source context"
+  ],
+  "uncertain_fields": "Seed mobile number 07516 096525 differs from the official page's 07516 096 525 formatting/alternate displayed number 07516 069 525; retain all and confirm before publication.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

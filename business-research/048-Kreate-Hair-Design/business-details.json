@@ -1,0 +1,27 @@
+{
+  "raw_id": 48,
+  "business_name": "Kreate Hair Design",
+  "address": "Ground Floor, 47 Belvoir Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 6SL",
+  "latitude": null,
+  "longitude": null,
+  "category": "Hair salon",
+  "phone": "0116 319 3470 (seed listing; not independently confirmed)",
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Hair salon at 47 Belvoir Street; active Companies House record under Kreate Hair Design Limited and a booking directory listing match the salon name and address.",
+  "services": [
+    "Hairdressing (specific treatments not verified)"
+  ],
+  "review_summary": "Google rating/text not verified; Fresha has a business listing, but rating/review data not transcribed.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for field-level source context"
+  ],
+  "uncertain_fields": "Company registered office and salon listing match, but current service list and hours not confirmed.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

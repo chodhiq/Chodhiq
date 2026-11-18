@@ -1,0 +1,28 @@
+{
+  "raw_id": 38,
+  "business_name": "Cakes & Bakes Evington Road",
+  "address": "200 Evington Road",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE2 1HN",
+  "latitude": null,
+  "longitude": null,
+  "category": "Bakery / cake shop",
+  "phone": "0116 507 2549",
+  "website": "https://www.cakesandbakes.co.uk/shop-evington-road-leicester",
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Cake shop and bakery at 200 Evington Road; official location page lists cakes and baked products for this Leicester branch.",
+  "services": [
+    "Cakes and baked goods",
+    "Online ordering/delivery listing (platform dependent)"
+  ],
+  "review_summary": "Google rating/text not verified; third-party delivery listings show reviews but not used as Google reviews.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for evidence"
+  ],
+  "uncertain_fields": "Branch match confirmed at address; hours not located in official page results.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

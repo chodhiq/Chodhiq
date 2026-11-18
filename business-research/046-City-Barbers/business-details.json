@@ -1,0 +1,28 @@
+{
+  "raw_id": 46,
+  "business_name": "City Barbers Leicester",
+  "address": "11 Rutland Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 1RB",
+  "latitude": null,
+  "longitude": null,
+  "category": "Barber shop",
+  "phone": "07931 427370 (Visit Leicester guide; some older listings show 0116 254 3656)",
+  "website": null,
+  "social_media": "https://www.instagram.com/citybarbersleicester/ (handle printed in Visit Leicester guide; current profile not checked)",
+  "opening_hours": null,
+  "description": "Barber shop at 11 Rutland Street; local booking/listing pages identify barbering and hair styling services.",
+  "services": [
+    "Barbering",
+    "Hair styling"
+  ],
+  "review_summary": "Google rating/text not verified.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for field-level source context"
+  ],
+  "uncertain_fields": "Phone varies across listings; opening hours not verified. Social URL reconstructed from official guide handle and may need confirmation.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

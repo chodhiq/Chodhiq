@@ -1,0 +1,27 @@
+{
+  "raw_id": 45,
+  "business_name": "Fade Barber",
+  "address": "389 Humberstone Road",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE5 3DF",
+  "latitude": null,
+  "longitude": null,
+  "category": "Barber shop",
+  "phone": "07763 636398",
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Barber shop at 389 Humberstone Road; appointment platform listings associate this exact Leicester address and phone with Fade Barber.",
+  "services": [
+    "Barbering / haircuts (service detail not further verified)"
+  ],
+  "review_summary": "Google rating/text not verified; Fresha search listing shows booking/review surface, but no rating transcribed.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for field-level source context"
+  ],
+  "uncertain_fields": "No official website or current opening schedule verified.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

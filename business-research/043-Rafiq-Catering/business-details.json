@@ -1,0 +1,32 @@
+{
+  "raw_id": 43,
+  "business_name": "Rafiq Catering",
+  "address": "77 Dorothy Road",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE5 5DS",
+  "latitude": null,
+  "longitude": null,
+  "category": "Event catering",
+  "phone": "07878 385876",
+  "website": "https://www.rafiqcatering.com/",
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Leicester caterer specializing in wedding, private and corporate event catering, with menus ranging from traditional to fusion and service at customer-selected venues.",
+  "services": [
+    "Wedding catering",
+    "Private and family meal catering",
+    "Corporate events",
+    "Private chef service",
+    "Menu planning",
+    "On-site chefs and service staff by arrangement"
+  ],
+  "review_summary": "Google rating/text not verified.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for field-level source context"
+  ],
+  "uncertain_fields": "77 Dorothy Road is the contact/registered address; it is not described as a walk-in storefront. No public opening hours.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

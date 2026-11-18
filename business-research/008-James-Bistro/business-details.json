@@ -1,0 +1,31 @@
+{
+  "raw_id": 8,
+  "business_name": "James' Bistro",
+  "address": "5 East Bond Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 4SX",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe / bistro",
+  "phone": "0116 251 3323",
+  "website": "https://jamesbistro.com/",
+  "social_media": null,
+  "opening_hours": "Tue–Wed 10:00–15:00; Thu–Fri 10:00–15:00 and 17:00–late; Sat 10:00–16:00 and 17:00–late; Sun–Mon closed",
+  "description": "Independent cafe/bistro serving brunch, lunch and dinner on selected days, with locally sourced ingredients where possible.",
+  "services": [
+    "Brunch",
+    "Lunch",
+    "Dinner on selected days",
+    "Vegan, vegetarian and gluten-free adaptations",
+    "Outdoor seating",
+    "Private hire and event catering"
+  ],
+  "review_summary": "No Google score/text captured; Tripadvisor reviews include positive feedback and a report of a long wait.",
+  "google_rating": null,
+  "verified_fields": [
+    "See source list for evidence by field"
+  ],
+  "uncertain_fields": "Hours may change; confirm before visit.",
+  "image_sources": []
+}

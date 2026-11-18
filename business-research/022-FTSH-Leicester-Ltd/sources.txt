@@ -1,0 +1,7 @@
+ChodhiQ Leicester seed raw_id 22: FTSH Leicester Ltd (possible trading name: Fattoush Urban Lebanese Kitchen)
+Research date: 2026-11-18
+Sources:
+https://find-and-update.company-information.service.gov.uk/company/13298526
+https://sponsordirectory.co.uk/ftsh-leicester-ltd-enderby
+https://sponsorlicensechecker.uk/sponsors/ftsh-leicester-ltd-t-a-fattoush-urban-lebanese-kitchen
+No Google review score/text verified. For unverified records, this folder documents the search outcome and retains fields as null rather than inferring from the seed name/address.

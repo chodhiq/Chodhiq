@@ -1,0 +1,1730 @@
+{
+  "title": "ChodhiQ Leicester Business Research",
+  "assembled_on": "2026-11-18",
+  "input_register": "project-docs/seed/leicester-review.csv",
+  "entry_count": 50,
+  "notes": [
+    "This is a research aid, not a publication-ready verified directory.",
+    "Null values mean the field was not verified.",
+    "Google review ratings and text were not independently verified; review summaries identify third-party material where applicable.",
+    "Potential duplicates and mismatches are retained under their original raw IDs and flagged for review.",
+    "No images are included."
+  ],
+  "businesses": [
+    {
+      "raw_id": 1,
+      "business_name": "La Maison Cafe",
+      "address": "43 Abbey Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 3TE",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe / restaurant",
+      "phone": "0116 431 5524 (official contact page; separate official footer also shows 0116 482 6912)",
+      "website": "https://www.lamaisoncafe.co.uk/leicester/",
+      "social_media": null,
+      "opening_hours": "Mon–Thu 10:00–17:00; Fri 14:00–17:00; Sat–Sun 10:00–17:00",
+      "description": "Cafe serving breakfast and cafe food; offers collection ordering, delivery in eligible postcodes and a loyalty scheme.",
+      "services": [
+        "Breakfast",
+        "Cafe food and drinks",
+        "Collection ordering",
+        "Eligible delivery",
+        "Loyalty points"
+      ],
+      "review_summary": "No Google score/text verified; official site displays a customer comment praising waffles and service.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See source list for evidence by field"
+      ],
+      "uncertain_fields": "Official site shows conflicting phone numbers; coordinates/area unverified.",
+      "image_sources": [],
+      "sources": [
+        "https://www.lamaisoncafe.co.uk/leicester/",
+        "https://www.lamaisoncafe.co.uk/leicester/contact-us.html",
+        "https://www.lamaisoncafe.co.uk/leicester/menu.html"
+      ]
+    },
+    {
+      "raw_id": 2,
+      "business_name": "La Forêt Café",
+      "address": "11 King Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 6RH (business/city listings); LE1 6RN also appears in company/review listings",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe / coffee shop",
+      "phone": "07898 007227",
+      "website": null,
+      "social_media": "https://m.facebook.com/laforetcafeuk/",
+      "opening_hours": "Tue–Fri 09:00–18:00; Sat 10:00–18:00; Sun 10:00–17:00; Mon closed (directory updated 2026-06-07)",
+      "description": "Cafe and coffee shop; secondary review snippets mention soup, avocado and egg dishes, and coffee.",
+      "services": [
+        "Cafe food",
+        "Coffee"
+      ],
+      "review_summary": "No Google rating/review verified; Tripadvisor reviews exist but are not Google reviews.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See source list for evidence by field"
+      ],
+      "uncertain_fields": "Postcode conflict; hours from directory, not first-party; social page currency unconfirmed.",
+      "image_sources": [],
+      "sources": [
+        "https://leicester.cylex-uk.co.uk/company/la-for%C3%AAt-cafe-28836487.html",
+        "https://ratings.food.gov.uk/business/1231067",
+        "https://m.facebook.com/laforetcafeuk/"
+      ]
+    },
+    {
+      "raw_id": 3,
+      "business_name": "Lunch Box",
+      "address": "1 Malcolm Arcade",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 5FT",
+      "latitude": null,
+      "longitude": null,
+      "category": "Lunch restaurant / cafe",
+      "phone": null,
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Candidate listing for a lunch cafe at this address; current operation could not be confirmed from an authoritative current source.",
+      "services": [],
+      "review_summary": "A local directory currently lists a 5.0 score and 39 reviews, but these were not verified as Google reviews; another directory says closed.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See source list for evidence by field"
+      ],
+      "uncertain_fields": "Current operation/status conflict; phone, hours and official page not found.",
+      "image_sources": [],
+      "sources": [
+        "https://www.visitleicester.info/dbimgs/Leicester%20Cafe%20Directory.pdf",
+        "https://www.urbanary.co.uk/restaurants/leicester",
+        "https://niche-eats.co.uk/restaurants/leicester/lunch-box-leicester"
+      ]
+    },
+    {
+      "raw_id": 4,
+      "business_name": "Bitsy's Emporium of Awesome",
+      "address": "The Old Mill, 4 North Mills, Frog Island",
+      "area": "Frog Island",
+      "city": "Leicester",
+      "postcode": "LE3 5DL",
+      "latitude": null,
+      "longitude": null,
+      "category": "Bake shop / cafe",
+      "phone": null,
+      "website": "https://www.bitsysemporium.com/",
+      "social_media": null,
+      "opening_hours": "Mon closed; Tue–Wed 11:00–16:00; Thu 11:00–20:00; Fri–Sun 11:00–16:00",
+      "description": "Independent bake shop and cafe in a canal-side old mill, serving house-made baked goods, coffee and other food including grilled cheese.",
+      "services": [
+        "House-made baked goods",
+        "Coffee and food",
+        "Takeaway packaging",
+        "Pet friendly",
+        "Seating",
+        "Limited weekday parking"
+      ],
+      "review_summary": "No Google score/text verified; third-party reviews exist.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See source list for evidence by field"
+      ],
+      "uncertain_fields": "Phone and coordinates not verified.",
+      "image_sources": [],
+      "sources": [
+        "https://www.bitsysemporium.com/",
+        "https://www.bitsysemporium.com/bitsy-s-bakeshop",
+        "https://visitleicester.info/point-of-interest/bitsys-emporium-of-awesome/"
+      ]
+    },
+    {
+      "raw_id": 5,
+      "business_name": "Bread & Honey Coffee House",
+      "address": "15 King Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 6RN",
+      "latitude": null,
+      "longitude": null,
+      "category": "Coffee shop / cafe",
+      "phone": null,
+      "website": "https://breadnhoneycoffee.com/",
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Coffee house; secondary review aggregators describe coffee, sandwiches and freshly baked cakes and pastries.",
+      "services": [
+        "Coffee",
+        "Sandwiches and baked goods (secondary listing)"
+      ],
+      "review_summary": "No Google rating/text verified; secondary platforms have reviews.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See source list for evidence by field"
+      ],
+      "uncertain_fields": "Current hours, phone and official site details not verified.",
+      "image_sources": [],
+      "sources": [
+        "https://breadnhoneycoffee.com/",
+        "https://wanderlog.com/place/details/1430420/bread--honey",
+        "https://restaurantguru.com/Bread-and-Honey-Leicester"
+      ]
+    },
+    {
+      "raw_id": 6,
+      "business_name": "PUBLIC Leicester (seed name: PUBLIC)",
+      "address": "41 King Street, Canopy",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 6RN",
+      "latitude": null,
+      "longitude": null,
+      "category": "Independent coffee shop / bakery",
+      "phone": null,
+      "website": "https://ourpublic.co.uk/find-us/leicester",
+      "social_media": null,
+      "opening_hours": "Mon–Fri 07:30–18:00; Sat 08:00–18:00; Sun 09:00–17:00",
+      "description": "Independent coffee shop and bakery serving coffee, filled croissants, bakes and food; located inside Canopy.",
+      "services": [
+        "Coffee",
+        "Bakery and filled croissants",
+        "Food",
+        "Work/meet space"
+      ],
+      "review_summary": "No Google score/text captured.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See source list for evidence by field"
+      ],
+      "uncertain_fields": "Possible overlap with raw_id 197 PUBLIC & Plants at same address; relationship unresolved.",
+      "image_sources": [],
+      "sources": [
+        "https://ourpublic.co.uk/find-us/leicester",
+        "https://ourpublic.co.uk/about",
+        "https://visitleicester.info/point-of-interest/public-plants/"
+      ]
+    },
+    {
+      "raw_id": 7,
+      "business_name": "Chloe Gourmet",
+      "address": "10–12 Cank Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 5GW",
+      "latitude": null,
+      "longitude": null,
+      "category": "French patisserie / cafe",
+      "phone": "0116 319 6477 (secondary directory)",
+      "website": null,
+      "social_media": null,
+      "opening_hours": "Mon–Fri 11:00–16:00; Sat 10:00–17:00; Sun 11:00–16:00 (directory updated 2026-06-07)",
+      "description": "French patisserie and cafe; secondary sources describe pastries, desserts and coffee.",
+      "services": [
+        "Patisserie",
+        "Cafe/coffee"
+      ],
+      "review_summary": "No Google score/text captured; third-party reviews exist.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See source list for evidence by field"
+      ],
+      "uncertain_fields": "Hours/phone from secondary sources; official site/social not found in this pass.",
+      "image_sources": [],
+      "sources": [
+        "https://visitleicester.info/wp-content/uploads/2025/08/Cafe-Guide-2025.pdf",
+        "https://find-open.co.uk/leicester/chloe-gourmet-3196589",
+        "https://ratings.food.gov.uk/business/1217084",
+        "https://www.bizseek.co.uk/chloe-gourmet-0116-319-6477"
+      ]
+    },
+    {
+      "raw_id": 8,
+      "business_name": "James' Bistro",
+      "address": "5 East Bond Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 4SX",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe / bistro",
+      "phone": "0116 251 3323",
+      "website": "https://jamesbistro.com/",
+      "social_media": null,
+      "opening_hours": "Tue–Wed 10:00–15:00; Thu–Fri 10:00–15:00 and 17:00–late; Sat 10:00–16:00 and 17:00–late; Sun–Mon closed",
+      "description": "Independent cafe/bistro serving brunch, lunch and dinner on selected days, with locally sourced ingredients where possible.",
+      "services": [
+        "Brunch",
+        "Lunch",
+        "Dinner on selected days",
+        "Vegan, vegetarian and gluten-free adaptations",
+        "Outdoor seating",
+        "Private hire and event catering"
+      ],
+      "review_summary": "No Google score/text captured; Tripadvisor reviews include positive feedback and a report of a long wait.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See source list for evidence by field"
+      ],
+      "uncertain_fields": "Hours may change; confirm before visit.",
+      "image_sources": [],
+      "sources": [
+        "https://jamesbistro.com/",
+        "https://jamesbistro.com/menu/",
+        "https://visitleicester.info/point-of-interest/james-bistro/",
+        "https://www.tripadvisor.co.uk/Restaurant_Review-g186334-d2212845-Reviews-James_Cafe_Bistro-Leicester_Leicestershire_England.html"
+      ]
+    },
+    {
+      "raw_id": 9,
+      "business_name": "Casablanca Café",
+      "address": "186 Uppingham Road",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE5 0QG",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe",
+      "phone": "0116 276 8260 (seed; not independently corroborated in sources returned)",
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Cafe at 186 Uppingham Road; current ordering listing describes a coffee and cafe venue.",
+      "services": [
+        "Cafe drinks/food (limited source detail)"
+      ],
+      "review_summary": "No Google review score/text captured.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See source list for evidence by field"
+      ],
+      "uncertain_fields": "Hours and phone not verified; name/address match supported by delivery and local listings.",
+      "image_sources": [],
+      "sources": [
+        "https://www.coffeeclub.co.uk/coffee-deals/independent/casablanca-cafe-leicester",
+        "https://www.ubereats.com/gb/store/casablanca-cafe/WZxLkhYgVu2pGU9o5ffWxw",
+        "https://evingtonecho.uk/wp-content/uploads/2022/10/OCT-NOV22-ECHO.pdf"
+      ]
+    },
+    {
+      "raw_id": 10,
+      "business_name": "Bryter Moon Deli",
+      "address": "Unit 1, Silver Arcade",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 5FA",
+      "latitude": null,
+      "longitude": null,
+      "category": "Deli / cafe",
+      "phone": "0116 251 7786",
+      "website": "https://www.brytermoon.net/",
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Delicatessen in Leicester's historic Silver Arcade; offers deli food and a published menu.",
+      "services": [
+        "Delicatessen",
+        "Cafe/food and drink",
+        "Menu available online"
+      ],
+      "review_summary": "No Google score/text captured; Tripadvisor reviews include mixed opinions.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See source list for evidence by field"
+      ],
+      "uncertain_fields": "Opening hours not verified in this pass. Raw_id 40 is a possible duplicate at the same name/address.",
+      "image_sources": [],
+      "sources": [
+        "https://www.brytermoon.net/",
+        "https://www.brytermoon.net/contact",
+        "https://www.brytermoon.net/menu-1",
+        "https://www.tripadvisor.co.uk/Restaurant_Review-g186334-d17806086-Reviews-Bryter_Moon_Deli-Leicester_Leicestershire_England.html"
+      ]
+    },
+    {
+      "raw_id": 11,
+      "business_name": "Bru Coffee and More",
+      "address": "20–22 Granby Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 1DE",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe / coffee shop / bakery",
+      "phone": "0116 251 9667 (seed; not confirmed on official page)",
+      "website": "https://brucoffee.co.uk/leicester/",
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Leicester cafe serving coffee, food and desserts. Official page confirms the Granby Street location and describes extended opening, but exact schedule was not captured.",
+      "services": [
+        "Coffee",
+        "Food",
+        "Desserts"
+      ],
+      "review_summary": "Google review score/text not verified. Third-party listings have review content, not recorded as Google reviews.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for source-specific evidence"
+      ],
+      "uncertain_fields": "Exact current hours and phone not verified; do not use another Bru branch details.",
+      "image_sources": [],
+      "sources": [
+        "https://brucoffee.co.uk/leicester/",
+        "https://brucoffee.co.uk/locations/",
+        "https://ratings.food.gov.uk/business/668690",
+        "https://visitleicester.info/dbimgs/Leicester%20Cafe%20Directory.pdf"
+      ]
+    },
+    {
+      "raw_id": 12,
+      "business_name": "Brown's Cafe Bistro",
+      "address": "12 Allandale Road, Stoneygate",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE2 2DA",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe / bistro",
+      "phone": "0116 270 6865 (seed listing)",
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Cafe bistro. Business listings describe home-cooked daily specials, breakfast, hot and cold lunches, afternoon tea and Sunday lunch.",
+      "services": [
+        "Breakfast",
+        "Hot and cold lunches",
+        "Afternoon tea",
+        "Sunday lunch (secondary listing)"
+      ],
+      "review_summary": "Google review score/text not verified. Tripadvisor reviews and local directory snippets describe food/service; not Google review content.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for source-specific evidence"
+      ],
+      "uncertain_fields": "No official website or current hours verified; phone only from seed/secondary directory.",
+      "image_sources": [],
+      "sources": [
+        "https://ratings.food.gov.uk/business/1231052/browns-cafe-and-bistro",
+        "https://www.tripadvisor.co.uk/Restaurant_Review-g186334-d10052493-Reviews-Browns_Cafe_Bistro-Leicester_Leicestershire_England.html",
+        "https://www.bizseek.co.uk/browns-cafe-bistro-0116-270-6865"
+      ]
+    },
+    {
+      "raw_id": 13,
+      "business_name": "KAI",
+      "address": "4 St Martins Square",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 5DF",
+      "latitude": null,
+      "longitude": null,
+      "category": "Brunch restaurant",
+      "phone": "0116 262 1400 (seed listing)",
+      "website": "https://kai.kitchen/",
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Leicester brunch and coffee venue. Recent local news reported a temporary closure for refurbishment; current reopening date/status was not established in this pass.",
+      "services": [
+        "Brunch",
+        "Coffee"
+      ],
+      "review_summary": "Google score/text not verified. Third-party reviews exist but not treated as Google reviews.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for source-specific evidence"
+      ],
+      "uncertain_fields": "Current operating status uncertain due to reported refurbishment closure; hours not verified.",
+      "image_sources": [],
+      "sources": [
+        "https://kai.kitchen/",
+        "https://www.leicesterbuzz.uk/popular-kai-cafe-in-leicesters-st-martins-square-closes-for-refurbishment/",
+        "https://www.tripadvisor.co.uk/Restaurant_Review-g186334-d11769394-Reviews-KAI-Leicester_Leicestershire_England.html"
+      ]
+    },
+    {
+      "raw_id": 14,
+      "business_name": "Halcyon Kitchen",
+      "address": "95 Queens Road, Clarendon Park",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE2 1TT",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe / restaurant",
+      "phone": "0116 270 6077",
+      "website": "https://halcyonkitchen.com/",
+      "social_media": null,
+      "opening_hours": "Mon–Wed 08:30–20:30; Thu–Sat 08:30–21:00; Sun 09:30–14:30 (food service times; official site)",
+      "description": "Cafe-restaurant serving breakfast, brunch and evening meals; menu includes classic breakfasts, Italian-style dishes and options including vegan choices.",
+      "services": [
+        "Breakfast and brunch",
+        "Lunch and dinner",
+        "Pizza/pasta (menu-dependent)",
+        "Online booking",
+        "Cocktail menu Thu–Sun"
+      ],
+      "review_summary": "Google review score/text not verified; third-party Tripadvisor reviews exist.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for source-specific evidence"
+      ],
+      "uncertain_fields": "Service times may vary by menu/day; check official site.",
+      "image_sources": [],
+      "sources": [
+        "https://halcyonkitchen.com/contact/",
+        "https://halcyonkitchen.com/",
+        "https://halcyonkitchen.com/menu/",
+        "https://ratings.food.gov.uk/business/982648/halcyon-kitchen"
+      ]
+    },
+    {
+      "raw_id": 15,
+      "business_name": "Hallaci Cafe",
+      "address": "79 Church Gate",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 3AN",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe",
+      "phone": null,
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Cafe at 79 Church Gate. Secondary listings describe Albanian/Turkish home-cooked food, sandwiches, toasties and daily specials.",
+      "services": [
+        "Cafe food",
+        "Sandwiches and toasties (secondary sources)",
+        "Delivery listed on Deliveroo"
+      ],
+      "review_summary": "Google review score/text not verified.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for source-specific evidence"
+      ],
+      "uncertain_fields": "Hours, phone and official site not verified; cuisine/menu details from secondary directories.",
+      "image_sources": [],
+      "sources": [
+        "https://deliveroo.co.uk/menu/leicester/leicester-city-centre/hallaci-cafe-79-church-gate",
+        "https://ratings.food.gov.uk/business/1198937",
+        "https://businessesmap.com/gb/leicester/cafes/hallaci-cafe/menu",
+        "https://www.waze.com/live-map/directions/united-kingdom/england/leicester/hallaci-cafe?to=place.ChIJVVyFaRJhd0gRGGS2ssoMKNI"
+      ]
+    },
+    {
+      "raw_id": 16,
+      "business_name": "Roma Cafe Bar & Restaurant",
+      "address": "11 Halford Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 1JA",
+      "latitude": null,
+      "longitude": null,
+      "category": "Italian cafe bar / restaurant",
+      "phone": "0116 251 5959",
+      "website": "https://romaleicester.co.uk/",
+      "social_media": null,
+      "opening_hours": "Sun–Tue closed; Wed–Sat cafe brunch/lunch 09:30–16:00; evening restaurant from 16:00, last bookings 20:30 (official site)",
+      "description": "Traditional Italian cafe and restaurant serving brunch/lunch and evening meals including pizza and pasta.",
+      "services": [
+        "Cafe brunch and lunch",
+        "Evening restaurant",
+        "Pizza and pasta",
+        "Bookings"
+      ],
+      "review_summary": "Google review score/text not verified; Tripadvisor listing exists, no snippets added as Google reviews.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for source-specific evidence"
+      ],
+      "uncertain_fields": "Official site has current dated event announcements; reconfirm hours before relying on them.",
+      "image_sources": [],
+      "sources": [
+        "https://romaleicester.co.uk/location/",
+        "https://romaleicester.co.uk/",
+        "https://ratings.food.gov.uk/business/60341",
+        "https://www.visitleicester.info/wp-content/uploads/2025/04/Leicester-Cafe-Directory.pdf"
+      ]
+    },
+    {
+      "raw_id": 17,
+      "business_name": "Grays Coffee Shop & Kitchen",
+      "address": "LCB Depot, 31 Rutland Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 1RE",
+      "latitude": null,
+      "longitude": null,
+      "category": "Coffee shop / cafe",
+      "phone": null,
+      "website": "https://graysleicester.com/",
+      "social_media": null,
+      "opening_hours": "Mon–Fri 09:00–16:30; brunch 09:00–14:00; lunch 12:00–14:00 (official site)",
+      "description": "Seasonal cafe in Leicester's Cultural Quarter serving changing menus, brunch and lunch.",
+      "services": [
+        "Coffee and drinks",
+        "Brunch",
+        "Lunch",
+        "Weekly changing menu"
+      ],
+      "review_summary": "Google review score/text not verified. Third-party review aggregators have review summaries; not transcribed as Google reviews.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for source-specific evidence"
+      ],
+      "uncertain_fields": "No phone listed on official contact page; weekend hours not listed on official site.",
+      "image_sources": [],
+      "sources": [
+        "https://graysleicester.com/",
+        "https://graysleicester.com/contactus",
+        "https://graysleicester.com/menu",
+        "https://ratings.food.gov.uk/business/656243/grays-coffee-shop-kitchen-leicester",
+        "https://visitleicester.info/point-of-interest/grays/"
+      ]
+    },
+    {
+      "raw_id": 18,
+      "business_name": "B-B's Cafe",
+      "address": "28 Belgrave Road",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE4 5AS",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe / restaurant",
+      "phone": "0116 221 6670",
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Cafe/restaurant at 28 Belgrave Road. Current official food hygiene record corroborates this business and address; menu/offer details not confirmed from first-party source.",
+      "services": [],
+      "review_summary": "Google score/text not verified; Tripadvisor listing exists but no rating copied.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for source-specific evidence"
+      ],
+      "uncertain_fields": "Possible duplicate/relationship ambiguity with raw_id 25 (B B's Cafe Ltd); legal entity vs storefront operator is unresolved. Hours not verified.",
+      "image_sources": [],
+      "sources": [
+        "https://ratings.food.gov.uk/business/1764666/b-bs-cafe",
+        "https://find-and-update.company-information.service.gov.uk/company/15439439",
+        "https://www.tripadvisor.co.uk/Restaurant_Review-g186333-d34086973-Reviews-B_B_s_Cafe-Leicestershire_England.html",
+        "https://www.ubereats.com/gb/store/b-bs-cafe/QvcJ4JqyTcOQvrVpYR_-Eg"
+      ]
+    },
+    {
+      "raw_id": 19,
+      "business_name": "Merchant of Venice (Granby Street branch)",
+      "address": "173–175 Granby Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 6FE",
+      "latitude": null,
+      "longitude": null,
+      "category": "Italian cafe / restaurant",
+      "phone": "0116 291 5604",
+      "website": "https://merchantofvenice.co/",
+      "social_media": null,
+      "opening_hours": "Mon–Thu 08:00–22:00; Fri–Sat 08:00–23:00; Sun 09:00–22:00 (official site, Granby branch)",
+      "description": "Italian restaurant and cafe serving coffee, ice cream, pastries, salads and other Italian food. This record is specifically the Granby Street branch.",
+      "services": [
+        "Italian dining",
+        "Coffee",
+        "Ice cream, pastries and desserts",
+        "Reservations"
+      ],
+      "review_summary": "Google rating/review text not verified; Tripadvisor has location-specific reviews.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for source-specific evidence"
+      ],
+      "uncertain_fields": "Merchant of Venice also has a separate Leicester branch at Loseby Lane; keep branch records distinct.",
+      "image_sources": [],
+      "sources": [
+        "https://merchantofvenice.co/",
+        "https://merchantofvenice.co/reservation.php",
+        "https://ratings.food.gov.uk/business/1693207/merchant-of-venice",
+        "https://www.tripadvisor.co.uk/Restaurant_Review-g186334-d17624632-Reviews-Merchant_of_Venice_Italian_Restaurant-Leicester_Leicestershire_England.html"
+      ]
+    },
+    {
+      "raw_id": 20,
+      "business_name": "Chocoberry (London Road)",
+      "address": "130 London Road",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE2 1EB",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe / dessert restaurant",
+      "phone": "0116 221 9515",
+      "website": "https://www.chocoberrycafe.com/pages/location/leicester",
+      "social_media": null,
+      "opening_hours": "Mon–Thu 08:00–00:00; Fri–Sat 08:00–01:00; Sun 08:00–00:00 (official location page)",
+      "description": "Cafe serving all-day breakfast, coffee, desserts and dinner, including French toast, grilled chicken and cakes.",
+      "services": [
+        "Dine-in",
+        "Takeaway",
+        "Delivery",
+        "Brunch",
+        "Desserts",
+        "Coffee and karak",
+        "Halal certified (official listing)"
+      ],
+      "review_summary": "Google rating/text not verified.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for source-specific evidence"
+      ],
+      "uncertain_fields": "Chocoberry has multiple Leicester branches; this record is only London Road at 130 London Road.",
+      "image_sources": [],
+      "sources": [
+        "https://www.chocoberrycafe.com/pages/location/leicester",
+        "https://www.chocoberrycafe.com/pages/locations",
+        "https://ratings.food.gov.uk/business/1516403",
+        "https://www.just-eat.co.uk/takeaway/brands/chocoberry"
+      ]
+    },
+    {
+      "raw_id": 21,
+      "business_name": "Tea Time Leicester Limited (candidate trading name: Teatime)",
+      "address": "122 Granby Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 1DL",
+      "latitude": null,
+      "longitude": null,
+      "category": "Possible cafe / tea shop; premises licence application described a cafe/tea shop",
+      "phone": null,
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "A Leicester premises-licence record identifies Tea Time Leicester Limited as applicant for Teatime at 122 Granby Street. This supports a connection to a proposed or licensed cafe/tea shop, but current operating storefront status was not verified.",
+      "services": [],
+      "review_summary": "No Google reviews or score verified.",
+      "google_rating": null,
+      "storefront_verified": false,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt; legal/company records are not proof of an operating storefront"
+      ],
+      "uncertain_fields": "Legal entity/address and licensing application are supported; current storefront operation, hours, phone, menu and trading status unverified.",
+      "image_sources": [],
+      "sources": [
+        "https://find-and-update.company-information.service.gov.uk/company/14769168",
+        "https://cabinet.leicester.gov.uk/mgAi.aspx?ID=127725",
+        "https://cabinet.leicester.gov.uk/documents/s165242/Appendix%20A%20-%20Application.pdf"
+      ]
+    },
+    {
+      "raw_id": 22,
+      "business_name": "FTSH Leicester Ltd (possible trading name: Fattoush Urban Lebanese Kitchen)",
+      "address": "109 Coleman Road",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE5 4LE",
+      "latitude": null,
+      "longitude": null,
+      "category": "Company SIC: unlicensed restaurants and cafes; candidate trading name suggests Lebanese kitchen",
+      "phone": null,
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Companies House records FTSH Leicester Ltd at 109 Coleman Road. Search results associate the company with Fattoush Urban Lebanese Kitchen, but the address appears in company records and was not verified as a customer-facing outlet.",
+      "services": [],
+      "review_summary": "No Google reviews or score verified.",
+      "google_rating": null,
+      "storefront_verified": false,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt; legal/company records are not proof of an operating storefront"
+      ],
+      "uncertain_fields": "Do not publish as a storefront: registered office does not establish public trading location. Trading-name relationship/current operation, public address, menu and hours unverified.",
+      "image_sources": [],
+      "sources": [
+        "https://find-and-update.company-information.service.gov.uk/company/13298526",
+        "https://sponsordirectory.co.uk/ftsh-leicester-ltd-enderby",
+        "https://sponsorlicensechecker.uk/sponsors/ftsh-leicester-ltd-t-a-fattoush-urban-lebanese-kitchen"
+      ]
+    },
+    {
+      "raw_id": 23,
+      "business_name": "Santhi Leicester Ltd",
+      "address": "124 Granby Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 1DL",
+      "latitude": null,
+      "longitude": null,
+      "category": "Restaurant (seed category only)",
+      "phone": null,
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Company and public business-index records associate Santhi Leicester Ltd with 124 Granby Street. No independently verified current restaurant storefront was located in this pass.",
+      "services": [],
+      "review_summary": "No Google reviews or score verified.",
+      "google_rating": null,
+      "storefront_verified": false,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt; legal/company records are not proof of an operating storefront"
+      ],
+      "uncertain_fields": "Registered/company address only; storefront, cuisine, phone, hours, menu and operating status unverified.",
+      "image_sources": [],
+      "sources": [
+        "https://find-and-update.company-information.service.gov.uk/officers/p_FTuY6YbiBxHz1qLJaODdG94-o/appointments",
+        "https://www.192.com/atoz/financial/business/13240801/",
+        "https://www.dataindex.online/postalcode/postcode/le1-1dl"
+      ]
+    },
+    {
+      "raw_id": 24,
+      "business_name": "Down To Earth Cafe Ltd",
+      "address": "98 Rutland Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 1SB",
+      "latitude": null,
+      "longitude": null,
+      "category": "Company SIC includes unlicensed restaurants and cafes",
+      "phone": null,
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Companies House confirms an active company named Down To Earth Cafe Ltd registered at 98 Rutland Street. This alone does not confirm a cafe is operating at the address.",
+      "services": [],
+      "review_summary": "No Google reviews or score verified.",
+      "google_rating": null,
+      "storefront_verified": false,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt; legal/company records are not proof of an operating storefront"
+      ],
+      "uncertain_fields": "New company incorporated 26 November 2025; registered office only. Customer-facing storefront, service, hours and contact details not established.",
+      "image_sources": [],
+      "sources": [
+        "https://find-and-update.company-information.service.gov.uk/company/16876284",
+        "https://www.checkcompany.co.uk/company/16876284/DOWN-TO-EARTH-CAFE-LTD"
+      ]
+    },
+    {
+      "raw_id": 25,
+      "business_name": "B-B's Cafe Ltd (legal entity candidate)",
+      "address": "28 Belgrave Road",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE4 5AS",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe / unlicensed restaurant (company SIC)",
+      "phone": "0116 221 6670 (number listed for B-B's Cafe storefront; association with company not proven here)",
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Companies House identifies B-B's Cafe Ltd at 28 Belgrave Road. A separate Leicester City food hygiene record lists a B B's Cafe at the same address. Keep this legal entity row distinct from raw_id 18 until the operator/storefront relationship is established.",
+      "services": [],
+      "review_summary": "No Google review score verified.",
+      "google_rating": null,
+      "storefront_verified": false,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt; legal/company records are not proof of an operating storefront"
+      ],
+      "uncertain_fields": "Possible same storefront as raw_id 18; legal entity relationship not independently proven. Do not merge automatically.",
+      "image_sources": [],
+      "sources": [
+        "https://find-and-update.company-information.service.gov.uk/company/15439439",
+        "https://ratings.food.gov.uk/business/1764666/b-bs-cafe",
+        "https://www.tripadvisor.co.uk/Restaurant_Review-g186333-d34086973-Reviews-B_B_s_Cafe-Leicestershire_England.html"
+      ]
+    },
+    {
+      "raw_id": 26,
+      "business_name": "Maka Cafe Ltd",
+      "address": "Unit 2, 2–6 Britannia Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 3LE",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe (seed category only)",
+      "phone": null,
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "No sufficiently reliable source found in this pass to verify an operating storefront under this name at the candidate address.",
+      "services": [],
+      "review_summary": "No Google reviews or score verified.",
+      "google_rating": null,
+      "storefront_verified": false,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt; legal/company records are not proof of an operating storefront"
+      ],
+      "uncertain_fields": "Business identity, address, company record, opening status and customer services not independently verified; preserve only as unverified seed candidate.",
+      "image_sources": [],
+      "sources": []
+    },
+    {
+      "raw_id": 27,
+      "business_name": "Arsad Cafe Ltd",
+      "address": "161 Belgrave Gate",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 3HS",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe (seed category only)",
+      "phone": null,
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "No sufficiently reliable source found in this pass to verify an operating storefront under this name at the candidate address.",
+      "services": [],
+      "review_summary": "No Google reviews or score verified.",
+      "google_rating": null,
+      "storefront_verified": false,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt; legal/company records are not proof of an operating storefront"
+      ],
+      "uncertain_fields": "Business identity, address, company record, opening status and customer services not independently verified; preserve only as unverified seed candidate.",
+      "image_sources": [],
+      "sources": []
+    },
+    {
+      "raw_id": 28,
+      "business_name": "Desi Street Food Ltd",
+      "address": "22–24 Horsefair Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 5BN",
+      "latitude": null,
+      "longitude": null,
+      "category": "Restaurant / cafe (seed category only)",
+      "phone": null,
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "No sufficiently reliable source found in this pass to verify a current customer-facing business under this exact legal name and address.",
+      "services": [],
+      "review_summary": "No Google reviews or score verified.",
+      "google_rating": null,
+      "storefront_verified": false,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt; legal/company records are not proof of an operating storefront"
+      ],
+      "uncertain_fields": "Storefront and legal-entity link, operating status, menu, hours and contact details remain unverified.",
+      "image_sources": [],
+      "sources": []
+    },
+    {
+      "raw_id": 29,
+      "business_name": "Kilminjaro Cafe and Restaurant Ltd",
+      "address": "12 Britannia Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 3LE",
+      "latitude": null,
+      "longitude": null,
+      "category": "Restaurant / cafe (seed category only)",
+      "phone": null,
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "No sufficiently reliable source found in this pass to verify an operating storefront under this name at the candidate address.",
+      "services": [],
+      "review_summary": "No Google reviews or score verified.",
+      "google_rating": null,
+      "storefront_verified": false,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt; legal/company records are not proof of an operating storefront"
+      ],
+      "uncertain_fields": "Possible name spelling/identity issue; address, operating status and storefront not independently verified. Do not normalize name without evidence.",
+      "image_sources": [],
+      "sources": []
+    },
+    {
+      "raw_id": 30,
+      "business_name": "Success Cafe Ltd",
+      "address": "12 New Walk",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 6TF",
+      "latitude": null,
+      "longitude": null,
+      "category": "Cafe (seed category only)",
+      "phone": null,
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "No sufficiently reliable source found in this pass to verify an operating storefront under this name at the candidate address.",
+      "services": [],
+      "review_summary": "No Google reviews or score verified.",
+      "google_rating": null,
+      "storefront_verified": false,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt; legal/company records are not proof of an operating storefront"
+      ],
+      "uncertain_fields": "Business identity, address, company record, operating status and services not independently verified; retain as unverified seed candidate.",
+      "image_sources": [],
+      "sources": []
+    },
+    {
+      "raw_id": 31,
+      "business_name": "Varanasi Leicester",
+      "address": "89–91 High Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 4JB",
+      "latitude": null,
+      "longitude": null,
+      "category": "Indian restaurant",
+      "phone": "0116 251 8244",
+      "website": "https://varanasi.uk/leicester",
+      "social_media": null,
+      "opening_hours": "Mon–Thu 18:00–22:30; Fri–Sun 17:00–22:30; last orders 22:00",
+      "description": "Indian restaurant at 89–91 High Street. The official Leicester page describes its restaurant spaces and provides bookings and menu information.",
+      "services": [
+        "Dine-in",
+        "Table reservations",
+        "Private dining (verify with venue)",
+        "Indian food"
+      ],
+      "review_summary": "Google rating/text not verified; Tripadvisor has location-specific reviews.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for evidence"
+      ],
+      "uncertain_fields": "Seed name “Varanasi Boutique Restaurant” normalized to current official trading name Varanasi Leicester; location matches exactly.",
+      "image_sources": [],
+      "sources": [
+        "https://varanasi.uk/leicester/contact",
+        "https://varanasi.uk/leicester",
+        "https://varanasi.uk/leicester/menu",
+        "https://ratings.food.gov.uk/business/1698748"
+      ]
+    },
+    {
+      "raw_id": 32,
+      "business_name": "Lala's Restaurant",
+      "address": "17 Halford Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 1JA",
+      "latitude": null,
+      "longitude": null,
+      "category": "Restaurant / takeaway",
+      "phone": "0116 507 9949",
+      "website": "https://www.thelalasrestaurant.com/",
+      "social_media": null,
+      "opening_hours": "Mon–Thu 11:00–23:00; Fri–Sat 11:00–00:00; Sun 12:00–22:00",
+      "description": "Restaurant serving stone-baked pizzas, peri-peri chicken, grilled dishes and burgers, cooked to order.",
+      "services": [
+        "Dine-in",
+        "Takeaway",
+        "Pizza",
+        "Flame-grilled chicken and grills",
+        "Burgers"
+      ],
+      "review_summary": "Google score/text not verified; official site mentions 500+ happy customers but does not provide a review platform breakdown.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for evidence"
+      ],
+      "uncertain_fields": "Official site identifies Lala's Restaurant at the exact seed address; no area or coordinates verified.",
+      "image_sources": [],
+      "sources": [
+        "https://www.thelalasrestaurant.com/",
+        "https://www.thelalasrestaurant.com/menu",
+        "https://ratings.food.gov.uk/business/1889781"
+      ]
+    },
+    {
+      "raw_id": 33,
+      "business_name": "Wild Tango",
+      "address": "14–16 King Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 6RJ",
+      "latitude": null,
+      "longitude": null,
+      "category": "Argentinian restaurant",
+      "phone": "0116 319 7837",
+      "website": "https://wildtango.co.uk/",
+      "social_media": null,
+      "opening_hours": "Mon–Sat 06:30–01:00; Sun 10:00–18:00 (official contact page; unusually early weekday start, verify before use)",
+      "description": "Argentinian restaurant at 14–16 King Street. The official site describes Argentine cuisine and table bookings.",
+      "services": [
+        "Argentinian dining",
+        "Table reservations",
+        "Lunch and dinner (third-party listing)"
+      ],
+      "review_summary": "Google rating/text not verified; Tripadvisor listing includes positive review snippets.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for evidence"
+      ],
+      "uncertain_fields": "Official hours show 06:30 weekday opening, which may be a typo or service-time nuance; confirm directly.",
+      "image_sources": [],
+      "sources": [
+        "https://wildtango.co.uk/contact/",
+        "https://wildtango.co.uk/",
+        "https://ratings.food.gov.uk/business/1645361",
+        "https://www.tripadvisor.co.uk/Restaurant_Review-g186334-d27538552-Reviews-Wild_Tango-Leicester_Leicestershire_England.html"
+      ]
+    },
+    {
+      "raw_id": 34,
+      "business_name": "Leicester Coffee House Company",
+      "address": "110 Granby Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 1DL",
+      "latitude": null,
+      "longitude": null,
+      "category": "Coffee shop",
+      "phone": "07772 258728 (seed listing; official current page did not confirm phone)",
+      "website": "https://www.leicestercoffeehouse.co.uk/",
+      "social_media": null,
+      "opening_hours": "Mon–Fri 07:00–16:00; Sat 09:00–15:00; Sunday not listed",
+      "description": "Coffee shop in a historic Granby Street building; serves espresso-based drinks using in-house roasted beans and cakes baked in-house, including gluten-free and vegan options.",
+      "services": [
+        "Specialty coffee",
+        "In-house roasted coffee beans",
+        "House-baked cakes",
+        "Gluten-free and vegan cake options"
+      ],
+      "review_summary": "Google rating/text not verified; Tripadvisor listing exists.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for evidence"
+      ],
+      "uncertain_fields": "Seed phone not corroborated on current official contact page; Sunday hours not listed.",
+      "image_sources": [],
+      "sources": [
+        "https://www.leicestercoffeehouse.co.uk/pages/the-coffee-shop",
+        "https://www.leicestercoffeehouse.co.uk/pages/contact",
+        "https://ratings.food.gov.uk/business/1089608"
+      ]
+    },
+    {
+      "raw_id": 35,
+      "business_name": "Kings Coffee House",
+      "address": "2 Upper King Street, Holy Trinity Church",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 6XE",
+      "latitude": null,
+      "longitude": null,
+      "category": "Coffee shop / cafe",
+      "phone": "0116 473 5405 (seed listing; not confirmed on official pages)",
+      "website": "https://www.kingscoffeeleicester.com/",
+      "social_media": null,
+      "opening_hours": "Mon–Fri 08:00–15:00; Sat 09:00–15:00 (church page; except public holidays)",
+      "description": "Coffee shop operating from the Holy Trinity Church foyer; serves coffee and food, with profits supporting the church's compassion ministries.",
+      "services": [
+        "Coffee",
+        "Food",
+        "Community fridge access during cafe hours"
+      ],
+      "review_summary": "Google score/text not verified; Tripadvisor listing exists.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for evidence"
+      ],
+      "uncertain_fields": "Phone from seed not corroborated on official pages.",
+      "image_sources": [],
+      "sources": [
+        "https://www.kingscoffeeleicester.com/contact/",
+        "https://www.kingscoffeeleicester.com/about-us/",
+        "https://www.achurchnearyou.com/church/2915/find-us/",
+        "https://ratings.food.gov.uk/business/1130305"
+      ]
+    },
+    {
+      "raw_id": 36,
+      "business_name": "The Tiny Bakery",
+      "address": "98 Clarendon Park Road, Clarendon Park",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE2 3AE",
+      "latitude": null,
+      "longitude": null,
+      "category": "Artisan bakery",
+      "phone": "0116 244 6447 (unverified; secondary listings differ; omit from profile until checked)",
+      "website": "https://thetinybakeryleicester.com/ (business link in listings; site not accessed/confirmed active)",
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Small artisan bakery reported to make handcrafted pastries, sourdough bread and cakes on site; location is corroborated by Visit Leicester and the Food Standards Agency.",
+      "services": [
+        "Artisan pastries",
+        "Sourdough bread",
+        "Cakes",
+        "Coffee (secondary listing)"
+      ],
+      "review_summary": "Google rating/text not verified; Tripadvisor listing exists with mixed review snippets.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for evidence"
+      ],
+      "uncertain_fields": "Current hours/phone and status of official website not verified in this pass.",
+      "image_sources": [],
+      "sources": [
+        "https://visitleicester.info/point-of-interest/the-tiny-bakery/",
+        "https://ratings.food.gov.uk/business/643136/the-tiny-bakery",
+        "https://www.greatfoodclub.co.uk/business/tiny-bakery-leicester/",
+        "https://www.tripadvisor.co.uk/Restaurant_Review-g186334-d12115634-Reviews-The_Tiny_Bakery-Leicester_Leicestershire_England.html"
+      ]
+    },
+    {
+      "raw_id": 37,
+      "business_name": "Pastry & Bake (seed listing; possible match: Bake Fresh)",
+      "address": "76 Linden Street (seed); directory identifies Bake Fresh, Unit 2C, 76 Linden Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE5 5EE",
+      "latitude": null,
+      "longitude": null,
+      "category": "Bakery (seed category); possible Bake Fresh match",
+      "phone": null,
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "The seed lists “Pastry & Bake” at 76 Linden Street. Search results for the address identify a Bake Fresh unit at 76 Linden Street, but no evidence establishes that these are the same business.",
+      "services": [],
+      "review_summary": "No Google reviews/score verified for this seed name and exact business match.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for evidence"
+      ],
+      "uncertain_fields": "Potential name/address mismatch. Do not substitute Bake Fresh details for Pastry & Bake without verification; current business identity, phone, hours and services unverified.",
+      "image_sources": [],
+      "sources": [
+        "https://addressesandpostcodes.co.uk/address/mX9jYaErq9/bake-fresh-unit-2c-ground-floor-rear-76-linden-street-leicester-le5-5ee.html"
+      ]
+    },
+    {
+      "raw_id": 38,
+      "business_name": "Cakes & Bakes Evington Road",
+      "address": "200 Evington Road",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE2 1HN",
+      "latitude": null,
+      "longitude": null,
+      "category": "Bakery / cake shop",
+      "phone": "0116 507 2549",
+      "website": "https://www.cakesandbakes.co.uk/shop-evington-road-leicester",
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Cake shop and bakery at 200 Evington Road; official location page lists cakes and baked products for this Leicester branch.",
+      "services": [
+        "Cakes and baked goods",
+        "Online ordering/delivery listing (platform dependent)"
+      ],
+      "review_summary": "Google rating/text not verified; third-party delivery listings show reviews but not used as Google reviews.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for evidence"
+      ],
+      "uncertain_fields": "Branch match confirmed at address; hours not located in official page results.",
+      "image_sources": [],
+      "sources": [
+        "https://www.cakesandbakes.co.uk/shop-evington-road-leicester",
+        "https://www.cakesandbakes.co.uk/our-stores",
+        "https://ratings.food.gov.uk/business/1760886"
+      ]
+    },
+    {
+      "raw_id": 39,
+      "business_name": "L'Amore Dessert Lounge (Evington Road)",
+      "address": "145 Evington Road",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE2 1QJ",
+      "latitude": null,
+      "longitude": null,
+      "category": "Dessert lounge",
+      "phone": "07850 278079 (seed listing; not independently verified)",
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Dessert lounge at 145 Evington Road. Licensing records document a premises licence application and delivery menus list desserts including cakes and sundaes.",
+      "services": [
+        "Desserts",
+        "Delivery listing (Uber Eats)"
+      ],
+      "review_summary": "Google rating/text not verified.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for evidence"
+      ],
+      "uncertain_fields": "Official hours and current phone not verified; source evidence confirms venue/licensing and address, not current schedule.",
+      "image_sources": [],
+      "sources": [
+        "https://publicnoticeportal.uk/notice/alcohol-and-licensing/69cd27eba5bbea77d7d23e97",
+        "https://www.ubereats.com/gb/store/lamore-dessert-lounge-evington-rd/S8gd9ue3WuqPUeDAEULhTA",
+        "https://foodscores.co.uk/establishments/l-amore-dessert-lounge-le2"
+      ]
+    },
+    {
+      "raw_id": 40,
+      "business_name": "Bryter Moon Deli (duplicate candidate; see raw_id 10)",
+      "address": "Unit 1, Silver Arcade",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 5FA",
+      "latitude": null,
+      "longitude": null,
+      "category": "Deli / cafe",
+      "phone": "0116 251 7786 (official contact page)",
+      "website": "https://www.brytermoon.net/",
+      "social_media": null,
+      "opening_hours": null,
+      "description": "This seed row repeats the name and address recorded at raw_id 10. Official business website confirms a deli at Unit 1, Silver Arcade; treat row 40 as a duplicate candidate rather than an additional storefront.",
+      "services": [
+        "Delicatessen",
+        "Cafe/food and drink",
+        "Online menu"
+      ],
+      "review_summary": "Google score/text not verified.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for evidence"
+      ],
+      "uncertain_fields": "Duplicate relationship with raw_id 10 is strongly supported by exact name and address; retain raw IDs in audit trail, do not make a second profile absent separate evidence.",
+      "image_sources": [],
+      "sources": [
+        "https://www.brytermoon.net/",
+        "https://www.brytermoon.net/contact",
+        "https://www.brytermoon.net/menu-1"
+      ]
+    },
+    {
+      "raw_id": 41,
+      "business_name": "Traditional Leicester",
+      "address": "257 Hinckley Road",
+      "area": "Braunstone / West Leicester (area description; site names street only)",
+      "city": "Leicester",
+      "postcode": "LE3 0TH",
+      "latitude": null,
+      "longitude": null,
+      "category": "Romanian butcher / deli / grocery",
+      "phone": "07563 878381",
+      "website": "https://www.traditional-leicester.co.uk/",
+      "social_media": null,
+      "opening_hours": "Mon–Sat 09:00–18:00; Sun 10:00–14:00 (official site)",
+      "description": "Romanian speciality butcher and food shop; sells Romanian meat specialities described as made without colourings or preservatives, smoked in-house, with in-store collection and delivery options.",
+      "services": [
+        "Romanian meat specialities",
+        "Butcher/deli retail",
+        "In-store collection",
+        "Delivery (terms apply)",
+        "Product tastings (as stated on site)"
+      ],
+      "review_summary": "Google review score/text not verified.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for field-level source context"
+      ],
+      "uncertain_fields": "Official site uses postcode formatting LE30TH; normalized to LE3 0TH. Confirm address/postcode formatting against map before publication.",
+      "image_sources": [],
+      "sources": [
+        "https://www.traditional-leicester.co.uk/contact",
+        "https://www.traditional-leicester.co.uk/",
+        "https://www.traditional-leicester.co.uk/category/all-products"
+      ]
+    },
+    {
+      "raw_id": 42,
+      "business_name": "The Cake Shop Leicester",
+      "address": "65 Derwent Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE2 0GE",
+      "latitude": null,
+      "longitude": null,
+      "category": "Bakery / cake shop",
+      "phone": "0116 251 5764 (seed listing; not corroborated by the sources returned)",
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Bakery/cake shop at 65 Derwent Street; local directory listings corroborate the business name and address.",
+      "services": [
+        "Cakes and bakery products (category-level; specific services not verified)"
+      ],
+      "review_summary": "Google rating/text not verified; third-party directory snippets praise cakes and service, but are not presented as Google reviews.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for field-level source context"
+      ],
+      "uncertain_fields": "No current official website or opening hours verified; phone remains seed-only.",
+      "image_sources": [],
+      "sources": [
+        "https://hygieneratings.uk/454999-the-cake-shop-leicester",
+        "https://leicester.cylex-uk.co.uk/company/the-cake-shop-leicester-22975945.html",
+        "https://www.scoresonthedoors.org.uk/food-hygiene/leicester.html"
+      ]
+    },
+    {
+      "raw_id": 43,
+      "business_name": "Rafiq Catering",
+      "address": "77 Dorothy Road",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE5 5DS",
+      "latitude": null,
+      "longitude": null,
+      "category": "Event catering",
+      "phone": "07878 385876",
+      "website": "https://www.rafiqcatering.com/",
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Leicester caterer specializing in wedding, private and corporate event catering, with menus ranging from traditional to fusion and service at customer-selected venues.",
+      "services": [
+        "Wedding catering",
+        "Private and family meal catering",
+        "Corporate events",
+        "Private chef service",
+        "Menu planning",
+        "On-site chefs and service staff by arrangement"
+      ],
+      "review_summary": "Google rating/text not verified.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for field-level source context"
+      ],
+      "uncertain_fields": "77 Dorothy Road is the contact/registered address; it is not described as a walk-in storefront. No public opening hours.",
+      "image_sources": [],
+      "sources": [
+        "https://www.rafiqcatering.com/",
+        "https://www.rafiqcatering.com/contact",
+        "https://www.rafiqcatering.com/about-us",
+        "https://ratings.food.gov.uk/business/923153"
+      ]
+    },
+    {
+      "raw_id": 44,
+      "business_name": "Catering Service SR Ltd",
+      "address": "Unit 2, 23–25 Highfield Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE2 1AB",
+      "latitude": null,
+      "longitude": null,
+      "category": "Catering service / other catering premises",
+      "phone": "07955 588772 (seed listing; not independently confirmed)",
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Leicester City food hygiene register confirms a catering premises at Unit 2, 23–25 Highfield Street. Public-facing cuisine, event services and current contact details were not found in this search.",
+      "services": [],
+      "review_summary": "No Google rating/review verified.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for field-level source context"
+      ],
+      "uncertain_fields": "Inspection record confirms premises classification and address, but not consumer offering, current operation, hours or phone. 2025 inspection rated hygiene standards as generally satisfactory with improvement necessary for cleanliness/facilities.",
+      "image_sources": [],
+      "sources": [
+        "https://ratings.food.gov.uk/business/1716800/catering-service-sr-ltd-leicester",
+        "https://ratings.food.gov.uk/business/1716800/catering-service-sr-ltd-leicester/online-ratings"
+      ]
+    },
+    {
+      "raw_id": 45,
+      "business_name": "Fade Barber",
+      "address": "389 Humberstone Road",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE5 3DF",
+      "latitude": null,
+      "longitude": null,
+      "category": "Barber shop",
+      "phone": "07763 636398",
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Barber shop at 389 Humberstone Road; appointment platform listings associate this exact Leicester address and phone with Fade Barber.",
+      "services": [
+        "Barbering / haircuts (service detail not further verified)"
+      ],
+      "review_summary": "Google rating/text not verified; Fresha search listing shows booking/review surface, but no rating transcribed.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for field-level source context"
+      ],
+      "uncertain_fields": "No official website or current opening schedule verified.",
+      "image_sources": [],
+      "sources": [
+        "https://www.fresha.com/lvp/fade-barber-humberstone-road-kq1gVo",
+        "https://www.fresha.com/lp/en/bt/barbershops/in/gb-leicester/humberstone-and-hamilton",
+        "https://uk.localitybiz.com/10369048/fade-barber-leicester"
+      ]
+    },
+    {
+      "raw_id": 46,
+      "business_name": "City Barbers Leicester",
+      "address": "11 Rutland Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 1RB",
+      "latitude": null,
+      "longitude": null,
+      "category": "Barber shop",
+      "phone": "07931 427370 (Visit Leicester guide; some older listings show 0116 254 3656)",
+      "website": null,
+      "social_media": "https://www.instagram.com/citybarbersleicester/ (handle printed in Visit Leicester guide; current profile not checked)",
+      "opening_hours": null,
+      "description": "Barber shop at 11 Rutland Street; local booking/listing pages identify barbering and hair styling services.",
+      "services": [
+        "Barbering",
+        "Hair styling"
+      ],
+      "review_summary": "Google rating/text not verified.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for field-level source context"
+      ],
+      "uncertain_fields": "Phone varies across listings; opening hours not verified. Social URL reconstructed from official guide handle and may need confirmation.",
+      "image_sources": [],
+      "sources": [
+        "https://www.visitleicester.info/dbimgs/5007%20LCC%20-%20Beauty-guide_WEB.pdf",
+        "https://www.fresha.com/lvp/city-barbers-rutland-street-NoL4aX",
+        "https://www.yell.com/biz/city-barbers-leicester-8258071/"
+      ]
+    },
+    {
+      "raw_id": 47,
+      "business_name": "HairNova Leicester",
+      "address": "40 Silver Street, St Martin's Square / The Lanes",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 5ET (official website); seed lists LE1 5ET",
+      "latitude": null,
+      "longitude": null,
+      "category": "Hair salon",
+      "phone": "020 3983 5818",
+      "website": "https://hairnovaleicester.co.uk/",
+      "social_media": null,
+      "opening_hours": null,
+      "description": "City-centre hair salon offering haircuts, colouring, hair treatments and extensions.",
+      "services": [
+        "Haircuts",
+        "Hair colouring",
+        "Hair treatments",
+        "Hair extensions",
+        "Consultations"
+      ],
+      "review_summary": "Google score/text not verified. Fresha search snippets show a 5.0 rating with 900+ reviews, but this is Fresha platform data, not Google; exact count varies by page snapshot.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for field-level source context"
+      ],
+      "uncertain_fields": "No opening hours captured from official site in this search.",
+      "image_sources": [],
+      "sources": [
+        "https://hairnovaleicester.co.uk/",
+        "https://hairnovaleicester.co.uk/hair-extensions/",
+        "https://hairnovaleicester.co.uk/hair-colouring/",
+        "https://www.fresha.com/a/hairnova-leicester-leicester-40-silver-street-znquoaa9"
+      ]
+    },
+    {
+      "raw_id": 48,
+      "business_name": "Kreate Hair Design",
+      "address": "Ground Floor, 47 Belvoir Street",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 6SL",
+      "latitude": null,
+      "longitude": null,
+      "category": "Hair salon",
+      "phone": "0116 319 3470 (seed listing; not independently confirmed)",
+      "website": null,
+      "social_media": null,
+      "opening_hours": null,
+      "description": "Hair salon at 47 Belvoir Street; active Companies House record under Kreate Hair Design Limited and a booking directory listing match the salon name and address.",
+      "services": [
+        "Hairdressing (specific treatments not verified)"
+      ],
+      "review_summary": "Google rating/text not verified; Fresha has a business listing, but rating/review data not transcribed.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for field-level source context"
+      ],
+      "uncertain_fields": "Company registered office and salon listing match, but current service list and hours not confirmed.",
+      "image_sources": [],
+      "sources": [
+        "https://find-and-update.company-information.service.gov.uk/company/10397225",
+        "https://www.fresha.com/en-GB/lvp/kreate-hair-design-belvoir-street-Ly5489",
+        "https://leicester.cylex-uk.co.uk/company/kreate-26398148.html"
+      ]
+    },
+    {
+      "raw_id": 49,
+      "business_name": "Nipa's Hair and Beauty (Haymarket Shopping Centre, Shop 29)",
+      "address": "Haymarket Shopping Centre, Shop 29 (older seed gives 29 Belgrave Gate)",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE1 3YH (directory listing; centre tenant page does not give street postcode)",
+      "latitude": null,
+      "longitude": null,
+      "category": "Hair and beauty salon",
+      "phone": "0730 5500 555",
+      "website": "https://nipabeauty.co.uk/",
+      "social_media": null,
+      "opening_hours": "Mon–Sat 09:00–19:00; Sun and bank holidays 10:30–17:00 (Haymarket tenant page) ",
+      "description": "Hair and beauty salon inside Haymarket Shopping Centre offering haircuts, colouring, threading, waxing, tinting, nails, facials and related treatments.",
+      "services": [
+        "Haircuts and colouring",
+        "Eyebrow threading and tinting",
+        "Eyelash extensions",
+        "Waxing",
+        "Manicure and pedicure",
+        "Facials",
+        "Massage"
+      ],
+      "review_summary": "Google score/text not verified; business site contains a testimonial, not an independent Google review summary.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for field-level source context"
+      ],
+      "uncertain_fields": "Seed street address 29 Belgrave Gate may refer to centre unit; retained alongside verified tenant location. Possible duplicate candidate raw_id 228 shares the same name/contact details.",
+      "image_sources": [],
+      "sources": [
+        "https://haymarketshoppingcentre.com/stores/nipas-hair-and-beauty.php",
+        "https://nipabeauty.co.uk/",
+        "https://nipabeauty.co.uk/services/",
+        "https://visitleicester.info/dbimgs/5007%20LCC%20-%20Beauty-guide_WEB.pdf"
+      ]
+    },
+    {
+      "raw_id": 50,
+      "business_name": "The Beauty Refinery",
+      "address": "First Floor, 101 London Road",
+      "area": null,
+      "city": "Leicester",
+      "postcode": "LE2 0PF",
+      "latitude": null,
+      "longitude": null,
+      "category": "Beauty salon / aesthetics",
+      "phone": "0116 254 7940; 07516 096 525; 07542 556 525 (official contact page; mobile numbers differ slightly from seed)",
+      "website": "https://thebeautyrefinery.co.uk/",
+      "social_media": null,
+      "opening_hours": "Mon–Sat 10:00–18:00; Sun 11:30–18:00 (official contact page)",
+      "description": "Established Leicester beauty salon offering beauty and aesthetic treatments at its London Road premises.",
+      "services": [
+        "Aesthetic treatments",
+        "Facials",
+        "Japanese head spa",
+        "Brows and semi-permanent makeup",
+        "Lash lifts and extensions",
+        "Waxing",
+        "Manicure and pedicure",
+        "Hair services"
+      ],
+      "review_summary": "Google rating/text not verified. Fresha listing shows 4.9/5 with roughly 3,000 votes; this is Fresha data, not Google.",
+      "google_rating": null,
+      "storefront_verified": null,
+      "possible_duplicate": null,
+      "verified_fields": [
+        "See sources.txt for field-level source context"
+      ],
+      "uncertain_fields": "Seed mobile number 07516 096525 differs from the official page's 07516 096 525 formatting/alternate displayed number 07516 069 525; retain all and confirm before publication.",
+      "image_sources": [],
+      "sources": [
+        "https://thebeautyrefinery.co.uk/contact/",
+        "https://thebeautyrefinery.co.uk/",
+        "https://thebeautyrefinery.co.uk/aesthetics/",
+        "https://www.fresha.com/en-GB/a/the-beauty-refinery-leicester-first-floor-101-london-road-xwl97vxh"
+      ]
+    }
+  ]
+}

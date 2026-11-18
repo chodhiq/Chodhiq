@@ -1,0 +1,31 @@
+{
+  "raw_id": 4,
+  "business_name": "Bitsy's Emporium of Awesome",
+  "address": "The Old Mill, 4 North Mills, Frog Island",
+  "area": "Frog Island",
+  "city": "Leicester",
+  "postcode": "LE3 5DL",
+  "latitude": null,
+  "longitude": null,
+  "category": "Bake shop / cafe",
+  "phone": null,
+  "website": "https://www.bitsysemporium.com/",
+  "social_media": null,
+  "opening_hours": "Mon closed; Tue–Wed 11:00–16:00; Thu 11:00–20:00; Fri–Sun 11:00–16:00",
+  "description": "Independent bake shop and cafe in a canal-side old mill, serving house-made baked goods, coffee and other food including grilled cheese.",
+  "services": [
+    "House-made baked goods",
+    "Coffee and food",
+    "Takeaway packaging",
+    "Pet friendly",
+    "Seating",
+    "Limited weekday parking"
+  ],
+  "review_summary": "No Google score/text verified; third-party reviews exist.",
+  "google_rating": null,
+  "verified_fields": [
+    "See source list for evidence by field"
+  ],
+  "uncertain_fields": "Phone and coordinates not verified.",
+  "image_sources": []
+}

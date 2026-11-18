@@ -1,0 +1,27 @@
+{
+  "raw_id": 5,
+  "business_name": "Bread & Honey Coffee House",
+  "address": "15 King Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 6RN",
+  "latitude": null,
+  "longitude": null,
+  "category": "Coffee shop / cafe",
+  "phone": null,
+  "website": "https://breadnhoneycoffee.com/",
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Coffee house; secondary review aggregators describe coffee, sandwiches and freshly baked cakes and pastries.",
+  "services": [
+    "Coffee",
+    "Sandwiches and baked goods (secondary listing)"
+  ],
+  "review_summary": "No Google rating/text verified; secondary platforms have reviews.",
+  "google_rating": null,
+  "verified_fields": [
+    "See source list for evidence by field"
+  ],
+  "uncertain_fields": "Current hours, phone and official site details not verified.",
+  "image_sources": []
+}

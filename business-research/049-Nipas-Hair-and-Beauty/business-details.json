@@ -1,0 +1,33 @@
+{
+  "raw_id": 49,
+  "business_name": "Nipa's Hair and Beauty (Haymarket Shopping Centre, Shop 29)",
+  "address": "Haymarket Shopping Centre, Shop 29 (older seed gives 29 Belgrave Gate)",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 3YH (directory listing; centre tenant page does not give street postcode)",
+  "latitude": null,
+  "longitude": null,
+  "category": "Hair and beauty salon",
+  "phone": "0730 5500 555",
+  "website": "https://nipabeauty.co.uk/",
+  "social_media": null,
+  "opening_hours": "Mon–Sat 09:00–19:00; Sun and bank holidays 10:30–17:00 (Haymarket tenant page) ",
+  "description": "Hair and beauty salon inside Haymarket Shopping Centre offering haircuts, colouring, threading, waxing, tinting, nails, facials and related treatments.",
+  "services": [
+    "Haircuts and colouring",
+    "Eyebrow threading and tinting",
+    "Eyelash extensions",
+    "Waxing",
+    "Manicure and pedicure",
+    "Facials",
+    "Massage"
+  ],
+  "review_summary": "Google score/text not verified; business site contains a testimonial, not an independent Google review summary.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for field-level source context"
+  ],
+  "uncertain_fields": "Seed street address 29 Belgrave Gate may refer to centre unit; retained alongside verified tenant location. Possible duplicate candidate raw_id 228 shares the same name/contact details.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

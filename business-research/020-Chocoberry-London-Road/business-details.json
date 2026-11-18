@@ -1,0 +1,32 @@
+{
+  "raw_id": 20,
+  "business_name": "Chocoberry (London Road)",
+  "address": "130 London Road",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE2 1EB",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe / dessert restaurant",
+  "phone": "0116 221 9515",
+  "website": "https://www.chocoberrycafe.com/pages/location/leicester",
+  "social_media": null,
+  "opening_hours": "Mon–Thu 08:00–00:00; Fri–Sat 08:00–01:00; Sun 08:00–00:00 (official location page)",
+  "description": "Cafe serving all-day breakfast, coffee, desserts and dinner, including French toast, grilled chicken and cakes.",
+  "services": [
+    "Dine-in",
+    "Takeaway",
+    "Delivery",
+    "Brunch",
+    "Desserts",
+    "Coffee and karak",
+    "Halal certified (official listing)"
+  ],
+  "review_summary": "Google rating/text not verified.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for source-specific evidence"
+  ],
+  "uncertain_fields": "Chocoberry has multiple Leicester branches; this record is only London Road at 130 London Road.",
+  "image_sources": []
+}

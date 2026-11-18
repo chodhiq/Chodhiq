@@ -1,0 +1,25 @@
+{
+  "raw_id": 21,
+  "business_name": "Tea Time Leicester Limited (candidate trading name: Teatime)",
+  "address": "122 Granby Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 1DL",
+  "latitude": null,
+  "longitude": null,
+  "category": "Possible cafe / tea shop; premises licence application described a cafe/tea shop",
+  "phone": null,
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "A Leicester premises-licence record identifies Tea Time Leicester Limited as applicant for Teatime at 122 Granby Street. This supports a connection to a proposed or licensed cafe/tea shop, but current operating storefront status was not verified.",
+  "services": [],
+  "review_summary": "No Google reviews or score verified.",
+  "google_rating": null,
+  "storefront_verified": false,
+  "verified_fields": [
+    "See sources.txt; legal/company records are not proof of an operating storefront"
+  ],
+  "uncertain_fields": "Legal entity/address and licensing application are supported; current storefront operation, hours, phone, menu and trading status unverified.",
+  "image_sources": []
+}

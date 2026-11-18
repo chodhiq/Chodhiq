@@ -1,0 +1,29 @@
+{
+  "raw_id": 17,
+  "business_name": "Grays Coffee Shop & Kitchen",
+  "address": "LCB Depot, 31 Rutland Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 1RE",
+  "latitude": null,
+  "longitude": null,
+  "category": "Coffee shop / cafe",
+  "phone": null,
+  "website": "https://graysleicester.com/",
+  "social_media": null,
+  "opening_hours": "Mon–Fri 09:00–16:30; brunch 09:00–14:00; lunch 12:00–14:00 (official site)",
+  "description": "Seasonal cafe in Leicester's Cultural Quarter serving changing menus, brunch and lunch.",
+  "services": [
+    "Coffee and drinks",
+    "Brunch",
+    "Lunch",
+    "Weekly changing menu"
+  ],
+  "review_summary": "Google review score/text not verified. Third-party review aggregators have review summaries; not transcribed as Google reviews.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for source-specific evidence"
+  ],
+  "uncertain_fields": "No phone listed on official contact page; weekend hours not listed on official site.",
+  "image_sources": []
+}

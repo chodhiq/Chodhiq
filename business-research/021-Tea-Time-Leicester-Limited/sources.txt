@@ -1,0 +1,7 @@
+ChodhiQ Leicester seed raw_id 21: Tea Time Leicester Limited (candidate trading name: Teatime)
+Research date: 2026-11-18
+Sources:
+https://find-and-update.company-information.service.gov.uk/company/14769168
+https://cabinet.leicester.gov.uk/mgAi.aspx?ID=127725
+https://cabinet.leicester.gov.uk/documents/s165242/Appendix%20A%20-%20Application.pdf
+No Google review score/text verified. For unverified records, this folder documents the search outcome and retains fields as null rather than inferring from the seed name/address.

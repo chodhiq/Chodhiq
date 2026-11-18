@@ -1,0 +1,25 @@
+{
+  "raw_id": 37,
+  "business_name": "Pastry & Bake (seed listing; possible match: Bake Fresh)",
+  "address": "76 Linden Street (seed); directory identifies Bake Fresh, Unit 2C, 76 Linden Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE5 5EE",
+  "latitude": null,
+  "longitude": null,
+  "category": "Bakery (seed category); possible Bake Fresh match",
+  "phone": null,
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "The seed lists “Pastry & Bake” at 76 Linden Street. Search results for the address identify a Bake Fresh unit at 76 Linden Street, but no evidence establishes that these are the same business.",
+  "services": [],
+  "review_summary": "No Google reviews/score verified for this seed name and exact business match.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for evidence"
+  ],
+  "uncertain_fields": "Potential name/address mismatch. Do not substitute Bake Fresh details for Pastry & Bake without verification; current business identity, phone, hours and services unverified.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

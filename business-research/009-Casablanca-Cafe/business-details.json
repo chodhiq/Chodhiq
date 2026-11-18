@@ -1,0 +1,26 @@
+{
+  "raw_id": 9,
+  "business_name": "Casablanca Café",
+  "address": "186 Uppingham Road",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE5 0QG",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe",
+  "phone": "0116 276 8260 (seed; not independently corroborated in sources returned)",
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Cafe at 186 Uppingham Road; current ordering listing describes a coffee and cafe venue.",
+  "services": [
+    "Cafe drinks/food (limited source detail)"
+  ],
+  "review_summary": "No Google review score/text captured.",
+  "google_rating": null,
+  "verified_fields": [
+    "See source list for evidence by field"
+  ],
+  "uncertain_fields": "Hours and phone not verified; name/address match supported by delivery and local listings.",
+  "image_sources": []
+}

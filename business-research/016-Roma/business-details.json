@@ -1,0 +1,29 @@
+{
+  "raw_id": 16,
+  "business_name": "Roma Cafe Bar & Restaurant",
+  "address": "11 Halford Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 1JA",
+  "latitude": null,
+  "longitude": null,
+  "category": "Italian cafe bar / restaurant",
+  "phone": "0116 251 5959",
+  "website": "https://romaleicester.co.uk/",
+  "social_media": null,
+  "opening_hours": "Sun–Tue closed; Wed–Sat cafe brunch/lunch 09:30–16:00; evening restaurant from 16:00, last bookings 20:30 (official site)",
+  "description": "Traditional Italian cafe and restaurant serving brunch/lunch and evening meals including pizza and pasta.",
+  "services": [
+    "Cafe brunch and lunch",
+    "Evening restaurant",
+    "Pizza and pasta",
+    "Bookings"
+  ],
+  "review_summary": "Google review score/text not verified; Tripadvisor listing exists, no snippets added as Google reviews.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for source-specific evidence"
+  ],
+  "uncertain_fields": "Official site has current dated event announcements; reconfirm hours before relying on them.",
+  "image_sources": []
+}

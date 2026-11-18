@@ -1,0 +1,31 @@
+{
+  "raw_id": 41,
+  "business_name": "Traditional Leicester",
+  "address": "257 Hinckley Road",
+  "area": "Braunstone / West Leicester (area description; site names street only)",
+  "city": "Leicester",
+  "postcode": "LE3 0TH",
+  "latitude": null,
+  "longitude": null,
+  "category": "Romanian butcher / deli / grocery",
+  "phone": "07563 878381",
+  "website": "https://www.traditional-leicester.co.uk/",
+  "social_media": null,
+  "opening_hours": "Mon–Sat 09:00–18:00; Sun 10:00–14:00 (official site)",
+  "description": "Romanian speciality butcher and food shop; sells Romanian meat specialities described as made without colourings or preservatives, smoked in-house, with in-store collection and delivery options.",
+  "services": [
+    "Romanian meat specialities",
+    "Butcher/deli retail",
+    "In-store collection",
+    "Delivery (terms apply)",
+    "Product tastings (as stated on site)"
+  ],
+  "review_summary": "Google review score/text not verified.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for field-level source context"
+  ],
+  "uncertain_fields": "Official site uses postcode formatting LE30TH; normalized to LE3 0TH. Confirm address/postcode formatting against map before publication.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

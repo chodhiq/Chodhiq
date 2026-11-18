@@ -1,0 +1,30 @@
+{
+  "raw_id": 1,
+  "business_name": "La Maison Cafe",
+  "address": "43 Abbey Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 3TE",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe / restaurant",
+  "phone": "0116 431 5524 (official contact page; separate official footer also shows 0116 482 6912)",
+  "website": "https://www.lamaisoncafe.co.uk/leicester/",
+  "social_media": null,
+  "opening_hours": "Mon–Thu 10:00–17:00; Fri 14:00–17:00; Sat–Sun 10:00–17:00",
+  "description": "Cafe serving breakfast and cafe food; offers collection ordering, delivery in eligible postcodes and a loyalty scheme.",
+  "services": [
+    "Breakfast",
+    "Cafe food and drinks",
+    "Collection ordering",
+    "Eligible delivery",
+    "Loyalty points"
+  ],
+  "review_summary": "No Google score/text verified; official site displays a customer comment praising waffles and service.",
+  "google_rating": null,
+  "verified_fields": [
+    "See source list for evidence by field"
+  ],
+  "uncertain_fields": "Official site shows conflicting phone numbers; coordinates/area unverified.",
+  "image_sources": []
+}

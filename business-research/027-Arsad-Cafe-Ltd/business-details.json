@@ -1,0 +1,25 @@
+{
+  "raw_id": 27,
+  "business_name": "Arsad Cafe Ltd",
+  "address": "161 Belgrave Gate",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 3HS",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe (seed category only)",
+  "phone": null,
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "No sufficiently reliable source found in this pass to verify an operating storefront under this name at the candidate address.",
+  "services": [],
+  "review_summary": "No Google reviews or score verified.",
+  "google_rating": null,
+  "storefront_verified": false,
+  "verified_fields": [
+    "See sources.txt; legal/company records are not proof of an operating storefront"
+  ],
+  "uncertain_fields": "Business identity, address, company record, opening status and customer services not independently verified; preserve only as unverified seed candidate.",
+  "image_sources": []
+}

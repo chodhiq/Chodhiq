@@ -1,0 +1,29 @@
+{
+  "raw_id": 35,
+  "business_name": "Kings Coffee House",
+  "address": "2 Upper King Street, Holy Trinity Church",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 6XE",
+  "latitude": null,
+  "longitude": null,
+  "category": "Coffee shop / cafe",
+  "phone": "0116 473 5405 (seed listing; not confirmed on official pages)",
+  "website": "https://www.kingscoffeeleicester.com/",
+  "social_media": null,
+  "opening_hours": "Mon–Fri 08:00–15:00; Sat 09:00–15:00 (church page; except public holidays)",
+  "description": "Coffee shop operating from the Holy Trinity Church foyer; serves coffee and food, with profits supporting the church's compassion ministries.",
+  "services": [
+    "Coffee",
+    "Food",
+    "Community fridge access during cafe hours"
+  ],
+  "review_summary": "Google score/text not verified; Tripadvisor listing exists.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for evidence"
+  ],
+  "uncertain_fields": "Phone from seed not corroborated on official pages.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

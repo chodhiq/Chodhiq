@@ -1,0 +1,25 @@
+{
+  "raw_id": 23,
+  "business_name": "Santhi Leicester Ltd",
+  "address": "124 Granby Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 1DL",
+  "latitude": null,
+  "longitude": null,
+  "category": "Restaurant (seed category only)",
+  "phone": null,
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Company and public business-index records associate Santhi Leicester Ltd with 124 Granby Street. No independently verified current restaurant storefront was located in this pass.",
+  "services": [],
+  "review_summary": "No Google reviews or score verified.",
+  "google_rating": null,
+  "storefront_verified": false,
+  "verified_fields": [
+    "See sources.txt; legal/company records are not proof of an operating storefront"
+  ],
+  "uncertain_fields": "Registered/company address only; storefront, cuisine, phone, hours, menu and operating status unverified.",
+  "image_sources": []
+}

@@ -1,0 +1,25 @@
+{
+  "raw_id": 22,
+  "business_name": "FTSH Leicester Ltd (possible trading name: Fattoush Urban Lebanese Kitchen)",
+  "address": "109 Coleman Road",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE5 4LE",
+  "latitude": null,
+  "longitude": null,
+  "category": "Company SIC: unlicensed restaurants and cafes; candidate trading name suggests Lebanese kitchen",
+  "phone": null,
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Companies House records FTSH Leicester Ltd at 109 Coleman Road. Search results associate the company with Fattoush Urban Lebanese Kitchen, but the address appears in company records and was not verified as a customer-facing outlet.",
+  "services": [],
+  "review_summary": "No Google reviews or score verified.",
+  "google_rating": null,
+  "storefront_verified": false,
+  "verified_fields": [
+    "See sources.txt; legal/company records are not proof of an operating storefront"
+  ],
+  "uncertain_fields": "Do not publish as a storefront: registered office does not establish public trading location. Trading-name relationship/current operation, public address, menu and hours unverified.",
+  "image_sources": []
+}

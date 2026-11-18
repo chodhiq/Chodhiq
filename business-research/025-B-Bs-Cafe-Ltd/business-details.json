@@ -1,0 +1,25 @@
+{
+  "raw_id": 25,
+  "business_name": "B-B's Cafe Ltd (legal entity candidate)",
+  "address": "28 Belgrave Road",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE4 5AS",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe / unlicensed restaurant (company SIC)",
+  "phone": "0116 221 6670 (number listed for B-B's Cafe storefront; association with company not proven here)",
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Companies House identifies B-B's Cafe Ltd at 28 Belgrave Road. A separate Leicester City food hygiene record lists a B B's Cafe at the same address. Keep this legal entity row distinct from raw_id 18 until the operator/storefront relationship is established.",
+  "services": [],
+  "review_summary": "No Google review score verified.",
+  "google_rating": null,
+  "storefront_verified": false,
+  "verified_fields": [
+    "See sources.txt; legal/company records are not proof of an operating storefront"
+  ],
+  "uncertain_fields": "Possible same storefront as raw_id 18; legal entity relationship not independently proven. Do not merge automatically.",
+  "image_sources": []
+}

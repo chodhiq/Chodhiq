@@ -1,0 +1,30 @@
+{
+  "raw_id": 14,
+  "business_name": "Halcyon Kitchen",
+  "address": "95 Queens Road, Clarendon Park",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE2 1TT",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe / restaurant",
+  "phone": "0116 270 6077",
+  "website": "https://halcyonkitchen.com/",
+  "social_media": null,
+  "opening_hours": "Mon–Wed 08:30–20:30; Thu–Sat 08:30–21:00; Sun 09:30–14:30 (food service times; official site)",
+  "description": "Cafe-restaurant serving breakfast, brunch and evening meals; menu includes classic breakfasts, Italian-style dishes and options including vegan choices.",
+  "services": [
+    "Breakfast and brunch",
+    "Lunch and dinner",
+    "Pizza/pasta (menu-dependent)",
+    "Online booking",
+    "Cocktail menu Thu–Sun"
+  ],
+  "review_summary": "Google review score/text not verified; third-party Tripadvisor reviews exist.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for source-specific evidence"
+  ],
+  "uncertain_fields": "Service times may vary by menu/day; check official site.",
+  "image_sources": []
+}

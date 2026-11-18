@@ -1,0 +1,24 @@
+{
+  "raw_id": 3,
+  "business_name": "Lunch Box",
+  "address": "1 Malcolm Arcade",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 5FT",
+  "latitude": null,
+  "longitude": null,
+  "category": "Lunch restaurant / cafe",
+  "phone": null,
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "Candidate listing for a lunch cafe at this address; current operation could not be confirmed from an authoritative current source.",
+  "services": [],
+  "review_summary": "A local directory currently lists a 5.0 score and 39 reviews, but these were not verified as Google reviews; another directory says closed.",
+  "google_rating": null,
+  "verified_fields": [
+    "See source list for evidence by field"
+  ],
+  "uncertain_fields": "Current operation/status conflict; phone, hours and official page not found.",
+  "image_sources": []
+}

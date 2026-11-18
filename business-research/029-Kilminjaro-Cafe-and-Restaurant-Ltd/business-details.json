@@ -1,0 +1,25 @@
+{
+  "raw_id": 29,
+  "business_name": "Kilminjaro Cafe and Restaurant Ltd",
+  "address": "12 Britannia Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 3LE",
+  "latitude": null,
+  "longitude": null,
+  "category": "Restaurant / cafe (seed category only)",
+  "phone": null,
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "No sufficiently reliable source found in this pass to verify an operating storefront under this name at the candidate address.",
+  "services": [],
+  "review_summary": "No Google reviews or score verified.",
+  "google_rating": null,
+  "storefront_verified": false,
+  "verified_fields": [
+    "See sources.txt; legal/company records are not proof of an operating storefront"
+  ],
+  "uncertain_fields": "Possible name spelling/identity issue; address, operating status and storefront not independently verified. Do not normalize name without evidence.",
+  "image_sources": []
+}

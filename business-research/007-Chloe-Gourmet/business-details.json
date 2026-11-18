@@ -1,0 +1,27 @@
+{
+  "raw_id": 7,
+  "business_name": "Chloe Gourmet",
+  "address": "10–12 Cank Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 5GW",
+  "latitude": null,
+  "longitude": null,
+  "category": "French patisserie / cafe",
+  "phone": "0116 319 6477 (secondary directory)",
+  "website": null,
+  "social_media": null,
+  "opening_hours": "Mon–Fri 11:00–16:00; Sat 10:00–17:00; Sun 11:00–16:00 (directory updated 2026-06-07)",
+  "description": "French patisserie and cafe; secondary sources describe pastries, desserts and coffee.",
+  "services": [
+    "Patisserie",
+    "Cafe/coffee"
+  ],
+  "review_summary": "No Google score/text captured; third-party reviews exist.",
+  "google_rating": null,
+  "verified_fields": [
+    "See source list for evidence by field"
+  ],
+  "uncertain_fields": "Hours/phone from secondary sources; official site/social not found in this pass.",
+  "image_sources": []
+}

@@ -1,0 +1,25 @@
+{
+  "raw_id": 30,
+  "business_name": "Success Cafe Ltd",
+  "address": "12 New Walk",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 6TF",
+  "latitude": null,
+  "longitude": null,
+  "category": "Cafe (seed category only)",
+  "phone": null,
+  "website": null,
+  "social_media": null,
+  "opening_hours": null,
+  "description": "No sufficiently reliable source found in this pass to verify an operating storefront under this name at the candidate address.",
+  "services": [],
+  "review_summary": "No Google reviews or score verified.",
+  "google_rating": null,
+  "storefront_verified": false,
+  "verified_fields": [
+    "See sources.txt; legal/company records are not proof of an operating storefront"
+  ],
+  "uncertain_fields": "Business identity, address, company record, operating status and services not independently verified; retain as unverified seed candidate.",
+  "image_sources": []
+}

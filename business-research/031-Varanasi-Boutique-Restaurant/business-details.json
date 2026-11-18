@@ -1,0 +1,30 @@
+{
+  "raw_id": 31,
+  "business_name": "Varanasi Leicester",
+  "address": "89–91 High Street",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 4JB",
+  "latitude": null,
+  "longitude": null,
+  "category": "Indian restaurant",
+  "phone": "0116 251 8244",
+  "website": "https://varanasi.uk/leicester",
+  "social_media": null,
+  "opening_hours": "Mon–Thu 18:00–22:30; Fri–Sun 17:00–22:30; last orders 22:00",
+  "description": "Indian restaurant at 89–91 High Street. The official Leicester page describes its restaurant spaces and provides bookings and menu information.",
+  "services": [
+    "Dine-in",
+    "Table reservations",
+    "Private dining (verify with venue)",
+    "Indian food"
+  ],
+  "review_summary": "Google rating/text not verified; Tripadvisor has location-specific reviews.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for evidence"
+  ],
+  "uncertain_fields": "Seed name “Varanasi Boutique Restaurant” normalized to current official trading name Varanasi Leicester; location matches exactly.",
+  "image_sources": [],
+  "possible_duplicate": null
+}

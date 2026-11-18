@@ -1,0 +1,29 @@
+{
+  "raw_id": 40,
+  "business_name": "Bryter Moon Deli (duplicate candidate; see raw_id 10)",
+  "address": "Unit 1, Silver Arcade",
+  "area": null,
+  "city": "Leicester",
+  "postcode": "LE1 5FA",
+  "latitude": null,
+  "longitude": null,
+  "category": "Deli / cafe",
+  "phone": "0116 251 7786 (official contact page)",
+  "website": "https://www.brytermoon.net/",
+  "social_media": null,
+  "opening_hours": null,
+  "description": "This seed row repeats the name and address recorded at raw_id 10. Official business website confirms a deli at Unit 1, Silver Arcade; treat row 40 as a duplicate candidate rather than an additional storefront.",
+  "services": [
+    "Delicatessen",
+    "Cafe/food and drink",
+    "Online menu"
+  ],
+  "review_summary": "Google score/text not verified.",
+  "google_rating": null,
+  "verified_fields": [
+    "See sources.txt for evidence"
+  ],
+  "uncertain_fields": "Duplicate relationship with raw_id 10 is strongly supported by exact name and address; retain raw IDs in audit trail, do not make a second profile absent separate evidence.",
+  "image_sources": [],
+  "possible_duplicate": null
+}
